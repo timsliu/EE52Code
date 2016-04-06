@@ -163,16 +163,108 @@ IllegalEventHandler     ENDP
 ;
 ; Description:       This function installs the event handler for the data
 ;                    request interrupt from the VS1011 MP3 decoder. The
-;                    function
+;                    function also writes to the ICON0 register to turn
+;                    on INT0 interrupts.
 ;
-; Operation:         None
+; Operation:         Writes the address of the data request event handler
+;                    to the address of the INT0 interrupt vector. Write
+;                    ICON0Value to ICON0Address to turn on INT0 interrupts.
+;                    The function then sends an INT0EOI to clear out the 
+;                    interrupt controller.
+;
+; Arguments:         None.
+;
+; Return Value:      None.
+;
+; Local Variables:   None.
+;
+; Shared Variables:  None.
+;
+; Input:             None.
+;
+; Output:            None.
+;
+; Error Handling:    None.
+;
+; Algorithms:        None.
+;
+;
+; Author:            Timothy Liu
+; Last Modified:     4/4/16
+
+;Outline_Dreq()
+;    Clear ES
+;    Write to interrupt vector table
+;    Write to ICON0 register
+;    Send EOI. 
+
+InstallDreqHandler    PROC    NEAR
+                      PUBLIC  InstallDreqHandler
+
+##### InstallDemandHandler CODE #######
+
+
+InstallDemdandHandler    ENDP
+
+; InstallDemandHandler
+;
+; Description:       This function installs the event handler for the data
+;                    demand interrupt from the CON_MP3 decoder. The
+;                    function also writes to the ICON1 register to turn
+;                    on INT1 interrupts.
+;
+; Operation:         Writes the address of the data request event handler
+;                    to the address of the INT1 interrupt vector. Write
+;                    ICON1Value to ICON1Address to turn on INT1 interrupts.
+;                    The function then sends an INT1 EOI to clear out the 
+;                    interrupt controller.
+;
+; Arguments:         None.
+;
+; Return Value:      None.
+;
+; Local Variables:   None.
+;
+; Shared Variables:  None.
+;
+; Input:             None.
+;
+; Output:            None.
+;
+; Error Handling:    None.
+;
+; Algorithms:        None.
+;
+;
+; Author:            Timothy Liu
+; Last Modified:     4/4/16
+
+;Outline_Dreq()
+;    Clear ES
+;    Write to interrupt vector table
+;    Write to ICON1 register
+;    Send EOI. 
+
+InstallDemandHandler    PROC    NEAR
+                        PUBLIC  InstallDemandHandler
+
+##### InstallDemandHandler CODE #######
+
+
+InstallDemandHandler    ENDP
+
+; InstallTimer0Handler
+;
+; Description:       Install the event handler for the timer0 interrupt.
+;
+; Operation:         Writes the address of the timer event handler to the
+;                    appropriate interrupt vector.
 ;
 ; Arguments:         None.
 ; Return Value:      None.
 ;
 ; Local Variables:   None.
 ; Shared Variables:  None.
-; Global Variables:  None.
 ;
 ; Input:             None.
 ; Output:            None.
@@ -182,18 +274,26 @@ IllegalEventHandler     ENDP
 ; Algorithms:        None.
 ; Data Structures:   None.
 ;
-; Registers Changed: None
 ;
 ; Author:            Timothy Liu
 ; Last Modified:     4/4/16
 
-InstallDreqHandler    PROC    NEAR
-                      PUBLIC  InstallDreqHandler
-
-##### InstallDreqHandler CODE #######
+InstallTimer0Handler  PROC    NEAR
+                      PUBLIC  InstallTimer0Handler
 
 
-InstallDreqHandler    ENDP
+        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+        MOV     ES, AX
+                                ;store the vector - put location of timer event
+								;handler into ES
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(MuxKeypadEventHandler)
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(MuxKeypadEventHandler)
+
+
+        RET                     ;all done, return
+
+
+InstallTimer0Handler  ENDP
     
 
 
