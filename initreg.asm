@@ -2,18 +2,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
 ;                             INIT Registers MP3                             ;
-;                             Initial Functions                              ;
+;                         Initialize Register Functions                      ;
 ;                                   EE/CS 52                                 ;
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ; Description:  This file contains the functions for initializing the chip 
-;               select.
+;               selects and control registers.
 
 ; Table of Contents
 ;
 ;   InitCS          -Initialize chip select
+;   InitCon         -Initialize the control registers
 
 
 ; Revision History::
@@ -41,14 +42,15 @@ CODE SEGMENT PUBLIC 'CODE'
         ASSUME  CS:CGROUP
 
 ; external function declarations
-;
-;
+
+
 ;
 ; InitCS
 ;
 ; Description:       Initialize the Peripheral Chip Selects on the 80188.
 ;
-; Operation:         Write the initial values to the PACS and MPCS registers.
+; Operation:         Write the initial values to the PACS and MPCS, MMCS,
+;                    LMCS, and UMCS values.
 ;
 ; Arguments:         None.
 ; Return Value:      None.
@@ -68,7 +70,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ; Registers Changed: AX, DX
 ;
 ; Author:            Timothy Liu
-; Last Modified:     10/27/15
+; Last Modified:     4/5/16
 
 InitCS  PROC    NEAR
         PUBLIC  InitCS
@@ -93,6 +95,67 @@ InitCS  PROC    NEAR
         MOV     DX, UMCSreg     ;setup to write to MPCS register
         MOV     AX, UMCSval
         OUT     DX, AL          ;write MPCSval to MPCS
+
+
+
+        RET                     ;done so return
+
+
+InitCS  ENDP
+
+
+;
+; InitCon
+;
+; Description:       Initialize the control registers on the 80188.
+;
+; Operation:         Write the initial values to RELREG (PCB relocation),
+;                    RFBASE (refresh base address), RFTIME (refresh clock),
+;                    RFCON (Refresh Control), DxCON (DMAControl).
+;
+; Arguments:         None.
+; Return Value:      None.
+;
+; Local Variables:   None.
+; Shared Variables:  None.
+; Global Variables:  None.
+;
+; Input:             None.
+; Output:            None.
+;
+; Error Handling:    None.
+;
+; Algorithms:        None.
+; Data Structures:   None.
+;
+; Registers Changed: AX, DX
+;
+; Author:            Timothy Liu
+; Last Modified:     04/5/16
+
+InitCS  PROC    NEAR
+        PUBLIC  InitCS
+
+
+        MOV     DX, RELREGreg     ;setup to write to RELREG register
+        MOV     AX, RELREGval
+        OUT     DX, AL            ;write RELREGval to RELREG
+
+        MOV     DX, RFBASEreg     ;setup to write to RFBASE register
+        MOV     AX, RFBASEval
+        OUT     DX, AL            ;write RFBASEval to RFBASE
+
+        MOV     DX, RFTIMEreg     ;setup to write to RFTIME register
+        MOV     AX, RFTIMEval
+        OUT     DX, AL            ;write RFTIMEval to RFTIME
+
+        MOV     DX, RFCONreg      ;setup to write to RFCON register
+        MOV     AX, RFCONval
+        OUT     DX, AL            ;write RFCONval to RFCON
+
+        MOV     DX, DxCONreg      ;setup to write to DxCON register
+        MOV     AX, DxCONval
+        OUT     DX, AL            ;write DxCONval to DxCON
 
 
 

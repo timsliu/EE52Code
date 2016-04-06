@@ -16,6 +16,7 @@
 ;                                is for 80188 MP3 player
 ;    4/4/16      Timothy Liu     added MMCS, LMCs UMCS reg and val definitions
 ;                                but no values
+;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
 
 
 ; Chip Select Unit Definitions
