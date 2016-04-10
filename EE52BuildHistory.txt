@@ -1,0 +1,28 @@
+EE52 Board Build
+
+4/7/16
+Added the 5 mounting stands
+
+4/8/16
+Added 5 test points. Checked for continuity (all good - no shorts)
+C46 and C47 (1 uF)
+10nF caps
+10 uF caps (continuity checked)
+C37 (47 nF)
+C1 (47 uF)
+C6 and C53 (33 pF)
+C5, C10, C16
+C4, C11, C17 (continuity checked)
+C20, C2, C40, C19, C21 (GND - VCC continuity good)
+C12, C22, C49, C29, C40
+
+4/9/16
+C3, C13, C15, C48
+C36, C7, C28, C41, C42, C43 (continuity checked - no shorts)
+C26, C27, C44, C34, C35, C39 (continuity checked - no short)
+C30, C31, C32 (continuity checked - no shorts)
+Note: all caps now done (I think)
+Trimmed cap leads further down.
+U8 (LM1086 voltage regulator)
+J1 DC power jack
+Spliced open DC power adapter - white wire is VCC
