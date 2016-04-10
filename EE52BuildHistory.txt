@@ -26,3 +26,10 @@ Trimmed cap leads further down.
 U8 (LM1086 voltage regulator)
 J1 DC power jack
 Spliced open DC power adapter - white wire is VCC
+Soldered white wire VCC to the corresponding lead on male jack
+
+4/10/16 - 8am
+Added hot glue to cover bare wires in DC jack
+Soldered other wire to the smaller lead
+Smashed the DC power jack case back in
+Tested for five volts on board - 5.02V and 3.24V recorded (looks good)
