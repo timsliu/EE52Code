@@ -33,3 +33,8 @@ Added hot glue to cover bare wires in DC jack
 Soldered other wire to the smaller lead
 Smashed the DC power jack case back in
 Tested for five volts on board - 5.02V and 3.24V recorded (looks good)
+
+4/11/16
+R76 and R77 (LED resistors) soldered. LEDs both turn on (yay!)
+SW1 Reset and SW10 Trap
+Sockets for U9, U10, X1, U4
