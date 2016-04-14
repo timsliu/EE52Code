@@ -38,3 +38,20 @@ Tested for five volts on board - 5.02V and 3.24V recorded (looks good)
 R76 and R77 (LED resistors) soldered. LEDs both turn on (yay!)
 SW1 Reset and SW10 Trap
 Sockets for U9, U10, X1, U4
+
+4/12/16
+Sockets for U7, U11, U13, U16
+R20, R105
+R2 (external oscillator resistor)
+Tested SW1 Reset - lights up correctly
+NOTE: Make sure to think about order that the CPLDs are soldered on b/c the 
+sockets are larger than the footprints and there isn’t room for the
+resistors on the top of the board.
+R3, R4, R5, R8 (11k CPU resistors)
+SW3 - SW9
+Sockets U19-21
+
+4/13/16
+Inserted U2 (CPU) and X1 (external oscillator) into sockets
+Inserted U4 (Reset) into socket
+Soldered header P20, 21, 22, 12, 3, 4, 13, 17, 9, 8
