@@ -40,7 +40,7 @@ Initialize the data segment
 
 MainLoopRestart
 
-CALL InitCS
+CALL InitReg
 CALL ClrIRQVectors
 
 CALL InitDisplay

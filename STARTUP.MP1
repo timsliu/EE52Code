@@ -1,0 +1,21 @@
+
+DOS 5.0 (038-N) 8086 LINKER, V2.7
+
+INPUT FILES: STARTUP.OBJ, INITREG.OBJ
+OUTPUT FILE: STARTUP.LNK
+CONTROLS SPECIFIED IN INVOCATION COMMAND:
+DATE:  04/20/;6  TIME:  00:52:41
+
+
+LINK MAP OF MODULE STARTUP
+
+LOGICAL SEGMENTS INCLUDED:
+LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
+ 0000H ------    G    ??SEG                                         
+ 0044H ------    G    CODE            CODE                          
+ 0000H ------    G    DATA            DATA                          
+ 0280H ------    G    STACK           STACK                         
+
+INPUT MODULES INCLUDED:
+STARTUP.OBJ(STARTUP)
+INITREG.OBJ(INITREG)

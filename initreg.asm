@@ -133,36 +133,36 @@ InitCS  ENDP
 ; Author:            Timothy Liu
 ; Last Modified:     04/5/16
 
-InitCS  PROC    NEAR
-        PUBLIC  InitCS
-
-
-        MOV     DX, RELREGreg     ;setup to write to RELREG register
-        MOV     AX, RELREGval
-        OUT     DX, AL            ;write RELREGval to RELREG
-
-        MOV     DX, RFBASEreg     ;setup to write to RFBASE register
-        MOV     AX, RFBASEval
-        OUT     DX, AL            ;write RFBASEval to RFBASE
-
-        MOV     DX, RFTIMEreg     ;setup to write to RFTIME register
-        MOV     AX, RFTIMEval
-        OUT     DX, AL            ;write RFTIMEval to RFTIME
-
-        MOV     DX, RFCONreg      ;setup to write to RFCON register
-        MOV     AX, RFCONval
-        OUT     DX, AL            ;write RFCONval to RFCON
-
-        MOV     DX, DxCONreg      ;setup to write to DxCON register
-        MOV     AX, DxCONval
-        OUT     DX, AL            ;write DxCONval to DxCON
-
-
-
-        RET                     ;done so return
-
-
-InitCS  ENDP
+;InitCS  PROC    NEAR
+;        PUBLIC  InitCS
+;
+;
+;        MOV     DX, RELREGreg     ;setup to write to RELREG register
+;        MOV     AX, RELREGval
+;        OUT     DX, AL            ;write RELREGval to RELREG
+;
+;        MOV     DX, RFBASEreg     ;setup to write to RFBASE register
+;        MOV     AX, RFBASEval
+;        OUT     DX, AL            ;write RFBASEval to RFBASE
+;
+;        MOV     DX, RFTIMEreg     ;setup to write to RFTIME register
+;        MOV     AX, RFTIMEval
+;        OUT     DX, AL            ;write RFTIMEval to RFTIME
+;
+;        MOV     DX, RFCONreg      ;setup to write to RFCON register
+;        MOV     AX, RFCONval
+;        OUT     DX, AL            ;write RFCONval to RFCON
+;
+;        MOV     DX, DxCONreg      ;setup to write to DxCON register
+;        MOV     AX, DxCONval
+;        OUT     DX, AL            ;write DxCONval to DxCON
+;
+;
+;
+;        RET                     ;done so return
+;
+;
+;InitCS  ENDP
 
 
 CODE ENDS

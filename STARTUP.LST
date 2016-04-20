@@ -1,0 +1,137 @@
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  00:52:40  04/20/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
+OBJECT MODULE PLACED IN STARTUP.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE STARTUP.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1             NAME    STARTUP
+                             2     
+                             3     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             4     ;                                                                            ;
+                             5     ;                                   C0SMROM                                  ;
+                             6     ;                               Startup Template                             ;
+                             7     ;                    Intel C Small Memory Model, ROM Option                  ;
+                             8     ;                                                                            ;
+                             9     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            10     
+                            11     ; This file contains a template for the startup code used when interfacing to
+                            12     ; C code compiled with the Intel C compiler using the small memory model and
+                            13     ; ROM option.  It assumes nothing about the system hardware, it's main purpose
+                            14     ; is to setup the groups and segments correctly.  Note that most segments are
+                            15     ; empty, they are present only for the GROUP definitions.  The actual startup
+                            16     ; code for a system would include definitions for the global variables and all
+                            17     ; of the system initialization.  Note that the CONST segment does not exist
+                            18     ; for ROMmable code (it is automatically made part of the CODE segment by the
+                            19     ; compiler).
+                            20     ;
+                            21     ;
+                            22     ; Revision History:
+                            23     ;    3/7/94   Glen George       Initial revision.
+                            24     ;    2/28/95  Glen George       Fixed segment alignments.
+                            25     ;                               Fixed SP initialization.
+                            26     ;                               Removed CS:IP initialization (END Start -> END).
+                            27     ;                               Updated comments.
+                            28     ;    2/29/96  Glen George       Updated comments.
+                            29     ;    2/24/98  Glen George       Updated comments.
+                            30     ;   11/18/98  Glen George       Updated comments.
+                            31     ;   12/26/99  Glen George       Changed formatting.
+                            32     ;    1/30/02  Glen George       Added proper assume for ES.
+                            33     ;    1/27/03  Glen George       Changed to looping if main() returns instead
+                            34     ;                                  of halting
+                            35     ;    4/19/16  Timothy Liu       Added initcs and created infinite loop
+                            36     
+                            37     
+                            38     
+                            39     
+                            40     ; setup code and data groups
+                            41     CGROUP  GROUP   CODE
+                            42     DGROUP  GROUP   DATA, STACK
+                            43     
+                            44     
+                            45     
+                            46     ; the actual startup code - should be executed (jumped to) after reset
+                            47     
+----                        48     CODE    SEGMENT   PUBLIC  'CODE'
+                            49     
+                            50     ; segment register assumptions
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  00:52:40  04/20/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                            51     
+                            52             ASSUME  CS:CGROUP, DS:DGROUP, ES:NOTHING, SS:DGROUP
+                            53     
+                            54     
+                            55     
+                            56             ;EXTRN   main:NEAR               ;declare the main function
+                            57             EXTRN    InitCS:NEAR            ;initialize chip selects
+                            58     
+0000                        59     START:
+                            60     
+                            61     
+0000                        62     MAIN:                                  ;start the program
+0000 FA                     63             CLI                             ;disable interrupts
+0001 B8----         R       64             MOV     AX, DGROUP              ;initialize the stack pointer
+0004 8ED0                   65             MOV     SS, AX
+0006 BC800290       R       66             MOV     SP, OFFSET(DGROUP:TopOfStack)
+                            67     
+000A B8----         R       68             MOV     AX, DGROUP              ;initialize the data segment
+000D 8ED8                   69             MOV     DS, AX
+                            70     
+                            71             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            72             ; user initialization code goes here ;
+                            73             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            74     
+000F E80000         E       75             CALL    InitCS
+                            76     
+                            77             ;CALL    main                    ;run the main function (no arguments)
+                            78     
+                            79             ;JMP     Start                   ;if return - reinitialize and try again
+                            80     
+0012                        81     InfiniteLoop:
+                            82     
+0012 EBFE                   83             JMP      InfiniteLoop            ;loop infinitely
+                            84     
+                            85     
+                            86     
+----                        87     CODE    ENDS
+                            88     
+                            89     ; the stack segment - used for subroutine linkage, argument passing, and
+                            90     ; local variables
+                            91     
+----                        92     STACK   SEGMENT   STACK  'STACK'
+                            93     
+                            94     
+0000 (80                    95             DB      80 DUP ('Stack   ')             ;320 words
+     537461636B2020
+     20
+     )
+                            96     
+0280                        97     TopOfStack      LABEL   WORD
+                            98     
+                            99     
+----                       100     STACK   ENDS
+                           101     
+                           102     ; the data segment - used for static and global variables
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  00:52:40  04/20/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           103     
+----                       104     DATA    SEGMENT   PUBLIC  'DATA'
+                           105     
+                           106     
+----                       107     DATA    ENDS
+                           108     
+                           109     
+                           110     
+                           111     
+                           112             END    START
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

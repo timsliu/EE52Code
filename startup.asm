@@ -32,6 +32,7 @@
 ;    1/30/02  Glen George       Added proper assume for ES.
 ;    1/27/03  Glen George       Changed to looping if main() returns instead
 ;                                  of halting
+;    4/19/16  Timothy Liu       Added initcs and created infinite loop
 
 
 
@@ -41,47 +42,25 @@ CGROUP  GROUP   CODE
 DGROUP  GROUP   DATA, STACK
 
 
+
+; the actual startup code - should be executed (jumped to) after reset
+
+CODE    SEGMENT   PUBLIC  'CODE'
+
 ; segment register assumptions
+
         ASSUME  CS:CGROUP, DS:DGROUP, ES:NOTHING, SS:DGROUP
 
 
 
-; the data segment - used for static and global variables
+        ;EXTRN   main:NEAR               ;declare the main function
+        EXTRN    InitCS:NEAR            ;initialize chip selects
 
-DATA    SEGMENT  WORD  PUBLIC  'DATA'
-
-
-DATA    ENDS
+START:
 
 
-
-
-; the stack segment - used for subroutine linkage, argument passing, and
-; local variables
-
-STACK   SEGMENT  WORD  STACK  'STACK'
-
-
-        DB      80 DUP ('Stack   ')             ;320 words
-
-TopOfStack      LABEL   WORD
-
-
-STACK   ENDS
-
-
-
-
-; the actual startup code - should be executed (jumped to) after reset
-
-CODE    SEGMENT  WORD  PUBLIC  'CODE'
-
-
-        EXTRN   main:NEAR               ;declare the main function
-
-
-Start:                                  ;start the program
-
+MAIN:                                  ;start the program
+        CLI                             ;disable interrupts
         MOV     AX, DGROUP              ;initialize the stack pointer
         MOV     SS, AX
         MOV     SP, OFFSET(DGROUP:TopOfStack)
@@ -93,14 +72,41 @@ Start:                                  ;start the program
         ; user initialization code goes here ;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        CALL    main                    ;run the main function (no arguments)
+        CALL    InitCS
 
-        JMP     Start                   ;if return - reinitialize and try again
+        ;CALL    main                    ;run the main function (no arguments)
+
+        ;JMP     Start                   ;if return - reinitialize and try again
+
+InfiniteLoop:
+
+        JMP      InfiniteLoop            ;loop infinitely
 
 
 
 CODE    ENDS
 
+; the stack segment - used for subroutine linkage, argument passing, and
+; local variables
+
+STACK   SEGMENT   STACK  'STACK'
 
 
-        END
+        DB      80 DUP ('Stack   ')             ;320 words
+
+TopOfStack      LABEL   WORD
+
+
+STACK   ENDS
+
+; the data segment - used for static and global variables
+
+DATA    SEGMENT   PUBLIC  'DATA'
+
+
+DATA    ENDS
+
+
+
+
+        END    START
