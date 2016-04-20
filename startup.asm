@@ -33,6 +33,9 @@
 ;    1/27/03  Glen George       Changed to looping if main() returns instead
 ;                                  of halting
 ;    4/19/16  Timothy Liu       Added initcs and created infinite loop
+;    4/19/16  Timothy Liu       Changed name to STARTUP
+;    4/19/16  Timothy Liu       Reordered assumes and group declarations
+;    4/19/16  Timothy Liu       Added START and END START CS:IP init
 
 
 

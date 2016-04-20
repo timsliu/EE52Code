@@ -30,6 +30,7 @@
 ;       4/4/16      Timothy Liu     Removed GENERAL.INC and changed INITCS.INC
 ;                                   to INITCSM.INC
 ;       4/4/16      Timothy Liu     Changed name to InitReg (init registers)
+;       4/19/16     Timothy Liu     Commented out InitCon - may delete later
 ; local include files
 
 $INCLUDE(INITREG.INC)
