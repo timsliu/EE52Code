@@ -31,6 +31,7 @@
 ;                                   to INITCSM.INC
 ;       4/4/16      Timothy Liu     Changed name to InitReg (init registers)
 ;       4/19/16     Timothy Liu     Commented out InitCon - may delete later
+;       4/20/16     Timothy Liu     Moved write to LMCS to startup.asm
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -89,9 +90,6 @@ InitCS  PROC    NEAR
         MOV     AX, MMCSval
         OUT     DX, AL          ;write MPCSval to MPCS
 
-        MOV     DX, LMCSreg     ;setup to write to MPCS register
-        MOV     AX, LMCSval
-        OUT     DX, AL          ;write MPCSval to MPCS
 
         MOV     DX, UMCSreg     ;setup to write to MPCS register
         MOV     AX, UMCSval

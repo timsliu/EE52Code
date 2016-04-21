@@ -22,16 +22,16 @@
 ;    InstallTimer0Handler   -installs the timer0 handler
 
 
-Revisioin History:
+;Revision History:
 ;    4/4/16
 
 $INCLUDE(MIRQ.INC)
 
 CGROUP    GROUP    CODE
 
-CODE SEGMENT  PUBLIC ‘CODE’
+CODE SEGMENT PUBLIC 'CODE'
 
-        ASSUME    CS:GROUP
+        ASSUME    CS:CGROUP
 
 ; external function declarations
 
@@ -198,13 +198,13 @@ IllegalEventHandler     ENDP
 ;    Write to ICON0 register
 ;    Send EOI. 
 
-InstallDreqHandler    PROC    NEAR
-                      PUBLIC  InstallDreqHandler
+;InstallDreqHandler    PROC    NEAR
+;                      PUBLIC  InstallDreqHandler
 
-##### InstallDemandHandler CODE #######
+;##### InstallDemandHandler CODE #######
 
 
-InstallDemdandHandler    ENDP
+;InstallDemdandHandler    ENDP
 
 ; InstallDemandHandler
 ;
@@ -245,13 +245,13 @@ InstallDemdandHandler    ENDP
 ;    Write to ICON1 register
 ;    Send EOI. 
 
-InstallDemandHandler    PROC    NEAR
-                        PUBLIC  InstallDemandHandler
+;InstallDemandHandler    PROC    NEAR
+;                        PUBLIC  InstallDemandHandler
 
-##### InstallDemandHandler CODE #######
+;##### InstallDemandHandler CODE #######
 
 
-InstallDemandHandler    ENDP
+;InstallDemandHandler    ENDP
 
 ; InstallTimer0Handler
 ;
@@ -278,22 +278,22 @@ InstallDemandHandler    ENDP
 ; Author:            Timothy Liu
 ; Last Modified:     4/4/16
 
-InstallTimer0Handler  PROC    NEAR
-                      PUBLIC  InstallTimer0Handler
-
-
-        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-        MOV     ES, AX
-                                ;store the vector - put location of timer event
-								;handler into ES
-        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(MuxKeypadEventHandler)
-        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(MuxKeypadEventHandler)
-
-
-        RET                     ;all done, return
-
-
-InstallTimer0Handler  ENDP
+;InstallTimer0Handler  PROC    NEAR
+;                      PUBLIC  InstallTimer0Handler
+;
+;
+;        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+;        MOV     ES, AX
+;                                ;store the vector - put location of timer event
+;								;handler into ES
+;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(MuxKeypadEventHandler)
+;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(MuxKeypadEventHandler)
+;
+;
+;        RET                     ;all done, return
+;
+;
+;InstallTimer0Handler  ENDP
     
 
 

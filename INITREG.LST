@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  00:52:41  04/20/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  18:30:08  04/20/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE INITREG
@@ -40,85 +40,85 @@ LOC  OBJ                  LINE     SOURCE
                             30     ;       4/4/16      Timothy Liu     Removed GENERAL.INC and changed INITCS.INC
                             31     ;                                   to INITCSM.INC
                             32     ;       4/4/16      Timothy Liu     Changed name to InitReg (init registers)
-                            33     ; local include files
-                            34     
-                            35 +1  $INCLUDE(INITREG.INC)
-                      =1    36     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    37     ;                                                                            ;
-                      =1    38     ;                                 initreg.INC                                ;
-                      =1    39     ;                       Initialize Registers MP3 Include File                ;
-                      =1    40     ;                                   EE/CS 52                                 ;
-                      =1    41     ;                                                                            ;
-                      =1    42     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    43     
-                      =1    44     ; This file contains the definitions for initcs.asm.
-                      =1    45     ;
-                      =1    46     ; Revision History:
-                      =1    47     ;    11/4/15     Timothy Liu     initial revision
-                      =1    48     ;    11/5/15     Timothy Liu     fixed formatting
-                      =1    49     ;    11/17/15    Timothy Liu     changed to only have values for initcs.asm
-                      =1    50     ;    4/4/16      Timothy Liu     changed name to InitCSM to signify file
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  00:52:41  04/20/;6  PAGE    2
+                            33     ;       4/19/16     Timothy Liu     Commented out InitCon - may delete later
+                            34     ;       4/20/16     Timothy Liu     Moved write to LMCS to startup.asm
+                            35     ; local include files
+                            36     
+                            37 +1  $INCLUDE(INITREG.INC)
+                      =1    38     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    39     ;                                                                            ;
+                      =1    40     ;                                 initreg.INC                                ;
+                      =1    41     ;                       Initialize Registers MP3 Include File                ;
+                      =1    42     ;                                   EE/CS 52                                 ;
+                      =1    43     ;                                                                            ;
+                      =1    44     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    45     
+                      =1    46     ; This file contains the definitions for initcs.asm.
+                      =1    47     ;
+                      =1    48     ; Revision History:
+                      =1    49     ;    11/4/15     Timothy Liu     initial revision
+                      =1    50     ;    11/5/15     Timothy Liu     fixed formatting
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  18:30:08  04/20/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1    51     ;                                is for 80188 MP3 player
-                      =1    52     ;    4/4/16      Timothy Liu     added MMCS, LMCs UMCS reg and val definitions
-                      =1    53     ;                                but no values
-                      =1    54     ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
-                      =1    55     ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
-                      =1    56     
-                      =1    57     
-                      =1    58     ; Chip Select Unit Definitions
+                      =1    51     ;    11/17/15    Timothy Liu     changed to only have values for initcs.asm
+                      =1    52     ;    4/4/16      Timothy Liu     changed name to InitCSM to signify file
+                      =1    53     ;                                is for 80188 MP3 player
+                      =1    54     ;    4/4/16      Timothy Liu     added MMCS, LMCs UMCS reg and val definitions
+                      =1    55     ;                                but no values
+                      =1    56     ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
+                      =1    57     ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
+                      =1    58     
                       =1    59     
-                      =1    60     ; Addresses
-  FFA4                =1    61     PACSreg         EQU     0FFA4H          ;address of PACS register
-  FFA8                =1    62     MPCSreg         EQU     0FFA8H          ;address of MPCS register
-  FFA6                =1    63     MMCSreg         EQU     0FFA6H          ;address of MMCS register
-  FFA2                =1    64     LMCSreg         EQU     0FFA2H          ;address of LMCS register
-  FFA0                =1    65     UMCSreg         EQU     0FFA0H          ;address of UMCS register
-                      =1    66     
-                      =1    67     ; Control Register Values
-  0003                =1    68     PACSval         EQU     00003H          ;PCS base at 0, 3 wait states
-                      =1    69                                             ;0000000000------  starts at address 0
-                      =1    70                                             ;----------000---  reserved
-                      =1    71                                             ;-------------0--  wait for RDY inputs
-                      =1    72                                             ;--------------11  3 wait states
-  0883                =1    73     MPCSval         EQU     00883H          ;PCS in I/O space, use PCS5/6, 3 wait states
-                      =1    74                                             ;0---------000---  reserved
-                      =1    75                                             ;-0001000--------  MCS is 64KB
-                      =1    76                                             ;--------1-------  output PCS5/PCS6
-                      =1    77                                             ;---------0------  PCS in I/O space
-                      =1    78                                             ;-------------0--  wait for RDY inputs
-                      =1    79                                             ;--------------11  3 wait states
-                      =1    80     
-  7003                =1    81     MMCSval        EQU     07003H           ;MMCS base 70000H, 3 wait states
-                      =1    82                                             ;0111000---------  start address
-                      =1    83                                             ;-------000000---  reserved
-                      =1    84                                             ;-------------0--  enable bus ready
-                      =1    85                                             ;--------------11  3 wait states
-                      =1    86     
-  07C3                =1    87     LMCSval        EQU     007C3H           ;LCS end at 07FFFFH, 3 wait states
-                      =1    88                                             ;00--------------  reserved
-                      =1    89                                             ;--00011111------  end address
-                      =1    90                                             ;----------000---  reserved
-                      =1    91                                             ;-------------0--  enable bus ready
-                      =1    92                                             ;--------------11  3 wait states
-                      =1    93     
-  3003                =1    94     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
-                      =1    95                                             ;00--------------  reserved
-                      =1    96                                             ;--11000000------  start address F0000
-                      =1    97                                             ;----------000---  reserved
-                      =1    98                                             ;-------------0--  enable bus ready
-                      =1    99                                             ;--------------11  3 wait states
-                      =1   100     
-                      =1   101     
+                      =1    60     ; Chip Select Unit Definitions
+                      =1    61     
+                      =1    62     ; Addresses
+  FFA4                =1    63     PACSreg         EQU     0FFA4H          ;address of PACS register
+  FFA8                =1    64     MPCSreg         EQU     0FFA8H          ;address of MPCS register
+  FFA6                =1    65     MMCSreg         EQU     0FFA6H          ;address of MMCS register
+  FFA2                =1    66     LMCSreg         EQU     0FFA2H          ;address of LMCS register
+  FFA0                =1    67     UMCSreg         EQU     0FFA0H          ;address of UMCS register
+                      =1    68     
+                      =1    69     ; Control Register Values
+  0003                =1    70     PACSval         EQU     00003H          ;PCS base at 0, 3 wait states
+                      =1    71                                             ;0000000000------  starts at address 0
+                      =1    72                                             ;----------000---  reserved
+                      =1    73                                             ;-------------0--  wait for RDY inputs
+                      =1    74                                             ;--------------11  3 wait states
+  0883                =1    75     MPCSval         EQU     00883H          ;PCS in I/O space, use PCS5/6, 3 wait states
+                      =1    76                                             ;0---------000---  reserved
+                      =1    77                                             ;-0001000--------  MCS is 64KB
+                      =1    78                                             ;--------1-------  output PCS5/PCS6
+                      =1    79                                             ;---------0------  PCS in I/O space
+                      =1    80                                             ;-------------0--  wait for RDY inputs
+                      =1    81                                             ;--------------11  3 wait states
+                      =1    82     
+  7003                =1    83     MMCSval        EQU     07003H           ;MMCS base 70000H, 3 wait states
+                      =1    84                                             ;0111000---------  start address
+                      =1    85                                             ;-------000000---  reserved
+                      =1    86                                             ;-------------0--  enable bus ready
+                      =1    87                                             ;--------------11  3 wait states
+                      =1    88     
+  07C3                =1    89     LMCSval        EQU     007C3H           ;LCS end at 07FFFFH, 3 wait states
+                      =1    90                                             ;00--------------  reserved
+                      =1    91                                             ;--00011111------  end address
+                      =1    92                                             ;----------000---  reserved
+                      =1    93                                             ;-------------0--  enable bus ready
+                      =1    94                                             ;--------------11  3 wait states
+                      =1    95     
+  3003                =1    96     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
+                      =1    97                                             ;00--------------  reserved
+                      =1    98                                             ;--11000000------  start address F0000
+                      =1    99                                             ;----------000---  reserved
+                      =1   100                                             ;-------------0--  enable bus ready
+                      =1   101                                             ;--------------11  3 wait states
                       =1   102     
                       =1   103     
                       =1   104     
                       =1   105     
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  00:52:41  04/20/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  18:30:08  04/20/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -130,151 +130,150 @@ LOC  OBJ                  LINE     SOURCE
                       =1   110     
                       =1   111     
                       =1   112     
-                           113     
-                           114     
-                           115     CGROUP    GROUP    CODE
+                      =1   113     
+                      =1   114     
+                           115     
                            116     
-----                       117     CODE SEGMENT PUBLIC 'CODE'
+                           117     CGROUP    GROUP    CODE
                            118     
-                           119             ASSUME  CS:CGROUP
+----                       119     CODE SEGMENT PUBLIC 'CODE'
                            120     
-                           121     ; external function declarations
+                           121             ASSUME  CS:CGROUP
                            122     
-                           123     
-                           124     ;
-                           125     ; InitCS
+                           123     ; external function declarations
+                           124     
+                           125     
                            126     ;
-                           127     ; Description:       Initialize the Peripheral Chip Selects on the 80188.
+                           127     ; InitCS
                            128     ;
-                           129     ; Operation:         Write the initial values to the PACS and MPCS, MMCS,
-                           130     ;                    LMCS, and UMCS values.
-                           131     ;
-                           132     ; Arguments:         None.
-                           133     ; Return Value:      None.
-                           134     ;
-                           135     ; Local Variables:   None.
-                           136     ; Shared Variables:  None.
-                           137     ; Global Variables:  None.
-                           138     ;
-                           139     ; Input:             None.
-                           140     ; Output:            None.
-                           141     ;
-                           142     ; Error Handling:    None.
+                           129     ; Description:       Initialize the Peripheral Chip Selects on the 80188.
+                           130     ;
+                           131     ; Operation:         Write the initial values to the PACS and MPCS, MMCS,
+                           132     ;                    LMCS, and UMCS values.
+                           133     ;
+                           134     ; Arguments:         None.
+                           135     ; Return Value:      None.
+                           136     ;
+                           137     ; Local Variables:   None.
+                           138     ; Shared Variables:  None.
+                           139     ; Global Variables:  None.
+                           140     ;
+                           141     ; Input:             None.
+                           142     ; Output:            None.
                            143     ;
-                           144     ; Algorithms:        None.
-                           145     ; Data Structures:   None.
-                           146     ;
-                           147     ; Registers Changed: AX, DX
+                           144     ; Error Handling:    None.
+                           145     ;
+                           146     ; Algorithms:        None.
+                           147     ; Data Structures:   None.
                            148     ;
-                           149     ; Author:            Timothy Liu
-                           150     ; Last Modified:     4/5/16
-                           151     
-0000                       152     InitCS  PROC    NEAR
-                           153             PUBLIC  InitCS
-                           154     
-                           155     
-0000 BAA4FF                156             MOV     DX, PACSreg     ;setup to write to PACS register
-0003 B80300                157             MOV     AX, PACSval
-0006 EE                    158             OUT     DX, AL          ;write PACSval to PACS
-                           159     
-0007 BAA8FF                160             MOV     DX, MPCSreg     ;setup to write to MPCS register
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  00:52:41  04/20/;6  PAGE    4
+                           149     ; Registers Changed: AX, DX
+                           150     ;
+                           151     ; Author:            Timothy Liu
+                           152     ; Last Modified:     4/5/16
+                           153     
+0000                       154     InitCS  PROC    NEAR
+                           155             PUBLIC  InitCS
+                           156     
+                           157     
+0000 BAA4FF                158             MOV     DX, PACSreg     ;setup to write to PACS register
+0003 B80300                159             MOV     AX, PACSval
+0006 EE                    160             OUT     DX, AL          ;write PACSval to PACS
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  18:30:08  04/20/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-000A B88308                161             MOV     AX, MPCSval
-000D EE                    162             OUT     DX, AL          ;write MPCSval to MPCS
-                           163     
-000E BAA6FF                164             MOV     DX, MMCSreg     ;setup to write to MPCS register
-0011 B80370                165             MOV     AX, MMCSval
-0014 EE                    166             OUT     DX, AL          ;write MPCSval to MPCS
-                           167     
-0015 BAA2FF                168             MOV     DX, LMCSreg     ;setup to write to MPCS register
-0018 B8C307                169             MOV     AX, LMCSval
-001B EE                    170             OUT     DX, AL          ;write MPCSval to MPCS
-                           171     
-001C BAA0FF                172             MOV     DX, UMCSreg     ;setup to write to MPCS register
-001F B80330                173             MOV     AX, UMCSval
-0022 EE                    174             OUT     DX, AL          ;write MPCSval to MPCS
+                           161     
+0007 BAA8FF                162             MOV     DX, MPCSreg     ;setup to write to MPCS register
+000A B88308                163             MOV     AX, MPCSval
+000D EE                    164             OUT     DX, AL          ;write MPCSval to MPCS
+                           165     
+000E BAA6FF                166             MOV     DX, MMCSreg     ;setup to write to MPCS register
+0011 B80370                167             MOV     AX, MMCSval
+0014 EE                    168             OUT     DX, AL          ;write MPCSval to MPCS
+                           169     
+                           170     
+0015 BAA0FF                171             MOV     DX, UMCSreg     ;setup to write to MPCS register
+0018 B80330                172             MOV     AX, UMCSval
+001B EE                    173             OUT     DX, AL          ;write MPCSval to MPCS
+                           174     
                            175     
                            176     
-                           177     
-0023 C3                    178             RET                     ;done so return
+001C C3                    177             RET                     ;done so return
+                           178     
                            179     
-                           180     
-                           181     InitCS  ENDP
+                           180     InitCS  ENDP
+                           181     
                            182     
-                           183     
-                           184     ;
-                           185     ; InitCon
-                           186     ;
-                           187     ; Description:       Initialize the control registers on the 80188.
-                           188     ;
-                           189     ; Operation:         Write the initial values to RELREG (PCB relocation),
-                           190     ;                    RFBASE (refresh base address), RFTIME (refresh clock),
-                           191     ;                    RFCON (Refresh Control), DxCON (DMAControl).
-                           192     ;
-                           193     ; Arguments:         None.
-                           194     ; Return Value:      None.
-                           195     ;
-                           196     ; Local Variables:   None.
-                           197     ; Shared Variables:  None.
-                           198     ; Global Variables:  None.
-                           199     ;
-                           200     ; Input:             None.
-                           201     ; Output:            None.
-                           202     ;
-                           203     ; Error Handling:    None.
-                           204     ;
-                           205     ; Algorithms:        None.
-                           206     ; Data Structures:   None.
-                           207     ;
-                           208     ; Registers Changed: AX, DX
-                           209     ;
-                           210     ; Author:            Timothy Liu
-                           211     ; Last Modified:     04/5/16
-                           212     
-                           213     ;InitCS  PROC    NEAR
-                           214     ;        PUBLIC  InitCS
+                           183     ;
+                           184     ; InitCon
+                           185     ;
+                           186     ; Description:       Initialize the control registers on the 80188.
+                           187     ;
+                           188     ; Operation:         Write the initial values to RELREG (PCB relocation),
+                           189     ;                    RFBASE (refresh base address), RFTIME (refresh clock),
+                           190     ;                    RFCON (Refresh Control), DxCON (DMAControl).
+                           191     ;
+                           192     ; Arguments:         None.
+                           193     ; Return Value:      None.
+                           194     ;
+                           195     ; Local Variables:   None.
+                           196     ; Shared Variables:  None.
+                           197     ; Global Variables:  None.
+                           198     ;
+                           199     ; Input:             None.
+                           200     ; Output:            None.
+                           201     ;
+                           202     ; Error Handling:    None.
+                           203     ;
+                           204     ; Algorithms:        None.
+                           205     ; Data Structures:   None.
+                           206     ;
+                           207     ; Registers Changed: AX, DX
+                           208     ;
+                           209     ; Author:            Timothy Liu
+                           210     ; Last Modified:     04/5/16
+                           211     
+                           212     ;InitCS  PROC    NEAR
+                           213     ;        PUBLIC  InitCS
+                           214     ;
                            215     ;
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  00:52:41  04/20/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  18:30:08  04/20/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     ;
-                           217     ;        MOV     DX, RELREGreg     ;setup to write to RELREG register
-                           218     ;        MOV     AX, RELREGval
-                           219     ;        OUT     DX, AL            ;write RELREGval to RELREG
-                           220     ;
-                           221     ;        MOV     DX, RFBASEreg     ;setup to write to RFBASE register
-                           222     ;        MOV     AX, RFBASEval
-                           223     ;        OUT     DX, AL            ;write RFBASEval to RFBASE
-                           224     ;
-                           225     ;        MOV     DX, RFTIMEreg     ;setup to write to RFTIME register
-                           226     ;        MOV     AX, RFTIMEval
-                           227     ;        OUT     DX, AL            ;write RFTIMEval to RFTIME
-                           228     ;
-                           229     ;        MOV     DX, RFCONreg      ;setup to write to RFCON register
-                           230     ;        MOV     AX, RFCONval
-                           231     ;        OUT     DX, AL            ;write RFCONval to RFCON
-                           232     ;
-                           233     ;        MOV     DX, DxCONreg      ;setup to write to DxCON register
-                           234     ;        MOV     AX, DxCONval
-                           235     ;        OUT     DX, AL            ;write DxCONval to DxCON
+                           216     ;        MOV     DX, RELREGreg     ;setup to write to RELREG register
+                           217     ;        MOV     AX, RELREGval
+                           218     ;        OUT     DX, AL            ;write RELREGval to RELREG
+                           219     ;
+                           220     ;        MOV     DX, RFBASEreg     ;setup to write to RFBASE register
+                           221     ;        MOV     AX, RFBASEval
+                           222     ;        OUT     DX, AL            ;write RFBASEval to RFBASE
+                           223     ;
+                           224     ;        MOV     DX, RFTIMEreg     ;setup to write to RFTIME register
+                           225     ;        MOV     AX, RFTIMEval
+                           226     ;        OUT     DX, AL            ;write RFTIMEval to RFTIME
+                           227     ;
+                           228     ;        MOV     DX, RFCONreg      ;setup to write to RFCON register
+                           229     ;        MOV     AX, RFCONval
+                           230     ;        OUT     DX, AL            ;write RFCONval to RFCON
+                           231     ;
+                           232     ;        MOV     DX, DxCONreg      ;setup to write to DxCON register
+                           233     ;        MOV     AX, DxCONval
+                           234     ;        OUT     DX, AL            ;write DxCONval to DxCON
+                           235     ;
                            236     ;
                            237     ;
-                           238     ;
-                           239     ;        RET                     ;done so return
+                           238     ;        RET                     ;done so return
+                           239     ;
                            240     ;
-                           241     ;
-                           242     ;InitCS  ENDP
+                           241     ;InitCS  ENDP
+                           242     
                            243     
-                           244     
-----                       245     CODE ENDS
+----                       244     CODE ENDS
+                           245     
                            246     
-                           247     
-                           248             END
+                           247             END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

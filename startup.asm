@@ -36,8 +36,9 @@
 ;    4/19/16  Timothy Liu       Changed name to STARTUP
 ;    4/19/16  Timothy Liu       Reordered assumes and group declarations
 ;    4/19/16  Timothy Liu       Added START and END START CS:IP init
+; local include files
 
-
+$INCLUDE(INITREG.INC)
 
 
 ; setup code and data groups
@@ -48,7 +49,7 @@ DGROUP  GROUP   DATA, STACK
 
 ; the actual startup code - should be executed (jumped to) after reset
 
-CODE    SEGMENT   PUBLIC  'CODE'
+CODE    SEGMENT  WORD  PUBLIC  'CODE'
 
 ; segment register assumptions
 
@@ -58,6 +59,7 @@ CODE    SEGMENT   PUBLIC  'CODE'
 
         ;EXTRN   main:NEAR               ;declare the main function
         EXTRN    InitCS:NEAR            ;initialize chip selects
+        EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
 
 START:
 
@@ -75,7 +77,12 @@ MAIN:                                  ;start the program
         ; user initialization code goes here ;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        CALL    InitCS
+        MOV     DX, LMCSreg     ;setup to write to MPCS register
+        MOV     AX, LMCSval
+        OUT     DX, AL          ;write MPCSval to MPCS
+
+        CALL    InitCS                  ;initialize chip selects
+        CALL    ClrIRQVectors           ;clear interrupt vector table
 
         ;CALL    main                    ;run the main function (no arguments)
 
@@ -92,7 +99,7 @@ CODE    ENDS
 ; the stack segment - used for subroutine linkage, argument passing, and
 ; local variables
 
-STACK   SEGMENT   STACK  'STACK'
+STACK   SEGMENT  WORD  STACK  'STACK'
 
 
         DB      80 DUP ('Stack   ')             ;320 words
@@ -104,7 +111,7 @@ STACK   ENDS
 
 ; the data segment - used for static and global variables
 
-DATA    SEGMENT   PUBLIC  'DATA'
+DATA    SEGMENT  WORD  PUBLIC  'DATA'
 
 
 DATA    ENDS

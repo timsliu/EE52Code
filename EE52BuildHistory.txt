@@ -83,3 +83,6 @@ Temporary resistor to pull SRDY up
 
 4/18/16
 R14, R11, R80
+
+4/20/16
+Inserted 74ALS245 into U11 (switch buffer)
