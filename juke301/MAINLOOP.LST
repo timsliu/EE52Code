@@ -1,0 +1,449 @@
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE MAINLOOP
+OBJECT MODULE PLACED IN MAINLOOP.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                 MAINLOOP                                 */
+    4             /*                             Main Program Loop                            */
+    5             /*                            MP3 Jukebox Project                           */
+    6             /*                                 EE/CS 52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains the main processing loop (background) for the MP3
+   12                Jukebox Project.  The only global function included is:
+   13                   main - background processing loop
+   14             
+   15                The local functions included are:
+   16                   key_lookup - get a key and look up its keycode
+   17             
+   18                The locally global variable definitions included are:
+   19                   none
+   20             
+   21             
+   22                Revision History
+   23                   6/5/00   Glen George       Initial revision (from 3/6/99 version of
+   24                                              mainloop.c for the Digital Audio Recorder
+   25                                              Project).
+   26                   6/2/02   Glen George       Updated comments.
+   27                   5/15/03  Glen George       Moved static declarations to first keyword
+   28                                              since the lame NIOS compiler requires it.
+   29                   5/15/03  Glen George       Changed type on some variables to size_t
+   30                                              for better portability and more accurate
+   31                                              typing.
+   32                   5/15/03  Glen George       Added #include of stddef.h to get some
+   33                                              standard definitions.
+   34                   6/5/03   Glen George       Removed references to track number, it is no
+   35                                              longer used.
+   36                   6/5/03   Glen George       Added initialization to FAT directory system.
+   37                   6/5/03   Glen George       Updated function headers.
+   38                   3/14/13  Glen George       Changed code to match new interfaces for
+   39                                              init_FAT_system() and get_first_dir_entry().
+   40             */
+   41             
+   42             
+   43             
+   44             /* library include files */
+   45             #include  <stddef.h>
+   46             
+   47             /* local include files */
+   48             #include  "interfac.h"
+   49             #include  "mp3defs.h"
+   50             #include  "keyproc.h"
+   51             #include  "updatfnc.h"
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   2
+
+
+   52             #include  "trakutil.h"
+   53             #include  "fatutil.h"
+   54             
+   55             
+   56             
+   57             
+   58             /* local function declarations */
+   59             enum keycode  key_lookup(void);      /* translate key values into keycodes */
+   60             
+   61             
+   62             
+   63             
+   64             /*
+   65                main
+   66             
+   67                Description:      This procedure is the main program loop for the MP3
+   68                                  Jukebox.  It loops getting keys from the keypad,
+   69                                  processing those keys as is appropriate.  It also handles
+   70                                  updating the display and setting up the buffers for MP3
+   71                                  playback.
+   72             
+   73                Arguments:        None.
+   74                Return Value:     (int) - return code, always 0 (never returns).
+   75             
+   76                Input:            Keys from the keypad.
+   77                Output:           Status information to the display.
+   78             
+   79                Error Handling:   Invalid input is ignored.
+   80             
+   81                Algorithms:       The function is table-driven.  The processing routines
+   82                                  for each input are given in tables which are selected
+   83                                  based on the context (state) in which the program is
+   84                                  operating.
+   85                Data Structures:  None.
+   86             
+   87                Shared Variables: None.
+   88             
+   89                Author:           Glen George
+   90                Last Modified:    March 14, 2013
+   91             
+   92             */
+   93             
+   94             int  main()
+   95             {
+   96     1           /* variables */
+   97     1           enum keycode  key;                      /* an input key */
+   98     1       
+   99     1           enum status   cur_status = STAT_IDLE;   /* current program status */
+  100     1           enum status   prev_status = STAT_IDLE;  /* previous program status */
+  101     1       
+  102     1           char          error;                    /* error flag */
+  103     1       
+  104     1           /* array of status type translations (from enum status to #defines) */
+  105     1           /* note: the array must match the enum definition order exactly */
+  106     1           static const unsigned int  xlat_stat[] =
+  107     1               {  STATUS_IDLE,      /* system idle */
+  108     1                  STATUS_PLAY,      /* playing (or repeat playing) a track */
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   3
+
+
+  109     1                  STATUS_FASTFWD,   /* fast forwarding a track */
+  110     1                  STATUS_REVERSE    /* reversing a track */
+  111     1               };
+  112     1       
+  113     1           /* update functions (one for each system status type) */
+  114     1           static enum status  (* const update_fnc[NUM_STATUS])(enum status) =
+  115     1               /*                        Current System Status                           */
+  116     1               /*    idle        play      fast forward      reverse      */
+  117     1               {  no_update, update_Play, update_FastFwd, update_Reverse  };
+  118     1       
+  119     1           /* key processing functions (one for each system status type and key) */
+  120     1           static enum status  (* const process_key[NUM_KEYCODES][NUM_STATUS])(enum status) =
+  121     1               /*                            Current System Status                                           
+                -     */
+  122     1               /* idle           play            fast forward   reverse                  key         */
+  123     1             { {  do_TrackUp,    no_action,      no_action,     no_action     },   /* <Track Up>     */
+  124     1               {  do_TrackDown,  no_action,      no_action,     no_action     },   /* <Track Down>   */
+  125     1               {  start_Play,    no_action,      begin_Play,    begin_Play    },   /* <Play>         */
+  126     1               {  start_RptPlay, cont_RptPlay,   begin_RptPlay, begin_RptPlay },   /* <Repeat Play>  */
+  127     1               {  start_FastFwd, switch_FastFwd, stop_FFRev,    begin_FastFwd },   /* <Fast Forward> */
+  128     1               {  start_Reverse, switch_Reverse, begin_Reverse, stop_FFRev    },   /* <Reverse>      */
+  129     1               {  stop_idle,     stop_Play,      stop_FFRev,    stop_FFRev    },   /* <Stop>         */
+  130     1               {  no_action,     no_action,      no_action,     no_action     } }; /* illegal key    */
+  131     1       
+  132     1       
+  133     1       
+  134     1           /* first initialize everything */
+  135     1           /* initialize FAT directory functions */
+  136     1           error = init_FAT_system();
+  137     1       
+  138     1           /* get the first directory entry (file/song) */
+  139     1           if (!error)  {
+  140     2               /* no error initializing the FAT system - get first directory entry */
+  141     2               get_first_dir_entry();
+  142     2               /* and setup the information for the track/file */
+  143     2               setup_cur_track_info();
+  144     2           }
+  145     1           else  {
+  146     2               /* had an error - fill with error track information */
+  147     2               setup_error_track_info();
+  148     2           }
+  149     1       
+  150     1       
+  151     1           /* display track information */
+  152     1           display_time(get_track_time());
+  153     1           display_title(get_track_title());
+  154     1           display_artist(get_track_artist());
+  155     1       
+  156     1           display_status(xlat_stat[cur_status]);  /* display status */
+  157     1       
+  158     1       
+  159     1           /* infinite loop processing input */
+  160     1           while(TRUE)  {
+  161     2       
+  162     2               /* handle updates */
+  163     2               cur_status = update_fnc[cur_status](cur_status);
+  164     2       
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   4
+
+
+  165     2       
+  166     2               /* now check for keypad input */
+  167     2               if (key_available())  {
+  168     3       
+  169     3                   /* have keypad input - get the key */
+  170     3                   key = key_lookup();
+  171     3       
+  172     3                   /* execute processing routine for that key */
+  173     3                   cur_status = process_key[key][cur_status](cur_status);
+  174     3               }
+  175     2       
+  176     2       
+  177     2               /* finally, if the status has changed - display the new status */
+  178     2               if (cur_status != prev_status)  {
+  179     3       
+  180     3                   /* status has changed - update the status display */
+  181     3                   display_status(xlat_stat[cur_status]);
+  182     3               }
+  183     2       
+  184     2               /* always remember the current status for next loop iteration */
+  185     2               prev_status = cur_status;
+  186     2           }
+  187     1       
+  188     1       
+  189     1           /* done with main (never should get here), return 0 */
+  190     1           return  0;
+  191     1       
+  192     1       }
+  193             
+  194             
+  195             
+  196             
+  197             /*
+  198                key_lookup
+  199             
+  200                Description:      This function gets a key from the keypad and translates
+  201                                  the raw keycode to an enumerated keycode for the main
+  202                                  loop.
+  203             
+  204                Arguments:        None.
+  205                Return Value:     (enum keycode) - type of the key input on keypad.
+  206             
+  207                Input:            Keys from the keypad.
+  208                Output:           None.
+  209             
+  210                Error Handling:   Invalid keys are returned as KEYCODE_ILLEGAL.
+  211             
+  212                Algorithms:       The function uses an array to lookup the key types.
+  213                Data Structures:  Array of key types versus key codes.
+  214             
+  215                Shared Variables: None.
+  216             
+  217                Author:           Glen George
+  218                Last Modified:    May 15, 2003
+  219             
+  220             */
+  221             
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   5
+
+
+  222             static  enum keycode  key_lookup()
+  223             {
+  224     1           /* variables */
+  225     1       
+  226     1           static const enum keycode  keycodes[] = /* array of keycodes */
+  227     1               {                                   /* order must match keys array exactly */
+  228     1                  KEYCODE_TRACKUP,    /* <Track Up>     */    /* also needs to have extra */
+  229     1                  KEYCODE_TRACKDOWN,  /* <Track Down>   */    /* entry for illegal codes */
+  230     1                  KEYCODE_PLAY,       /* <Play>         */
+  231     1                  KEYCODE_RPTPLAY,    /* <Repeat Play>  */
+  232     1                  KEYCODE_FASTFWD,    /* <Fast Forward> */
+  233     1                  KEYCODE_REVERSE,    /* <Reverse>      */
+  234     1                  KEYCODE_STOP,       /* <Stop>         */
+  235     1                  KEYCODE_ILLEGAL     /* other keys     */
+  236     1               }; 
+  237     1       
+  238     1           static const int  keys[] =   /* array of key values */
+  239     1               {                        /* order must match keycodes array exactly */
+  240     1                  KEY_TRACKUP,    /* <Track Up>     */
+  241     1                  KEY_TRACKDOWN,  /* <Track Down>   */
+  242     1                  KEY_PLAY,       /* <Play>         */
+  243     1                  KEY_RPTPLAY,    /* <Repeat Play>  */
+  244     1                  KEY_FASTFWD,    /* <Fast Forward> */
+  245     1                  KEY_REVERSE,    /* <Reverse>      */
+  246     1                  KEY_STOP        /* <Stop>         */
+  247     1               }; 
+  248     1       
+  249     1           int     key;           /* an input key */
+  250     1       
+  251     1           size_t  i;             /* general loop index */
+  252     1       
+  253     1       
+  254     1       
+  255     1           /* get a key */
+  256     1           key = getkey();
+  257     1       
+  258     1       
+  259     1           /* lookup key in keys array */
+  260     1           for (i = 0; ((i < (sizeof(keys)/sizeof(int))) && (key != keys[i])); i++);
+  261     1       
+  262     1       
+  263     1           /* return the appropriate key type */
+  264     1           return  keycodes[i];
+  265     1       
+  266     1       }
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   6
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 95
+                           main      PROC NEAR
+             006E  56              PUSH    SI
+             006F  57              PUSH    DI
+             0070  C8080000        ENTER   8H,0H
+                           @1:
+                                                   ; STATEMENT # 99
+             0074  C746FC0000      MOV     [BP].cur_status,0H
+                                                   ; STATEMENT # 100
+             0079  C746FA0000      MOV     [BP].prev_status,0H
+                                                   ; STATEMENT # 136
+             007E  E80000          CALL    init_FAT_system
+             0081  8846F9          MOV     [BP].error,AL
+                                                   ; STATEMENT # 139
+             0084  08C0            OR      AL,AL
+             0086  7403            JZ      $+5H
+             0088  E90900          JMP     @2
+                                                   ; STATEMENT # 141
+             008B  E80000          CALL    get_first_dir_entry
+                                                   ; STATEMENT # 143
+             008E  E80000          CALL    setup_cur_track_info
+                                                   ; STATEMENT # 145
+             0091  E90300          JMP     @3
+                           @2:
+                                                   ; STATEMENT # 147
+             0094  E80000          CALL    setup_error_track_info
+                                                   ; STATEMENT # 148
+                           @3:
+                                                   ; STATEMENT # 152
+             0097  E80000          CALL    get_track_time
+             009A  50              PUSH    AX      ; 1
+             009B  E80000          CALL    display_time
+             009E  59              POP     CX      ; 1
+                                                   ; STATEMENT # 153
+             009F  E80000          CALL    get_track_title
+             00A2  52              PUSH    DX      ; 1
+             00A3  50              PUSH    AX      ; 2
+             00A4  E80000          CALL    display_title
+             00A7  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 154
+             00AB  E80000          CALL    get_track_artist
+             00AE  52              PUSH    DX      ; 1
+             00AF  50              PUSH    AX      ; 2
+             00B0  E80000          CALL    display_artist
+             00B3  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 156
+             00B7  8B5EFC          MOV     BX,[BP].cur_status
+             00BA  D1E3            SAL     BX,1
+             00BC  2EFFB70000      PUSH    CS:xlat_stat[BX]
+             00C1  E80000          CALL    display_status
+             00C4  59              POP     CX      ; 1
+                                                   ; STATEMENT # 160
+                           @5:
+                                                   ; STATEMENT # 163
+             00C5  8B5EFC          MOV     BX,[BP].cur_status
+             00C8  53              PUSH    BX      ; 1
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   7
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             00C9  D1E3            SAL     BX,1
+             00CB  2EFF970800      CALL    CS:update_fnc[BX]
+             00D0  59              POP     CX      ; 1
+             00D1  8946FC          MOV     [BP].cur_status,AX
+                                                   ; STATEMENT # 167
+             00D4  E80000          CALL    key_available
+             00D7  08C0            OR      AL,AL
+             00D9  7503            JNZ     $+5H
+             00DB  E91800          JMP     @6
+                                                   ; STATEMENT # 170
+             00DE  E83B00          CALL    key_lookup
+             00E1  8946FE          MOV     [BP].key,AX
+                                                   ; STATEMENT # 173
+             00E4  8B5EFC          MOV     BX,[BP].cur_status
+             00E7  53              PUSH    BX      ; 1
+             00E8  6BF008          IMUL    SI,AX,8H
+             00EB  D1E3            SAL     BX,1
+             00ED  2EFF901000      CALL    CS:[BX].process_key[SI]
+             00F2  59              POP     CX      ; 1
+             00F3  8946FC          MOV     [BP].cur_status,AX
+                                                   ; STATEMENT # 178
+                           @6:
+             00F6  8B5EFC          MOV     BX,[BP].cur_status
+             00F9  3B5EFA          CMP     BX,[BP].prev_status
+             00FC  7503            JNZ     $+5H
+             00FE  E90B00          JMP     @7
+                                                   ; STATEMENT # 181
+             0101  D1E3            SAL     BX,1
+             0103  2EFFB70000      PUSH    CS:xlat_stat[BX]
+             0108  E80000          CALL    display_status
+             010B  59              POP     CX      ; 1
+                                                   ; STATEMENT # 185
+                           @7:
+             010C  8B46FC          MOV     AX,[BP].cur_status
+             010F  8946FA          MOV     [BP].prev_status,AX
+                                                   ; STATEMENT # 186
+             0112  E9B0FF          JMP     @5
+                           @4:
+                                                   ; STATEMENT # 190
+             0115  31C0            XOR     AX,AX
+             0117  C9              LEAVE
+             0118  5F              POP     DI
+             0119  5E              POP     SI
+             011A  C3              RET
+                                                   ; STATEMENT # 192
+                           main      ENDP
+                                                   ; STATEMENT # 223
+                           key_lookup      PROC NEAR
+             011C  56              PUSH    SI
+             011D  57              PUSH    DI
+             011E  C8040000        ENTER   4H,0H
+                           @8:
+                                                   ; STATEMENT # 256
+             0122  E80000          CALL    getkey
+             0125  8946FE          MOV     [BP].key,AX
+                                                   ; STATEMENT # 260
+iC-86  COMPILER   MAINLOOP                                                                   04/21/;6 17:34:31  PAGE   8
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0128  C746FC0000      MOV     [BP].i,0H
+             012D  E90300          JMP     @11
+                           @9:
+             0130  FF46FC          INC     [BP].i
+                           @11:
+             0133  8B5EFC          MOV     BX,[BP].i
+             0136  81FB0700        CMP     BX,7H
+             013A  7203            JB      $+5H
+             013C  E91200          JMP     @10
+             013F  D1E3            SHL     BX,1
+             0141  2E8B876000      MOV     AX,CS:keys[BX]
+             0146  3B46FE          CMP     AX,[BP].key
+             0149  7503            JNZ     $+5H
+             014B  E90300          JMP     @10
+             014E  E9DFFF          JMP     @9
+                           @10:
+                                                   ; STATEMENT # 264
+             0151  8B5EFC          MOV     BX,[BP].i
+             0154  D1E3            SHL     BX,1
+             0156  2E8B875000      MOV     AX,CS:keycodes[BX]
+             015B  C9              LEAVE
+             015C  5F              POP     DI
+             015D  5E              POP     SI
+             015E  C3              RET
+                                                   ; STATEMENT # 266
+                           key_lookup      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 00F1H    241D
+     CONSTANT AREA SIZE           = 006EH    110D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 0014H     20D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

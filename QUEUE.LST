@@ -1,0 +1,539 @@
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE QUEUE
+OBJECT MODULE PLACED IN QUEUE.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE QUEUE.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1             NAME    QUEUE
+                             2     
+                             3     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             4     ;                                                                            ;
+                             5     ;                                   QUEUE                                    ;
+                             6     ;                             QUEUE Functions                                ;
+                             7     ;                                   EE/CS 51                                 ;
+                             8     ;                                                                            ;
+                             9     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            10     
+                            11     
+                            12     ; Functions for intializing a queue, adding elements to a queue, removing
+                            13     ; elements, and checking if the queue is full or empty
+                            14     ;
+                            15     ; Table of Contents:
+                            16     ;     QueueInit    Line 88
+                            17     ;     QueueEmpty   Line 151
+                            18     ;     QueueFull    Line 200
+                            19     ;     DeQueue      Line 278
+                            20     ;     EnQueue      Line 388
+                            21     ;
+                            22     ; Revision History:
+                            23     ;     10/20/15     Tim Liu     started writing functions
+                            24     ;     10/21/15     Tim Liu     fixed syntax errors
+                            25     ;     10/21/15     Tim Liu     replaced DX with BX for accessing contents
+                            26     ;     10/22/15     Tim Liu     updated comments
+                            27     ;
+                            28     ;local include files
+                            29 +1  $INCLUDE (queue.inc)
+                      =1    30     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    31     ;                                                                            ;
+                      =1    32     ;                                   QUEUE                                    ;
+                      =1    33     ;                             Conversion Functions                           ;
+                      =1    34     ;                                   EE/CS 51                                 ;
+                      =1    35     ;                                                                            ;
+                      =1    36     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    37     
+                      =1    38     
+                      =1    39     ; This file contains the definitions for the queue structure and several
+                      =1    40     ; constants.
+                      =1    41     ;
+                      =1    42     ; Revision History:
+                      =1    43     ;   10/20/15    Tim Liu   Wrote struct definition
+                      =1    44     ;   10/21/15    Tim Liu   Changed names to avoid protected names
+                      =1    45     ;   10/22/15    Tim Liu   Updated comments
+                      =1    46     ;   4/21/16     Tim Liu   Changed array_size to 256 bytes
+                      =1    47     
+                      =1    48     ;Queue definitions
+                      =1    49     
+  0100                =1    50     array_size         EQU     256    ;number of bytes in a queue
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+  00FF                =1    51     ModByteMask        EQU     255    ;number to AND with to get mod 1024
+  007F                =1    52     ModWordMask        EQU     127     ;number to AND with to get mod 512
+                      =1    53     
+  0001                =1    54     WordQueueType      EQU        1    ;make a word queue
+  0000                =1    55     ByteQueueType      EQU        0    ;make a byte queue
+                      =1    56     
+                      =1    57     ; Structure for queue
+                      =1    58     
+----                  =1    59     QueueStruct    STRUC
+0000                  =1    60         word_byte  DB                 ?     ;size of each element
+0001                  =1    61         filled     DW                 ?     ;number of elements filled
+0003                  =1    62         head       DW                 ?     ;value of head index
+0005                  =1    63         tail       DW                 ?     ;value of tail index
+0007                  =1    64         content    DB array_size DUP (?)    ;array for storing contents
+----                  =1    65     QueueStruct    ENDS
+                            66     
+                            67     CGROUP  GROUP   CODE
+                            68     
+                            69     
+----                        70     CODE    SEGMENT PUBLIC 'CODE'
+                            71     
+                            72     
+                            73             ASSUME  CS:CGROUP
+                            74     
+                            75     
+                            76     ;Name:              QueueInit(address, length, size)
+                            77     ;
+                            78     ;Description:       This function initializes a queue and prepares the
+                            79     ;                   structure for use. The function takes three arguments
+                            80     ;                   - an address where the queue begins (address), the
+                            81     ;                   length of the queue (length), and the size of each
+                            82     ;                   element in the queue (size). This function sets the
+                            83     ;                   value of the head and tail index to zero. The queue
+                            84     ;                   is always a set length of 1024 bytes. One of
+                            85     ;                   the attributes of the queue is a variable that counts
+                            86     ;                   the number of elements that have been filled. This
+                            87     ;                   prevents elements from being stored to the queue
+                            88     ;                   if the queue is already full. The queue is stored
+                            89     ;                   starting at the address specified in SI. The argument
+                            90     ;                   length is effectively ignored.
+                            91     ;               
+                            92     ;
+                            93     ;Operation:         The function fills in the attributes of the queue located
+                            94     ;                   at the specified address. The head and tail indices are
+                            95     ;                   both set to zero, and the number of filled elements is
+                            96     ;                   set to zero. If the size of each element is a
+                            97     ;                   byte, the integer 1 is stored at the attribute
+                            98     ;                   Queue.size. Otherwise, the integer 2 is stored at
+                            99     ;                   Queue.size.
+                           100     ;
+                           101     ;Arguments:         address (DS:SI) - starting location for the queue
+                           102     ;                   length (AX) - maximum number of elements that can be 
+                           103     ;                                 stored in the queue
+                           104     ;                   size(BL) - whether each element is a byte or a word;
+                           105     ;                              non-zero value indicates words and a zero
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           106     ;                              indicates bytes
+                           107     ;
+                           108     ;Return Values:     None
+                           109     ;
+                           110     ;Local Variables:   None
+                           111     ;
+                           112     ;Output:            None
+                           113     ;
+                           114     ;Error Handling:    None
+                           115     ;
+                           116     ;Stack Depth:       0 words
+                           117     ;
+                           118     ;Algorithms:        None
+                           119     ;
+                           120     ;Known Bugs:        None
+                           121     ;
+                           122     ;Limitations:       The queue can only take a limited number of elements,
+                           123     ;                   specified by LENGTH (1024 bytes).
+                           124     ;
+                           125     ;Author:            Timothy Liu
+                           126     ;
+                           127     ;Last modified:     October 21, 2015
+                           128     
+0000                       129     QueueInit     PROC    NEAR
+                           130                   PUBLIC  QueueInit
+                           131     
+0000                       132     QueueInitStart:
+0000 80FB00                133             CMP     BL, 0                   ;check element size - word or byte
+0003 7403                  134             JE      SizeByte                ;if 0, size is a byte
+0005 EB0790                135             JMP     SizeWord                ;otherwise it's a word
+                           136             
+0008                       137     SizeByte:                               ;store that size is a byte
+0008 C60401                138             MOV     [SI].word_byte, 1       ;each element is 1 byte
+000B EB0490                139             JMP     QueueInit2              ;finish the function
+                           140             
+000E                       141     SizeWord:                               ;store that size is a word
+000E C60402                142             MOV     [SI].word_byte, 2       ;each element is 2 bytes (1 word)
+                           143             ;JMP    QueueInit2              ;finish the function
+                           144             
+0011                       145     QueueInit2:                             ;finish initializing
+0011 C744030000            146             MOV     [SI].head, 0            ;set head index to 0
+0016 C744050000            147             MOV     [SI].tail, 0            ;set tail index to 0
+001B C744010000            148             MOV     [SI].filled, 0          ;no elements filled
+                           149             ;JMP    EndQueueInit
+                           150             
+0020                       151     EndQueueInit:
+0020 C3                    152             RET
+                           153     
+                           154     QueueInit     EndP
+                           155     
+                           156     ;Name: QueueEmpty
+                           157     ;
+                           158     ;Description:       This function determines whether the queue at an address 
+                           159     ;                   specified by DS:SI is empty. If the queue is empty, the
+                           160     ;                   function sets the zero flag. Otherwise, the function
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    4
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           161     ;                   resets the zero flag.
+                           162     ;
+                           163     ;Operation:         The function checks if the struct attribute b^^filledb^^ is
+                           164     ;                   equal to zero. If the filled attribute is zero, the
+                           165     ;                   queue is empty. Otherwise, the queue is not empty.
+                           166     ;                
+                           167     ;Arguments:         address (DS:SI) - starting location for the queue
+                           168     ;                 
+                           169     ;Return Values:     zero flag - set if queue is empty; otherwise reset
+                           170     ;                 
+                           171     ;Local Variables:   None
+                           172     ;
+                           173     ;Output:            None
+                           174     ;
+                           175     ;Error Handling:    None
+                           176     ;
+                           177     ;Stack Depth:       0 words
+                           178     ;
+                           179     ;Algorithms:        None
+                           180     ;
+                           181     ;Known Bugs:        None
+                           182     ;
+                           183     ;Limitations:       None
+                           184     ;
+                           185     ;Author:            Timothy Liu
+                           186     ;
+                           187     ;Last modified:     October 21, 2015
+                           188     
+                           189     
+0021                       190     QueueEmpty    PROC    NEAR
+                           191                   PUBLIC  QueueEmpty
+                           192                   
+0021                       193     QueueEmptyStart:
+0021 837C0100              194             CMP     [SI].filled, 0  ;check if 0 elements filled
+0025 C3                    195             RET                     ;
+                           196             
+                           197     QueueEmpty    EndP
+                           198     
+                           199     ;Name:               QueueFull
+                           200     ;
+                           201     ;Description:        This function determines whether the queue at the 
+                           202     ;                    address DS:SI is full. If the queue is full, the 
+                           203     ;                    zero flag is set. Otherwise, the zero flag is reset.
+                           204     ;
+                           205     ;Operation:          This function first calculates the maximum number of 
+                           206     ;                    elements that can be stored in the queue by dividing 
+                           207     ;                    the length of the queue by the size of each 
+                           208     ;                    element. The function then compares the number of 
+                           209     ;                    filled elements with the maximum number of possible
+                           210     ;                    elements. If the number of elements filled is equal
+                           211     ;                    to the maximum number of elements that can be stored, 
+                           212     ;                    the zero flag is set. Otherwise, the zero flag is reset.
+                           213     ;
+                           214     ;Arguments:          address (DS:SI) - starting location for the queue
+                           215     ;
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    5
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           216     ;Return Values:      zero flag - set if full; otherwise reset
+                           217     ;               
+                           218     ;Local Variables:    Maximum elements (AX) - the maximum number of elements that
+                           219     ;                    can be stored in the queue. Found by dividing
+                           220     ;                    the length of the queue by the attribute b^^sizeb^^.
+                           221     ;    
+                           222     ;Output:             None
+                           223     ;
+                           224     ;Error Handling:     None
+                           225     ;
+                           226     ;Stack Depth:        1 word
+                           227     ;
+                           228     ;Algorithms:         None
+                           229     ;
+                           230     ;Known Bugs:         None
+                           231     ;
+                           232     ;Limitations:        None
+                           233     ;
+                           234     ;Author:             Timothy Liu
+                           235     ;
+                           236     ;Last modified:      October 21, 2015
+                           237     
+0026                       238     QueueFull       PROC    NEAR
+                           239                     PUBLIC  QueueFull
+                           240                     
+0026                       241     QueueFullStart:
+0026 50                    242             PUSH    AX                  ;don't trash AX
+0027 B80001                243             MOV     AX, array_size      ;AX represents maximum elements in queue
+002A 803C02                244             CMP     [SI].word_byte, 2   ;check if elements are bytes or words
+002D 7403                  245             JE      QueueFullDivide     ;divide by two if elements are words
+002F EB0390                246             JMP     QueueFullCheck      ;otherwise max_elements = array_size
+                           247             
+0032                       248     QueueFullDivide:                    ;if elements are words, divide by two
+0032 D1E8                  249             SHR     AX, 1               ;divide length by two to get max elements
+                           250             ;JMP    QueueFullCheck
+                           251             
+0034                       252     QueueFullCheck:
+0034 394401                253             CMP     [SI].filled, AX     ;compare filled elements with max_elements
+0037 58                    254             POP     AX                  ;restore AX
+0038 C3                    255             RET
+                           256     
+                           257     QueueFull       ENDP
+                           258     
+                           259     ;Name:              DeQueue
+                           260     
+                           261     ;Description:       This function removes an element from the head of the queue.
+                           262     ;                   If each element is a word, then the element is moved to AX.
+                           263     ;                   If the element is a byte, the element is loaded to AL. If 
+                           264     ;                   the queue is empty, the function waits until something is 
+                           265     ;                   placed in the queue before removing it and storing it in AX. 
+                           266     ;                   The function does not return until there is an element  
+                           267     ;                   in the queue to remove. The function finally increments 
+                           268     ;                   the head pointer and decrements the number of 
+                           269     ;                   filled elements.
+                           270     ;
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    6
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           271     ;Operation:         The function calls the function QueueEmpty to check 
+                           272     ;                   if there are any elements in the queue. If the queue is 
+                           273     ;                   empty, the  function loops infinitely until an element 
+                           274     ;                   is placed in the queue. The function then multiplies the 
+                           275     ;                   value of the head index by the size of each element to 
+                           276     ;                   find how far from the beginning of the queue array the 
+                           277     ;                   head pointer is. The function then loads an element 
+                           278     ;                   into either AX or AL, corresponding to loading a word or 
+                           279     ;                   a byte. The function increments the head pointer and  
+                           280     ;                   decrements the attribute b^^filled.b^^ The function calculates 
+                           281     ;                   the maximum number of elements that can be stored in the 
+                           282     ;                   queue by dividing length by the attribute size. To 
+                           283     ;                   handle wraparound, mod (max_elements) is taken of the 
+                           284     ;                   head index.
+                           285     ;                   
+                           286     ;
+                           287     ;Arguments:         address (DS:SI) - starting location for the queue 
+                           288     ;                   
+                           289     ;Return Values:     AL/AX - value at the head of the queue. Will return a byte 
+                           290     ;                   to AL if the size of each element is a byte, and will
+                           291     ;                   return the word to AX if the size of each element is
+                           292     ;                   a word.
+                           293     ;Local Variables:   head_pointer (BX) - holds address of the head
+                           294     ;                   offset (AX) - the product of the size of each queue element
+                           295     ;                            (in bytes) and the value of the head index. Used to
+                           296     ;                            calculate the location of the head pointer
+                           297     ;                
+                           298     ;Output:            None
+                           299     
+                           300     ;Error Handling:    None
+                           301     ;
+                           302     ;Stack Depth:       1 word
+                           303     ;
+                           304     ;Algorithms:        None
+                           305     ;
+                           306     ;Known Bugs:        None
+                           307     ;
+                           308     ;Limitations:       None
+                           309     ;
+                           310     ;Author:            Timothy Liu
+                           311     ;
+                           312     ;Last modified:     October 21, 2015
+                           313     
+                           314     
+0039                       315     DeQueue         PROC    NEAR
+                           316                     PUBLIC  DeQueue
+0039                       317     DeQueueWait:
+0039 E8E5FF                318             CALL    QueueEmpty              ;check if the queue is empty
+003C 74FB                  319             JZ      DeQueueWait             ;wait and loop if queue is empty
+                           320             ;JMP     DeQueueOffset          ;If not empty, go to next label
+                           321             
+003E                       322     DeQueueOffset:
+003E 53                    323             PUSH    BX                      ;don't trash the BX register
+003F 8B4403                324             MOV     AX, [SI].head           ;move head index to AX
+0042 803C02                325             CMP     [SI].word_byte, 2       ;check the size of the element
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    7
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0045 7403                  326             JE      DeQueueDoubleOffset     ;double offset size if element is word
+0047 EB0390                327             JMP     DeQueueFindHead         ;otherwise go find the head
+                           328             
+004A                       329     DeQueueDoubleOffset:
+004A D1E0                  330             SHL     AX, 1                   ;double offset if the elements are words
+                           331             ;JMP    DeQueueFindHead         ;
+                           332             
+004C                       333     DeQueueFindHead:
+004C 8D5C07                334             LEA     BX, [SI].content        ;store location of start of array in BX
+004F 03D8                  335             ADD     BX, AX                  ;head pointer is at start + offset
+                           336             ;JMP    DeQueueCheckSize
+                           337             
+0051                       338     DeQueueCheckSize:
+0051 803C01                339             CMP     [SI].word_byte, 1       ;check size of element
+0054 7403                  340             JE      DeQueueByte             ;if byte, go to DeQueueByte
+0056 EB0690                341             JMP     DeQueueWord             ;otherwise, go to DeQueueWord
+                           342             
+0059                       343     DeQueueByte:                            ;if element is a byte
+0059 8A07                  344             MOV     AL, [BX]                ;put value at head in AL
+005B EB0390                345             JMP    DeQueueUpdateHead
+                           346          
+005E                       347     DeQueueWord:                            ;if element is a word
+005E 8B07                  348             MOV     AX, [BX]                ;put value at head in AX
+                           349             ;JMP    DeQueueUpdateHead
+                           350             
+0060                       351     DeQueueUpdateHead:
+0060 FF4403                352             INC     [SI].head               ;increment head index
+0063 803C01                353             CMP     [SI].word_byte, 1       ;check if size is a byte
+0066 7403                  354             JE      DeQueueModByte          ;mod with 1024 if byte
+0068 EB0990                355             JMP     DeQueueModWord          ;mod with 512 if word
+                           356             
+006B                       357     DeQueueModByte:
+006B 816403FF00            358             AND     [SI].head, ModByteMask  ;take mod 1024
+0070 EB0690                359             JMP     DeQueueEnd              ;
+                           360     
+0073                       361     DeQueueModWord:
+0073 8164037F00            362             AND     [SI].head, ModWordMask  ;take mod 512
+                           363             ;JMP    DeQueueEnd
+                           364             
+0078                       365     DeQueueEnd:
+0078 FF4C01                366             DEC     [SI].filled             ;one fewer element filled
+007B 5B                    367             POP     BX                      ;restore DX
+007C C3                    368             RET
+                           369                             
+                           370     DeQueue          EndP
+                           371     
+                           372     ;Name:                EnQueue
+                           373     ;
+                           374     ;Description:         This function adds an element at the tail of the queue.
+                           375     ;                     If the element is a byte, the element is passed in through
+                           376     ;                     AL. If the element is a word, it is passed in through AX.
+                           377     ;                     The function does not pass in the value if the queue is
+                           378     ;                     full. If the queue is full, the function waits until the
+                           379     ;                     queue is not full to add the element at the tail. The tail
+                           380     ;                     index is then incremented and the number of filled 
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    8
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           381     ;                     elements is incremented. 
+                           382     
+                           383     ;Operation:           The function calls the function QueueFull to check if the
+                           384     ;                     queue is full. If the queue is full, the function loops
+                           385     ;                     infinitely until a space opens. The function then 
+                           386     ;                     multiplies the value of the tail index by the size of 
+                           387     ;                     each element to find how far from the beginning of the 
+                           388     ;                     queue array the tail pointer is. The function then loads 
+                           389     ;                     the value from AL or AX into the queue and increments 
+                           390     ;                     the tail pointer. The function also increments the 
+                           391     ;                     attribute b^^filled.b^^ To handle wraparound,  the maximum 
+                           392     ;                     number of elements that can be stored in the queue
+                           393     ;                     is calculated by dividing the length by the attribute size.
+                           394     ;                     The mod (max_elements) of the tail index is taken to handle
+                           395     ;                     wraparound. 
+                           396     ;                     
+                           397     ;Arguments:           address (DS:SI) - starting location for the queue
+                           398     ;                     value (AL/AX) - value to be added to the queue
+                           399     ;               
+                           400     ;Return Values:       None
+                           401     ;
+                           402     ;Local Variables:     max_elements - the maximum number of elements that can be
+                           403     ;                                    in the queue
+                           404     ;                     offset - the product of the size of each queue element
+                           405     ;                              (in bytes) and the value of the head index. Used
+                           406     ;                              to calculate the location of the tail pointer
+                           407     ;                
+                           408     ;Output:              None
+                           409     ;
+                           410     ;Error Handling:      None
+                           411     ;
+                           412     ;Stack Depth:         0 words
+                           413     ;
+                           414     ;Algorithms:          None
+                           415     ;
+                           416     ;Known Bugs:          None
+                           417     ;
+                           418     ;Limitations:         None
+                           419     ;
+                           420     ;Author:            Timothy Liu
+                           421     ;
+                           422     ;Last modified:     October 21, 2015
+                           423     
+007D                       424     EnQueue         PROC    NEAR
+                           425                     PUBLIC  EnQueue
+                           426     
+007D                       427     EnQueueLoop:
+007D E8A6FF                428             CALL    QueueFull               ;check if queue is full
+0080 74FB                  429             JZ      EnQueueLoop             ;if so, wait and loop
+                           430             ;JMP     EnQueueOffset           ;otherwise, go calculate the offset
+                           431     
+0082                       432     EnQueueOffset:
+0082 52                    433             PUSH    DX                      ;save DX
+0083 53                    434             PUSH    BX                      ;save BX
+0084 8B5405                435             MOV     DX, [SI].tail           ;put tail index in DX
+8086/87/88/186 MACRO ASSEMBLER    QUEUE                                                    01:44:27  04/22/;6  PAGE    9
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0087 803C02                436             CMP     [SI].word_byte, 2       ;check if size is a word
+008A 7403                  437             JE      EnQueueDoubleOffset     ;if so, go double offset size
+008C EB0390                438             JMP     EnQueueFindTail         ;otherwise, go find the tail address
+                           439             
+008F                       440     EnQueueDoubleOffset:
+008F D1E2                  441             SHL     DX, 1                   ;double offset size
+                           442             ;JMP    EnQueueFindTail
+                           443     
+0091                       444     EnQueueFindTail:
+0091 8D5C07                445             LEA     BX, [SI].content        ;don't change value of [SI].content
+0094 03DA                  446             ADD     BX, DX                  ;tail pointer is start + offset
+                           447             ;JMP    EnQueueCheckSize
+                           448             
+0096                       449     EnQueueCheckSize:
+0096 803C01                450             CMP     [SI].word_byte, 1       ;check size of element
+0099 7403                  451             JE      EnQueueByte             ;if byte, go to EnQueueByte
+009B EB0690                452             JMP     EnQueueWord             ;otherwise, go to EnQueueWord
+                           453             
+009E                       454     EnQueueByte:
+009E 8807                  455             MOV     [BX], AL                ;move AL to address at DX
+00A0 EB0390                456             JMP     EnQueueUpdateTail       ;go update the tail
+                           457             
+00A3                       458     EnQueueWord:
+00A3 8907                  459             MOV     [BX], AX                ;move AX to address at DX
+                           460             ;JMP    EnQueueUpdateTail       ;go update the tail
+                           461            
+00A5                       462     EnQueueUpdateTail:
+00A5 FF4405                463             INC     [SI].tail               ;increment the tail index
+00A8 803C01                464             CMP     [SI].word_byte, 1       ;check if size is a byte
+00AB 7403                  465             JE      EnQueueModByte          ;mod with 1024 if byte
+00AD EB0990                466             JMP     EnQueueModWord          ;mod with 512 if word
+                           467     
+00B0                       468     EnQueueModByte:
+00B0 816405FF00            469             AND     [SI].tail, ModByteMask  ;take mod 1024
+00B5 EB0690                470             JMP     EnQueueEnd              ;go to end
+                           471             
+00B8                       472     EnQueueModWord:
+00B8 8164057F00            473             AND     [SI].tail, ModWordMask  ;take mod 512
+                           474             ;JMP    EnQueueEnd              ;go to end
+                           475     
+00BD                       476     EnQueueEnd:
+00BD FF4401                477             INC     [SI].filled             ;increment elements filled
+00C0 5B                    478             POP     BX                      ;restore BX
+00C1 5A                    479             POP     DX                      ;restore DX
+00C2 C3                    480             RET
+                           481                     
+                           482     EnQueue         ENDP
+                           483     
+----                       484     CODE    ENDS
+                           485     
+                           486     
+                           487             END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

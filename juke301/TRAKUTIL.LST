@@ -1,0 +1,1444 @@
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE TRAKUTIL
+OBJECT MODULE PLACED IN TRAKUTIL.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                TRAKUTIL                                  */
+    4             /*                         Track Utility Functions                          */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS 52                                  */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains the utility functions for dealing with tracks used by
+   12                the background routines of the MP3 Jukebox Project.  The current track
+   13                header and buffer are also defined in this file (locally).  The functions
+   14                included are:
+   15                   get_track_artist           - return the artist for the current track
+   16                   get_track_length           - get number of bytes in the current track
+   17                   get_track_position         - get the current position on the track
+   18                   get_track_block_position   - get the current block position on the track
+   19                   get_track_remaining_length - get number of bytes left on current track
+   20                   get_track_time             - return the current time for a track
+   21                   get_track_total_time       - return the total time for a track
+   22                   get_track_title            - return the title of the current track
+   23                   init_track                 - initialize to the start of the track
+   24                   init_tracks                - initialize the track information
+   25                   setup_cur_track_info       - setup info buffer for current track
+   26                   setup_error_track_info     - setup info buffer for an error track
+   27                   update_track_position      - update the position on the track
+   28             
+   29                The local functions included are:
+   30                   none
+   31             
+   32                The locally global variable definitions included are:
+   33                   track_info        - information on the current track
+   34                   track_info_buffer - buffer holding the current track string information
+   35             
+   36             
+   37                Revision History
+   38                   6/6/00   Glen George       Initial revision (from the 3/6/99 version of
+   39                                              updatfnc.h for the Digital Audio Recorder
+   40                                              Project).
+   41                   6/7/00   Glen George       Added local get_track_info() function.
+   42                   6/7/00   Glen George       Fixed overflow problem in get_track_time().
+   43                   6/7/00   Glen George       Added get_track_block_position() function.
+   44                   6/14/00  Glen George       Made get_track_info() function static so it
+   45                                              really is local.
+   46                   6/14/00  Glen George       Correctly updated get_track_time().
+   47                   6/14/00  Glen George       Fixed the offset for the title in function
+   48                                              get_track_info().
+   49                   6/14/00  Glen George       Changed track_info_buffer[] to unsigned char
+   50                                              to fix some type conversion warnings.
+   51                   6/14/00  Glen George       Added casts to functions get_track_title()
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   2
+
+
+   52                                              and get_track_artist() to fix some type
+   53                                              conversion warnings.
+   54                   6/2/02   Glen George       Added get_track_total_time() function.
+   55                   6/2/02   Glen George       Updated comments.
+   56                   6/10/02  Glen George       Added use of SECTOR_ADJUST constant for
+   57                                              dealing with hard drives with different
+   58                                              geometries.
+   59                   5/15/03  Glen George       Made get_track_info() more compiler
+   60                                              independent by masking data appropriately and
+   61                                              eliminating indexing which relies on the size
+   62                                              of built-in types.
+   63                   5/15/03  Glen George       Made system output "Error" as song title and
+   64                                              set times and lengths to reasonable values if
+   65                                              there is an error reading the track
+   66                                              information.
+   67                   6/5/03   Glen George       Removed functions and variables supporting
+   68                                              track numbers (update_track_no(),
+   69                                              get_track_no(), and track_number).
+   70                   6/5/03   Glen George       Split get_track_info() into two functions:
+   71                                              setup_cur_track_info() to handle "normal"
+   72                                              tracks and setup_error_track_info() to handle
+   73                                              tracks with errors, both are compatible with
+   74                                              FAT file systems.
+   75                   6/5/03   Glen George       Added #include of fatutil.h to support the
+   76                                              above changes.
+   77                   6/5/03   Glen George       Modified get_track_time() to handle TIME_NONE
+   78                                              and zero length tracks.
+   79                   6/5/03   Glen George       Updated function headers.
+   80                   5/13/05  Glen George       Modified get_track_time() to just use actual
+   81                                              track time at the start of the track to
+   82                                              eliminate rounding errors in the computation.
+   83                   6/4/06   Glen George       Fixed a bug in get_track_block_position to
+   84                                              account for IDE_BLOCK_SIZE being in words
+   85                                              instead of bytes now.
+   86                   3/15/13  Glen George       Changed get_track_time() to return the total
+   87                                              time instead of TIME_NONE when the time
+   88                                              cannot be computed.
+   89                   3/15/13  Glen George       Changed functions to use ID3 tags to get song
+   90                                              information instead of the filename and to
+   91                                              handle new track_header structure.
+   92             */
+   93             
+   94             
+   95             
+   96             /* library include files */
+   97               /* none */
+   98             
+   99             /* local include files */
+  100             #include  "interfac.h"
+  101             #include  "mp3defs.h"
+  102             #include  "trakutil.h"
+  103             #include  "fatutil.h"
+  104             #include  "vfat.h"
+  105             #include  "id3info.h"
+  106             
+  107             
+  108             
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   3
+
+
+  109             
+  110             /* locally global variables */
+  111             static struct track_header  track_info;                         /* current track information */
+  112             static char                 track_info_buffer[MAX_LFN_LEN + 2]; /* buffer holding the current informat
+                -ion */
+  113                                                                             /*   +2 for <null> and directory chara
+                -cter */
+  114             
+  115             
+  116             
+  117             
+  118             /* local function declarations */
+  119             void  get_track_info(void);      /* read the track information from disk */
+  120             
+  121             
+  122             
+  123             
+  124             /*
+  125                init_track
+  126             
+  127                Description:      This function initializes the current track to the start
+  128                                  of the track.  The current position (curpos element) is
+  129                                  set to the start of the track.
+  130             
+  131                Arguments:        None.
+  132                Return Value:     None.
+  133             
+  134                Input:            None.
+  135                Output:           None.
+  136             
+  137                Error Handling:   None.
+  138             
+  139                Algorithms:       None.
+  140                Data Structures:  None.
+  141             
+  142                Shared Variables: track_info - the curpos element is reset.
+  143             
+  144                Author:           Glen George
+  145                Last Modified:    June 6, 2000
+  146             
+  147             */
+  148             
+  149             void  init_track()
+  150             {
+  151     1           /* variables */
+  152     1             /* none */
+  153     1       
+  154     1       
+  155     1       
+  156     1           /* initialize the current position to the start of the track */
+  157     1           track_info.curpos = 0;
+  158     1       
+  159     1       
+  160     1           /* all done, return */
+  161     1           return;
+  162     1       
+  163     1       }
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   4
+
+
+  164             
+  165             
+  166             
+  167             
+  168             /*
+  169                get_track_artist
+  170             
+  171                Description:      This function returns the artist for the track.
+  172             
+  173                Arguments:        None.
+  174                Return Value:     (const char *) - pointer to the string containing the
+  175                                  artist for the current track.
+  176             
+  177                Input:            None.
+  178                Output:           None.
+  179             
+  180                Error Handling:   None.
+  181             
+  182                Algorithms:       None.
+  183                Data Structures:  None.
+  184             
+  185                Shared Variables: track_info - the artist element is returned.
+  186             
+  187                Author:           Glen George
+  188                Last Modified:    June 14, 2000
+  189             
+  190             */
+  191             
+  192             const char *  get_track_artist()
+  193             {
+  194     1           /* variables */
+  195     1             /* none */
+  196     1       
+  197     1       
+  198     1       
+  199     1           /* return the artist name */
+  200     1           return  (const char *) track_info.artist;
+  201     1       
+  202     1       }
+  203             
+  204             
+  205             
+  206             
+  207             /*
+  208                get_track_title
+  209             
+  210                Description:      This function returns the title for the track.
+  211             
+  212                Arguments:        None.
+  213                Return Value:     (const char *) - pointer to the string containing the
+  214                                  title of the current track.
+  215             
+  216                Input:            None.
+  217                Output:           None.
+  218             
+  219                Error Handling:   None.
+  220             
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   5
+
+
+  221                Algorithms:       None.
+  222                Data Structures:  None.
+  223             
+  224                Shared Variables: track_info - the title element is returned.
+  225             
+  226                Author:           Glen George
+  227                Last Modified:    June 14, 2000
+  228             
+  229             */
+  230             
+  231             const char *  get_track_title()
+  232             {
+  233     1           /* variables */
+  234     1             /* none */
+  235     1       
+  236     1       
+  237     1       
+  238     1           /* return the artist name */
+  239     1           return  (const char *) track_info.title;
+  240     1       
+  241     1       }
+  242             
+  243             
+  244             
+  245             
+  246             /*
+  247                get_track_length
+  248             
+  249                Description:      This function returns the length of the track in bytes.
+  250             
+  251                Arguments:        None.
+  252                Return Value:     (long int) - the length of the track in bytes.
+  253             
+  254                Input:            None.
+  255                Output:           None.
+  256             
+  257                Error Handling:   None.
+  258             
+  259                Algorithms:       None.
+  260                Data Structures:  None.
+  261             
+  262                Shared Variables: track_info - the length element is returned.
+  263             
+  264                Author:           Glen George
+  265                Last Modified:    June 5, 2000
+  266             
+  267             */
+  268             
+  269             long int  get_track_length()
+  270             {
+  271     1           /* variables */
+  272     1             /* none */
+  273     1       
+  274     1       
+  275     1       
+  276     1           /* return the track length */
+  277     1           return  track_info.length;
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   6
+
+
+  278     1       
+  279     1       }
+  280             
+  281             
+  282             
+  283             
+  284             /*
+  285                get_track_position
+  286             
+  287                Description:      This function returns the current position of the track
+  288                                  in bytes from the start of the track.
+  289             
+  290                Arguments:        None.
+  291                Return Value:     (long int) - the current position (offset from start) on
+  292                                  the track.
+  293             
+  294                Input:            None.
+  295                Output:           None.
+  296             
+  297                Error Handling:   None.
+  298             
+  299                Algorithms:       None.
+  300                Data Structures:  None.
+  301             
+  302                Shared Variables: track_info - the curpos element is returned.
+  303             
+  304                Author:           Glen George
+  305                Last Modified:    June 5, 2000
+  306             
+  307             */
+  308             
+  309             long int  get_track_position()
+  310             {
+  311     1           /* variables */
+  312     1             /* none */
+  313     1       
+  314     1       
+  315     1       
+  316     1           /* return the current position */
+  317     1           return  track_info.curpos;
+  318     1       
+  319     1       }
+  320             
+  321             
+  322             
+  323             
+  324             /*
+  325                get_track_block_position
+  326             
+  327                Description:      This function returns the current position of the track.
+  328                                  This is the number of sectors (blocks) within the file.
+  329             
+  330                Arguments:        None.
+  331                Return Value:     (long int) - the current position (block number within
+  332                                  the file) on the track.
+  333             
+  334                Input:            None.
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   7
+
+
+  335                Output:           None.
+  336             
+  337                Error Handling:   None.
+  338             
+  339                Algorithms:       None.
+  340                Data Structures:  None.
+  341             
+  342                Shared Variables: track_info - the curpos elements is used.
+  343             
+  344                Author:           Glen George
+  345                Last Modified:    March 15, 2013
+  346             
+  347             */
+  348             
+  349             long int  get_track_block_position()
+  350             {
+  351     1           /* variables */
+  352     1             /* none */
+  353     1       
+  354     1       
+  355     1       
+  356     1           /* return the current position (within the file, in blocks) */
+  357     1           /* this assumes that only complete blocks are read, thus curpos */
+  358     1           /*    is evenly divisible by IDE_BLOCK_SIZE                     */
+  359     1           /* remember that IDE_BLOCK_SIZE is in words, but curpos is in bytes */
+  360     1           return  track_info.curpos / (2 * IDE_BLOCK_SIZE);
+  361     1       
+  362     1       }
+  363             
+  364             
+  365             
+  366             
+  367             /*
+  368                get_track_remaining_length
+  369             
+  370                Description:      This function returns the number of bytes left on the
+  371                                  track.  This is the total length less the current
+  372                                  position.
+  373             
+  374                Arguments:        None.
+  375                Return Value:     (long int) - the bytes left on the track.
+  376             
+  377                Input:            None.
+  378                Output:           None.
+  379             
+  380                Error Handling:   None.
+  381             
+  382                Algorithms:       None.
+  383                Data Structures:  None.
+  384             
+  385                Shared Variables: track_info - the curpos and length elements are used.
+  386             
+  387                Author:           Glen George
+  388                Last Modified:    June 5, 2000
+  389             
+  390             */
+  391             
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   8
+
+
+  392             long int  get_track_remaining_length()
+  393             {
+  394     1           /* variables */
+  395     1           long int  bytes_left;
+  396     1       
+  397     1       
+  398     1       
+  399     1           /* compute the number of bytes left */
+  400     1           bytes_left = track_info.length - track_info.curpos;
+  401     1       
+  402     1           /* make sure it isn't negative */
+  403     1           if (bytes_left < 0)
+  404     1               bytes_left = 0;
+  405     1       
+  406     1       
+  407     1           /* return the bytes remaining */
+  408     1           return  bytes_left;
+  409     1       
+  410     1       }
+  411             
+  412             
+  413             
+  414             
+  415             /*
+  416                get_track_time
+  417             
+  418                Description:      This function returns the current time (time remaining)
+  419                                  for the passed track.  If the track has a total time
+  420                                  defined for it, the current time is computed by taking
+  421                                  the ratio of the current position to the total track
+  422                                  length and multiplying that by the total time.
+  423             
+  424                Arguments:        None.
+  425                Return Value:     (int) - the remaining time for the passed track (in
+  426                                  tenths of seconds) or TIME_NONE if there is no time
+  427                                  information for the track.
+  428             
+  429                Input:            None.
+  430                Output:           None.
+  431             
+  432                Error Handling:   There is no checking for overflow.
+  433             
+  434                Algorithms:       None.
+  435                Data Structures:  None.
+  436             
+  437                Shared Variables: track_info - the current time is computed from the time,
+  438                                               curpos, and length elements.
+  439             
+  440                Author:           Glen George
+  441                Last Modified:    March 15, 2013
+  442             
+  443             */
+  444             
+  445             int  get_track_time()
+  446             {
+  447     1           /* variables */
+  448     1             /* none */
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE   9
+
+
+  449     1       
+  450     1       
+  451     1       
+  452     1           /* just compute and return the time remaining on the track */
+  453     1           /* check if a time calculation even makes sense */
+  454     1           if ((track_info.time != TIME_NONE) && (track_info.time != 0) && (track_info.length > track_info.ti
+                -me))  {
+  455     2               /* have time on the track, compute time remaining */
+  456     2               /* check if at start of the track or in middle */
+  457     2               if (track_info.curpos == 0)
+  458     2                   /* at start, just return total time */
+  459     2                   return  track_info.time;
+  460     2               else
+  461     2                   /* in middle, compute time remaining */
+  462     2                   return  (track_info.length - track_info.curpos) / (track_info.length / track_info.time);
+  463     2           }
+  464     1           else  {
+  465     2               /* else, no time or length information on track - return it (0 or TIME_NONE) */
+  466     2               return  track_info.time;
+  467     2           }
+  468     1       
+  469     1       }
+  470             
+  471             
+  472             
+  473             
+  474             /*
+  475                get_track_total_time
+  476             
+  477                Description:      This function returns the total time for the passed
+  478                                  track in tenths of seconds.
+  479             
+  480                Arguments:        None.
+  481                Return Value:     (int) - the total time for the passed track (in tenths of
+  482                                  seconds).
+  483             
+  484                Input:            None.
+  485                Output:           None.
+  486             
+  487                Error Handling:   None.
+  488             
+  489                Algorithms:       None.
+  490                Data Structures:  None.
+  491             
+  492                Shared Variables: track_info - the time element is accessed and returned.
+  493             
+  494                Author:           Glen George
+  495                Last Modified:    June 1, 2002
+  496             
+  497             */
+  498             
+  499             int  get_track_total_time()
+  500             {
+  501     1           /* variables */
+  502     1             /* none */
+  503     1       
+  504     1       
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  10
+
+
+  505     1       
+  506     1           /* just return the total time */
+  507     1           return  track_info.time;
+  508     1       
+  509     1       }
+  510             
+  511             
+  512             
+  513             
+  514             /*
+  515                update_track_position
+  516             
+  517                Description:      This function updates the current position on the track
+  518                                  by the passed amount.
+  519             
+  520                Arguments:        delta (long int) - amount by which to update the current
+  521                                                     position.
+  522                Return Value:     None.
+  523             
+  524                Input:            None.
+  525                Output:           None.
+  526             
+  527                Error Handling:   None.
+  528             
+  529                Algorithms:       None.
+  530                Data Structures:  None.
+  531             
+  532                Shared Variables: track_info - the curpos element is updated.
+  533             
+  534                Author:           Glen George
+  535                Last Modified:    June 6, 2000
+  536             
+  537             */
+  538             
+  539             void  update_track_position(long int delta)
+  540             {
+  541     1           /* variables */
+  542     1             /* none */
+  543     1       
+  544     1       
+  545     1       
+  546     1           /* update the current position */
+  547     1           track_info.curpos += delta;
+  548     1       
+  549     1           /* make sure not out of range */
+  550     1           if (track_info.curpos < 0)
+  551     1               track_info.curpos = 0;
+  552     1           if (track_info.curpos > track_info.length)
+  553     1               track_info.curpos = track_info.length;
+  554     1       
+  555     1       
+  556     1           /* now return */
+  557     1           return;
+  558     1       
+  559     1       }
+  560             
+  561             
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  11
+
+
+  562             
+  563             
+  564             /*
+  565                setup_cur_track_info
+  566             
+  567                Description:      This function loads the information for the current
+  568                                  track/file from the hard drive and initializes the track
+  569                                  information data structure.  The track is positioned to
+  570                                  the start of the track.
+  571             
+  572                Arguments:        None.
+  573                Return Value:     None.
+  574             
+  575                Input:            The new track information is read from the hard drive.
+  576                Output:           None.
+  577             
+  578                Error Handling:   None.
+  579             
+  580                Algorithms:       None.
+  581                Data Structures:  None.
+  582             
+  583                Shared Variables: track_info        - updated.
+  584                                  track_info_buffer - updated.
+  585             
+  586                Author:           Glen George
+  587                Last Modified:    March 15, 2013
+  588             
+  589             */
+  590             
+  591             void  setup_cur_track_info()
+  592             {
+  593     1           /* variables */
+  594     1           char         have_ID3_tag;  /* keep track of if have ID3 tag or not */
+  595     1       
+  596     1           const char  *s;             /* general string pointer */
+  597     1       
+  598     1           int          i;             /* loop index */
+  599     1       
+  600     1       
+  601     1       
+  602     1           /* get the track/file information from either the disk directory */
+  603     1           /* information (directories) or the ID3 tag in the file          */
+  604     1       
+  605     1           /* first get the filename or ID3 tag */
+  606     1       
+  607     1           /* if not a directory should try to get an ID3 tag */
+  608     1           if (!cur_isDir())  {
+  609     2               /* it is a file so get the ID3 tag */
+  610     2               get_ID3_tag(track_info_buffer);
+  611     2               /* check if actually got an ID3 tag */
+  612     2               have_ID3_tag = ((track_info_buffer[0] == 'T') &&
+  613     2                               (track_info_buffer[1] == 'A') &&
+  614     2                               (track_info_buffer[2] == 'G'));
+  615     2           }
+  616     1       
+  617     1           /* if a directory or didn't get an ID3 tag, get the filename */
+  618     1           if (cur_isDir() || !have_ID3_tag)  {
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  12
+
+
+  619     2       
+  620     2               /* don't have an ID3 tag */
+  621     2               have_ID3_tag = FALSE;
+  622     2       
+  623     2               /* need to get the filename */
+  624     2               s = get_cur_file_name();
+  625     2       
+  626     2               /* check if needs a directory symbol in front of the name */
+  627     2               if (cur_isDir())  {
+  628     3                   /* is a directory, see which kind */
+  629     3                   if (cur_isParentDir())
+  630     3                       /* parent directory, put in "up directory character" */
+  631     3                       track_info_buffer[0] = PARENT_DIR_CHAR;
+  632     3                   else
+  633     3                       /* sub-directory, put in approipriate character */
+  634     3                       track_info_buffer[0] = SUBDIR_CHAR;
+  635     3                   /* and start filling at second character */
+  636     3                   i = 1;
+  637     3               }
+  638     2               else  {
+  639     3                   /* no directory character, start at beginning of the buffer */
+  640     3                   i = 0;
+  641     3               }
+  642     2       
+  643     2               /* now copy the filename into the buffer */
+  644     2               strcpy((track_info_buffer + i), s);
+  645     2           }
+  646     1       
+  647     1       
+  648     1           /* fill in the numeric values from directory information */
+  649     1           /* length (in bytes) of the song/file */
+  650     1           track_info.length = get_cur_file_size();
+  651     1       
+  652     1       
+  653     1           /* get the time from the ID3 tag if it exists */
+  654     1           /* length (in time) of the song/file - watch out for directories */
+  655     1           if (cur_isDir())  {
+  656     2               /* currently on a directory, not a song - so there is no time */
+  657     2               track_info.time = TIME_NONE;
+  658     2           }
+  659     1           else  {
+  660     2               /* on a song/file - get the length (in tenths of seconds) */
+  661     2               if (have_ID3_tag && (track_info_buffer[ID3_TAG_TIME_OFFSET] == 0) &&
+  662     2                   ((track_info_buffer[ID3_TAG_TIME_OFFSET + 1] & 0xC0) == 0x40) &&
+  663     2                   ((track_info_buffer[ID3_TAG_TIME_OFFSET + 2] & 0xC0) == 0x40) &&
+  664     2                   ((track_info_buffer[ID3_TAG_TIME_OFFSET + 3] & 0xC0) == 0x40))
+  665     2                   /* have an ID3 tag and time is stored there (our extension of ID3) */
+  666     2                   track_info.time = 10 * (((track_info_buffer[ID3_TAG_TIME_OFFSET + 1] & 0x3F) << 12) |
+  667     2                                           ((track_info_buffer[ID3_TAG_TIME_OFFSET + 2] & 0x3F) << 6) |
+  668     2                                           (track_info_buffer[ID3_TAG_TIME_OFFSET + 3] & 0x3F));
+  669     2               else
+  670     2                   /* no ID3 tag time information so set the time to 0 */
+  671     2                   track_info.time = 0;
+  672     2           }
+  673     1       
+  674     1       
+  675     1           /* now setup the title and artist */
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  13
+
+
+  676     1       
+  677     1           /* check if there is an ID3 tag */
+  678     1           if (have_ID3_tag)  {
+  679     2       
+  680     2               /* have an ID3 tag, copy the title from it */
+  681     2               strncpy(track_info.title, &(track_info_buffer[ID3_TAG_TITLE_OFFSET]),
+  682     2                       ID3_TAG_TITLE_SIZE);
+  683     2               /* make sure it is <null> terminated */
+  684     2               track_info.title[ID3_TAG_TITLE_SIZE] = '\0';
+  685     2       
+  686     2               /* now get the artist name from the ID3 tag */
+  687     2               strncpy(track_info.artist, &(track_info_buffer[ID3_TAG_ARTIST_OFFSET]),
+  688     2                       ID3_TAG_ARTIST_SIZE);
+  689     2               /* make sure it is <null> terminated */
+  690     2               track_info.artist[ID3_TAG_ARTIST_SIZE] = '\0';
+  691     2           }
+  692     1           else  {
+  693     2       
+  694     2               /* no ID3 tag so the title is the filename */
+  695     2               strncpy(track_info.title, track_info_buffer, MAX_TITLE_LEN);
+  696     2               /* make sure it is <null> terminated */
+  697     2               track_info.title[MAX_TITLE_LEN] = '\0';
+  698     2       
+  699     2               /* there is no artist in this case */
+  700     2               track_info.artist[0] = '\0';
+  701     2           }
+  702     1       
+  703     1       
+  704     1           /* always reset to the start of the track */
+  705     1           track_info.curpos = 0;
+  706     1       
+  707     1       
+  708     1           /* finally done so return */
+  709     1           return;
+  710     1       
+  711     1       }
+  712             
+  713             
+  714             
+  715             
+  716             /*
+  717                setup_error_track_info
+  718             
+  719                Description:      This function loads the information for the current
+  720                                  track/file with error information.  This is means no
+  721                                  time and a title and artist name of "Error".  The track
+  722                                  is positioned the start of the track.
+  723             
+  724                Arguments:        None.
+  725                Return Value:     None.
+  726             
+  727                Input:            The new track information is preset to error information.
+  728                Output:           None.
+  729             
+  730                Error Handling:   None.
+  731             
+  732                Algorithms:       None.
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  14
+
+
+  733                Data Structures:  None.
+  734             
+  735                Shared Variables: track_info - updated.
+  736             
+  737                Author:           Glen George
+  738                Last Modified:    March 15, 2013
+  739             
+  740             */
+  741             
+  742             void  setup_error_track_info()
+  743             {
+  744     1           /* variables */
+  745     1             /* none */    
+  746     1       
+  747     1       
+  748     1       
+  749     1           /* fill in the track information buffer */
+  750     1           track_info.length = 9999;
+  751     1           track_info.time = TIME_NONE;
+  752     1       
+  753     1           /* use "Error" for title and artist */
+  754     1           track_info.title[0] = 'E';
+  755     1           track_info.title[1] = 'r';
+  756     1           track_info.title[2] = 'r';
+  757     1           track_info.title[3] = 'o';
+  758     1           track_info.title[4] = 'r';
+  759     1           track_info.title[5] = '\0';
+  760     1           track_info.artist[0] = 'E';
+  761     1           track_info.artist[1] = 'r';
+  762     1           track_info.artist[2] = 'r';
+  763     1           track_info.artist[3] = 'o';
+  764     1           track_info.artist[4] = 'r';
+  765     1           track_info.artist[5] = '\0';
+  766     1       
+  767     1       
+  768     1           /* always reset to the start of the track */
+  769     1           track_info.curpos = 0;
+  770     1       
+  771     1       
+  772     1           /* done filling with error data so return */
+  773     1           return;
+  774     1       
+  775     1       }
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  15
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 150
+                           init_track      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 157
+             0005  B80000          MOV     AX,0H
+             0008  89064400        MOV     track_info+44H,AX
+             000C  89064600        MOV     track_info+46H,AX
+                                                   ; STATEMENT # 161
+             0010  5D              POP     BP
+             0011  5F              POP     DI
+             0012  5E              POP     SI
+             0013  C3              RET
+                                                   ; STATEMENT # 163
+                           init_track      ENDP
+                                                   ; STATEMENT # 193
+                           get_track_artist      PROC NEAR
+             0014  56              PUSH    SI
+             0015  57              PUSH    DI
+             0016  55              PUSH    BP
+             0017  8BEC            MOV     BP,SP
+                           @2:
+                                                   ; STATEMENT # 200
+             0019  B81F00          MOV     AX,OFFSET(track_info)+1FH
+             001C  8CDA            MOV     DX,DS
+             001E  5D              POP     BP
+             001F  5F              POP     DI
+             0020  5E              POP     SI
+             0021  C3              RET
+                                                   ; STATEMENT # 202
+                           get_track_artist      ENDP
+                                                   ; STATEMENT # 232
+                           get_track_title      PROC NEAR
+             0022  56              PUSH    SI
+             0023  57              PUSH    DI
+             0024  55              PUSH    BP
+             0025  8BEC            MOV     BP,SP
+                           @3:
+                                                   ; STATEMENT # 239
+             0027  B80000          MOV     AX,OFFSET(track_info)
+             002A  8CDA            MOV     DX,DS
+             002C  5D              POP     BP
+             002D  5F              POP     DI
+             002E  5E              POP     SI
+             002F  C3              RET
+                                                   ; STATEMENT # 241
+                           get_track_title      ENDP
+                                                   ; STATEMENT # 270
+                           get_track_length      PROC NEAR
+             0030  56              PUSH    SI
+             0031  57              PUSH    DI
+             0032  55              PUSH    BP
+             0033  8BEC            MOV     BP,SP
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  16
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           @4:
+                                                   ; STATEMENT # 277
+             0035  8B164200        MOV     DX,track_info+42H
+             0039  8B064000        MOV     AX,track_info+40H
+             003D  5D              POP     BP
+             003E  5F              POP     DI
+             003F  5E              POP     SI
+             0040  C3              RET
+                                                   ; STATEMENT # 279
+                           get_track_length      ENDP
+                                                   ; STATEMENT # 310
+                           get_track_position      PROC NEAR
+             0042  56              PUSH    SI
+             0043  57              PUSH    DI
+             0044  55              PUSH    BP
+             0045  8BEC            MOV     BP,SP
+                           @5:
+                                                   ; STATEMENT # 317
+             0047  8B164600        MOV     DX,track_info+46H
+             004B  8B064400        MOV     AX,track_info+44H
+             004F  5D              POP     BP
+             0050  5F              POP     DI
+             0051  5E              POP     SI
+             0052  C3              RET
+                                                   ; STATEMENT # 319
+                           get_track_position      ENDP
+                                                   ; STATEMENT # 350
+                           get_track_block_position      PROC NEAR
+             0054  56              PUSH    SI
+             0055  57              PUSH    DI
+             0056  55              PUSH    BP
+             0057  8BEC            MOV     BP,SP
+                           @6:
+                                                   ; STATEMENT # 360
+             0059  8B164600        MOV     DX,track_info+46H
+             005D  8B064400        MOV     AX,track_info+44H
+             0061  B90002          MOV     CX,200H
+             0064  BF0000          MOV     DI,0H
+             0067  9A00000000      CALL    LQ_SLONG_DIV
+             006C  5D              POP     BP
+             006D  5F              POP     DI
+             006E  5E              POP     SI
+             006F  C3              RET
+                                                   ; STATEMENT # 362
+                           get_track_block_position      ENDP
+                                                   ; STATEMENT # 393
+                           get_track_remaining_length      PROC NEAR
+             0070  56              PUSH    SI
+             0071  57              PUSH    DI
+             0072  C8040000        ENTER   4H,0H
+                           @7:
+                                                   ; STATEMENT # 400
+             0076  8B164200        MOV     DX,track_info+42H
+             007A  8B064000        MOV     AX,track_info+40H
+             007E  2B064400        SUB     AX,track_info+44H
+             0082  1B164600        SBB     DX,track_info+46H
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  17
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0086  8946FC          MOV     [BP].bytes_left,AX
+             0089  8956FE          MOV     [BP].bytes_left+2H,DX
+                                                   ; STATEMENT # 403
+             008C  09D2            OR      DX,DX
+             008E  7E03            JLE     $+5H
+             0090  E91700          JMP     @8
+             0093  7D03            JGE     $+5H
+             0095  E90900          JMP     @33
+             0098  81F80000        CMP     AX,0H
+             009C  7203            JB      $+5H
+             009E  E90900          JMP     @8
+                           @33:
+                                                   ; STATEMENT # 404
+             00A1  B80000          MOV     AX,0H
+             00A4  8946FC          MOV     [BP].bytes_left,AX
+             00A7  8946FE          MOV     [BP].bytes_left+2H,AX
+                                                   ; STATEMENT # 408
+                           @8:
+             00AA  8B56FE          MOV     DX,[BP].bytes_left+2H
+             00AD  8B46FC          MOV     AX,[BP].bytes_left
+             00B0  C9              LEAVE
+             00B1  5F              POP     DI
+             00B2  5E              POP     SI
+             00B3  C3              RET
+                                                   ; STATEMENT # 410
+                           get_track_remaining_length      ENDP
+                                                   ; STATEMENT # 446
+                           get_track_time      PROC NEAR
+             00B4  56              PUSH    SI
+             00B5  57              PUSH    DI
+             00B6  55              PUSH    BP
+             00B7  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 454
+             00B9  8B063E00        MOV     AX,track_info+3EH
+             00BD  BA0000          MOV     DX,0H
+             00C0  09D2            OR      DX,DX
+             00C2  7504            JNZ     $+6H
+             00C4  81F8FFFF        CMP     AX,0FFFFH
+             00C8  7503            JNZ     $+5H
+             00CA  E96E00          JMP     @10
+             00CD  09C0            OR      AX,AX
+             00CF  7503            JNZ     $+5H
+             00D1  E96700          JMP     @10
+             00D4  39164200        CMP     track_info+42H,DX
+             00D8  7D03            JGE     $+5H
+             00DA  E95E00          JMP     @10
+             00DD  7E03            JLE     $+5H
+             00DF  E90900          JMP     @34
+             00E2  39064000        CMP     track_info+40H,AX
+             00E6  7703            JA      $+5H
+             00E8  E95000          JMP     @10
+                           @34:
+                                                   ; STATEMENT # 457
+             00EB  813E46000000    CMP     track_info+46H,0H
+             00F1  7506            JNZ     $+8H
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  18
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             00F3  813E44000000    CMP     track_info+44H,0H
+             00F9  7403            JZ      $+5H
+             00FB  E90400          JMP     @11
+                                                   ; STATEMENT # 459
+             00FE  5D              POP     BP
+             00FF  5F              POP     DI
+             0100  5E              POP     SI
+             0101  C3              RET
+                                                   ; STATEMENT # 460
+                           @11:
+                                                   ; STATEMENT # 462
+             0102  8B164200        MOV     DX,track_info+42H
+             0106  8B064000        MOV     AX,track_info+40H
+             010A  2B064400        SUB     AX,track_info+44H
+             010E  1B164600        SBB     DX,track_info+46H
+             0112  50              PUSH    AX      ; 1
+             0113  8B3E4200        MOV     DI,track_info+42H
+             0117  8B064000        MOV     AX,track_info+40H
+             011B  8B0E3E00        MOV     CX,track_info+3EH
+             011F  BE0000          MOV     SI,0H
+             0122  52              PUSH    DX      ; 2
+             0123  8BD7            MOV     DX,DI
+             0125  8BFE            MOV     DI,SI
+             0127  9A00000000      CALL    LQ_SLONG_DIV
+             012C  8BC8            MOV     CX,AX
+             012E  5F              POP     DI      ; 2
+             012F  58              POP     AX      ; 1
+             0130  87D7            XCHG    DX,DI
+             0132  9A00000000      CALL    LQ_SLONG_DIV
+             0137  5D              POP     BP
+             0138  5F              POP     DI
+             0139  5E              POP     SI
+             013A  C3              RET
+                                                   ; STATEMENT # 464
+                           @10:
+                                                   ; STATEMENT # 466
+             013B  8B063E00        MOV     AX,track_info+3EH
+             013F  5D              POP     BP
+             0140  5F              POP     DI
+             0141  5E              POP     SI
+             0142  C3              RET
+                                                   ; STATEMENT # 469
+                           get_track_time      ENDP
+                                                   ; STATEMENT # 500
+                           get_track_total_time      PROC NEAR
+             0144  56              PUSH    SI
+             0145  57              PUSH    DI
+             0146  55              PUSH    BP
+             0147  8BEC            MOV     BP,SP
+                           @12:
+                                                   ; STATEMENT # 507
+             0149  8B063E00        MOV     AX,track_info+3EH
+             014D  5D              POP     BP
+             014E  5F              POP     DI
+             014F  5E              POP     SI
+             0150  C3              RET
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  19
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 509
+                           get_track_total_time      ENDP
+                                                   ; STATEMENT # 540
+                           update_track_position      PROC NEAR
+             0152  56              PUSH    SI
+             0153  57              PUSH    DI
+             0154  55              PUSH    BP
+             0155  8BEC            MOV     BP,SP
+                           @13:
+                                                   ; STATEMENT # 547
+             0157  8B560A          MOV     DX,[BP].delta+2H
+             015A  8B4608          MOV     AX,[BP].delta
+             015D  03064400        ADD     AX,track_info+44H
+             0161  13164600        ADC     DX,track_info+46H
+             0165  89064400        MOV     track_info+44H,AX
+             0169  89164600        MOV     track_info+46H,DX
+                                                   ; STATEMENT # 550
+             016D  09D2            OR      DX,DX
+             016F  7E03            JLE     $+5H
+             0171  E91900          JMP     @14
+             0174  7D03            JGE     $+5H
+             0176  E90900          JMP     @35
+             0179  81F80000        CMP     AX,0H
+             017D  7203            JB      $+5H
+             017F  E90B00          JMP     @14
+                           @35:
+                                                   ; STATEMENT # 551
+             0182  B80000          MOV     AX,0H
+             0185  89064400        MOV     track_info+44H,AX
+             0189  89064600        MOV     track_info+46H,AX
+                                                   ; STATEMENT # 552
+                           @14:
+             018D  8B164200        MOV     DX,track_info+42H
+             0191  8B064000        MOV     AX,track_info+40H
+             0195  39164600        CMP     track_info+46H,DX
+             0199  7D03            JGE     $+5H
+             019B  E91600          JMP     @15
+             019E  7E03            JLE     $+5H
+             01A0  E90900          JMP     @36
+             01A3  39064400        CMP     track_info+44H,AX
+             01A7  7703            JA      $+5H
+             01A9  E90800          JMP     @15
+                           @36:
+                                                   ; STATEMENT # 553
+             01AC  89064400        MOV     track_info+44H,AX
+             01B0  89164600        MOV     track_info+46H,DX
+                                                   ; STATEMENT # 557
+                           @15:
+             01B4  5D              POP     BP
+             01B5  5F              POP     DI
+             01B6  5E              POP     SI
+             01B7  C3              RET
+                                                   ; STATEMENT # 559
+                           update_track_position      ENDP
+                                                   ; STATEMENT # 592
+                           setup_cur_track_info      PROC NEAR
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  20
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             01B8  56              PUSH    SI
+             01B9  57              PUSH    DI
+             01BA  C8080000        ENTER   8H,0H
+                           @16:
+                                                   ; STATEMENT # 608
+             01BE  E80000          CALL    cur_isDir
+             01C1  08C0            OR      AL,AL
+             01C3  7403            JZ      $+5H
+             01C5  E96800          JMP     @17
+                                                   ; STATEMENT # 610
+             01C8  B84800          MOV     AX,OFFSET(track_info_buffer)
+             01CB  1E              PUSH    DS      ; 1
+             01CC  50              PUSH    AX      ; 2
+             01CD  E80000          CALL    get_ID3_tag
+             01D0  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 614
+             01D4  8A064800        MOV     AL,track_info_buffer
+             01D8  98              CBW
+             01D9  81F85400        CMP     AX,54H
+             01DD  B80100          MOV     AX,1H
+             01E0  7401            JZ      $+3H
+             01E2  48              DEC     AX
+             01E3  0BC0            OR      AX,AX
+             01E5  7503            JNZ     $+5H
+             01E7  E91C00          JMP     @19
+             01EA  8A064900        MOV     AL,track_info_buffer+1H
+             01EE  98              CBW
+             01EF  81F84100        CMP     AX,41H
+             01F3  B80100          MOV     AX,1H
+             01F6  7401            JZ      $+3H
+             01F8  48              DEC     AX
+             01F9  0BC0            OR      AX,AX
+             01FB  7503            JNZ     $+5H
+             01FD  E90600          JMP     @19
+             0200  B80100          MOV     AX,1H
+             0203  E90200          JMP     @37
+                           @19:
+             0206  2BC0            SUB     AX,AX
+                           @37:
+             0208  0BC0            OR      AX,AX
+             020A  7503            JNZ     $+5H
+             020C  E91C00          JMP     @18
+             020F  8A064A00        MOV     AL,track_info_buffer+2H
+             0213  98              CBW
+             0214  81F84700        CMP     AX,47H
+             0218  B80100          MOV     AX,1H
+             021B  7401            JZ      $+3H
+             021D  48              DEC     AX
+             021E  0BC0            OR      AX,AX
+             0220  7503            JNZ     $+5H
+             0222  E90600          JMP     @18
+             0225  B80100          MOV     AX,1H
+             0228  E90200          JMP     @38
+                           @18:
+             022B  2BC0            SUB     AX,AX
+                           @38:
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  21
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             022D  8846F9          MOV     [BP].have_ID3_tag,AL
+                                                   ; STATEMENT # 618
+                           @17:
+             0230  E80000          CALL    cur_isDir
+             0233  08C0            OR      AL,AL
+             0235  7403            JZ      $+5H
+             0237  E90900          JMP     @21
+             023A  827EF900        CMP     [BP].have_ID3_tag,0H
+             023E  7403            JZ      $+5H
+             0240  E95000          JMP     @20
+                           @21:
+                                                   ; STATEMENT # 621
+             0243  C646F900        MOV     [BP].have_ID3_tag,0H
+                                                   ; STATEMENT # 624
+             0247  E80000          CALL    get_cur_file_name
+             024A  8946FC          MOV     [BP].s,AX
+             024D  8956FE          MOV     [BP].s+2H,DX
+                                                   ; STATEMENT # 627
+             0250  E80000          CALL    cur_isDir
+             0253  08C0            OR      AL,AL
+             0255  7503            JNZ     $+5H
+             0257  E91F00          JMP     @22
+                                                   ; STATEMENT # 629
+             025A  E80000          CALL    cur_isParentDir
+             025D  08C0            OR      AL,AL
+             025F  7503            JNZ     $+5H
+             0261  E90800          JMP     @23
+                                                   ; STATEMENT # 631
+             0264  C60648003C      MOV     track_info_buffer,3CH
+                                                   ; STATEMENT # 632
+             0269  E90500          JMP     @24
+                           @23:
+                                                   ; STATEMENT # 634
+             026C  C60648003E      MOV     track_info_buffer,3EH
+                           @24:
+                                                   ; STATEMENT # 636
+             0271  C746FA0100      MOV     [BP].i,1H
+                                                   ; STATEMENT # 638
+             0276  E90500          JMP     @25
+                           @22:
+                                                   ; STATEMENT # 640
+             0279  C746FA0000      MOV     [BP].i,0H
+                                                   ; STATEMENT # 641
+                           @25:
+                                                   ; STATEMENT # 644
+             027E  C45EFC          LES     BX,[BP].s
+             0281  06              PUSH    ES      ; 1
+             0282  53              PUSH    BX      ; 2
+             0283  8B5EFA          MOV     BX,[BP].i
+             0286  8D874800        LEA     AX,track_info_buffer[BX]
+             028A  1E              PUSH    DS      ; 3
+             028B  50              PUSH    AX      ; 4
+             028C  E80000          CALL    strcpy_
+             028F  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 650
+                           @20:
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  22
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0293  E80000          CALL    get_cur_file_size
+             0296  89064000        MOV     track_info+40H,AX
+             029A  89164200        MOV     track_info+42H,DX
+                                                   ; STATEMENT # 655
+             029E  E80000          CALL    cur_isDir
+             02A1  08C0            OR      AL,AL
+             02A3  7503            JNZ     $+5H
+             02A5  E90900          JMP     @26
+                                                   ; STATEMENT # 657
+             02A8  C7063E00FFFF    MOV     track_info+3EH,0FFFFH
+                                                   ; STATEMENT # 659
+             02AE  E98200          JMP     @27
+                           @26:
+                                                   ; STATEMENT # 664
+             02B1  827EF900        CMP     [BP].have_ID3_tag,0H
+             02B5  7503            JNZ     $+5H
+             02B7  E97300          JMP     @28
+             02BA  823EC10000      CMP     track_info_buffer+79H,0H
+             02BF  7403            JZ      $+5H
+             02C1  E96900          JMP     @28
+             02C4  8A06C200        MOV     AL,track_info_buffer+7AH
+             02C8  98              CBW
+             02C9  81E0C000        AND     AX,0C0H
+             02CD  81F84000        CMP     AX,40H
+             02D1  7403            JZ      $+5H
+             02D3  E95700          JMP     @28
+             02D6  8A06C300        MOV     AL,track_info_buffer+7BH
+             02DA  98              CBW
+             02DB  81E0C000        AND     AX,0C0H
+             02DF  81F84000        CMP     AX,40H
+             02E3  7403            JZ      $+5H
+             02E5  E94500          JMP     @28
+             02E8  8A06C400        MOV     AL,track_info_buffer+7CH
+             02EC  98              CBW
+             02ED  81E0C000        AND     AX,0C0H
+             02F1  81F84000        CMP     AX,40H
+             02F5  7403            JZ      $+5H
+             02F7  E93300          JMP     @28
+                                                   ; STATEMENT # 668
+             02FA  8A06C400        MOV     AL,track_info_buffer+7CH
+             02FE  98              CBW
+             02FF  81E03F00        AND     AX,3FH
+             0303  50              PUSH    AX      ; 1
+             0304  8A06C200        MOV     AL,track_info_buffer+7AH
+             0308  98              CBW
+             0309  81E03F00        AND     AX,3FH
+             030D  C1E00C          SAL     AX,0CH
+             0310  50              PUSH    AX      ; 2
+             0311  8A06C300        MOV     AL,track_info_buffer+7BH
+             0315  98              CBW
+             0316  81E03F00        AND     AX,3FH
+             031A  C1E006          SAL     AX,6H
+             031D  59              POP     CX      ; 2
+             031E  0BC1            OR      AX,CX
+             0320  59              POP     CX      ; 1
+             0321  0BC1            OR      AX,CX
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  23
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0323  6BC00A          IMUL    AX,AX,0AH
+             0326  89063E00        MOV     track_info+3EH,AX
+                                                   ; STATEMENT # 669
+             032A  E90600          JMP     @29
+                           @28:
+                                                   ; STATEMENT # 671
+             032D  C7063E000000    MOV     track_info+3EH,0H
+                           @29:
+                                                   ; STATEMENT # 672
+                           @27:
+                                                   ; STATEMENT # 678
+             0333  827EF900        CMP     [BP].have_ID3_tag,0H
+             0337  7503            JNZ     $+5H
+             0339  E93500          JMP     @30
+                                                   ; STATEMENT # 682
+             033C  681E00          PUSH    1EH
+             033F  B84B00          MOV     AX,OFFSET(track_info_buffer)+3H
+             0342  1E              PUSH    DS      ; 2
+             0343  50              PUSH    AX      ; 3
+             0344  B80000          MOV     AX,OFFSET(track_info)
+             0347  1E              PUSH    DS      ; 4
+             0348  50              PUSH    AX      ; 5
+             0349  E80000          CALL    strncpy_
+             034C  81C40A00        ADD     SP,0AH
+                                                   ; STATEMENT # 684
+             0350  C6061E0000      MOV     track_info+1EH,0H
+                                                   ; STATEMENT # 688
+             0355  681E00          PUSH    1EH
+             0358  B86900          MOV     AX,OFFSET(track_info_buffer)+21H
+             035B  1E              PUSH    DS      ; 2
+             035C  50              PUSH    AX      ; 3
+             035D  B81F00          MOV     AX,OFFSET(track_info)+1FH
+             0360  1E              PUSH    DS      ; 4
+             0361  50              PUSH    AX      ; 5
+             0362  E80000          CALL    strncpy_
+             0365  81C40A00        ADD     SP,0AH
+                                                   ; STATEMENT # 690
+             0369  C6063D0000      MOV     track_info+3DH,0H
+                                                   ; STATEMENT # 692
+             036E  E91E00          JMP     @31
+                           @30:
+                                                   ; STATEMENT # 695
+             0371  681F00          PUSH    1FH
+             0374  B84800          MOV     AX,OFFSET(track_info_buffer)
+             0377  1E              PUSH    DS      ; 2
+             0378  50              PUSH    AX      ; 3
+             0379  B80000          MOV     AX,OFFSET(track_info)
+             037C  1E              PUSH    DS      ; 4
+             037D  50              PUSH    AX      ; 5
+             037E  E80000          CALL    strncpy_
+             0381  81C40A00        ADD     SP,0AH
+                                                   ; STATEMENT # 697
+             0385  C6061F0000      MOV     track_info+1FH,0H
+                                                   ; STATEMENT # 700
+             038A  C6061F0000      MOV     track_info+1FH,0H
+                                                   ; STATEMENT # 701
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  24
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           @31:
+                                                   ; STATEMENT # 705
+             038F  B80000          MOV     AX,0H
+             0392  89064400        MOV     track_info+44H,AX
+             0396  89064600        MOV     track_info+46H,AX
+                                                   ; STATEMENT # 709
+             039A  C9              LEAVE
+             039B  5F              POP     DI
+             039C  5E              POP     SI
+             039D  C3              RET
+                                                   ; STATEMENT # 711
+                           setup_cur_track_info      ENDP
+                                                   ; STATEMENT # 743
+                           setup_error_track_info      PROC NEAR
+             039E  56              PUSH    SI
+             039F  57              PUSH    DI
+             03A0  55              PUSH    BP
+             03A1  8BEC            MOV     BP,SP
+                           @32:
+                                                   ; STATEMENT # 750
+             03A3  C70640000F27    MOV     track_info+40H,270FH
+             03A9  C70642000000    MOV     track_info+42H,0H
+                                                   ; STATEMENT # 751
+             03AF  C7063E00FFFF    MOV     track_info+3EH,0FFFFH
+                                                   ; STATEMENT # 754
+             03B5  C606000045      MOV     track_info,45H
+                                                   ; STATEMENT # 755
+             03BA  C606010072      MOV     track_info+1H,72H
+                                                   ; STATEMENT # 756
+             03BF  C606020072      MOV     track_info+2H,72H
+                                                   ; STATEMENT # 757
+             03C4  C60603006F      MOV     track_info+3H,6FH
+                                                   ; STATEMENT # 758
+             03C9  C606040072      MOV     track_info+4H,72H
+                                                   ; STATEMENT # 759
+             03CE  C606050000      MOV     track_info+5H,0H
+                                                   ; STATEMENT # 760
+             03D3  C6061F0045      MOV     track_info+1FH,45H
+                                                   ; STATEMENT # 761
+             03D8  C606200072      MOV     track_info+20H,72H
+                                                   ; STATEMENT # 762
+             03DD  C606210072      MOV     track_info+21H,72H
+                                                   ; STATEMENT # 763
+             03E2  C60622006F      MOV     track_info+22H,6FH
+                                                   ; STATEMENT # 764
+             03E7  C606230072      MOV     track_info+23H,72H
+                                                   ; STATEMENT # 765
+             03EC  C606240000      MOV     track_info+24H,0H
+                                                   ; STATEMENT # 769
+             03F1  B80000          MOV     AX,0H
+             03F4  89064400        MOV     track_info+44H,AX
+             03F8  89064600        MOV     track_info+46H,AX
+                                                   ; STATEMENT # 773
+             03FC  5D              POP     BP
+             03FD  5F              POP     DI
+             03FE  5E              POP     SI
+iC-86  COMPILER   TRAKUTIL                                                                   04/21/;6 17:34:32  PAGE  25
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             03FF  C3              RET
+                                                   ; STATEMENT # 775
+                           setup_error_track_info      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 0400H   1024D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 014AH    330D
+     MAXIMUM STACK SIZE           = 001AH     26D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

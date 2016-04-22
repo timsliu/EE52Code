@@ -1,0 +1,402 @@
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE BUTTON
+OBJECT MODULE PLACED IN BUTTON.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE BUTTON.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1         NAME    BUTTON
+                             2     
+                             3     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             4     ;                                                                            ;
+                             5     ;                                    Button                                  ;
+                             6     ;                               Button Functions                             ;
+                             7     ;                                   EE/CS 51                                 ;
+                             8     ;                                                                            ;
+                             9     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            10     
+                            11     ; Description:    Functions for scanning the keys.
+                            12     ;
+                            13     ; Revision History:
+                            14     ;        2/3/16    Tim Liu    created file
+                            15     ;        2/4/16    Tim Liu    finished writing outline
+                            16     ;        4/4/16    Tim Liu    changed button to buttons
+                            17     ;        4/21/16   Tim Liu    wrote stub function for ButtonDebounce
+                            18     ;        4/21/16   Tim Liu    wrote InitButtons
+                            19     ;        4/21/16   Tim Liu    wrote ButtonDebounce
+                            20     ;
+                            21     ;
+                            22     ; Table of Contents
+                            23     ;
+                            24     ;        InitButtons - initializes the functions needed for buttons
+                            25     ;        ButtonDebounce - scans a the key address and debounces
+                            26     ;        key_available - returns TRUE if there is a valid key
+                            27     ;        getkey - returns the key code for the debounced key
+                            28     
+                            29     ; local include files
+                            30     
+                            31 +1  $INCLUDE(BUTTON.INC)
+                      =1    32     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    33     ;                                                                            ;
+                      =1    34     ;                                   Button.inc                               ;
+                      =1    35     ;                              Button Include File                           ;
+                      =1    36     ;                                   EE/CS 52                                 ;
+                      =1    37     ;                                                                            ;
+                      =1    38     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    39     
+                      =1    40     ; This file contains the definitions for button.asm
+                      =1    41     ;
+                      =1    42     ; Revision History:
+                      =1    43     ;    4/21/16     Timothy Liu     created file - initial revision
+                      =1    44     
+                      =1    45     
+  0032                =1    46     DebounceTime         EQU        50       ;miliseconds to debounce the keypad
+  012C                =1    47     RepeatRate           EQU        300      ;miliseconds between auto-repeat
+                      =1    48     
+  00FF                =1    49     NoButtonPressed      EQU   0FFh         ;indicates no button pressed
+                      =1    50     
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+  0000                =1    51     ButtonAddress        EQU   0            ;starting address of buttons
+                            52 +1  $INCLUDE(QUEUE.INC)
+                      =1    53     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    54     ;                                                                            ;
+                      =1    55     ;                                   QUEUE                                    ;
+                      =1    56     ;                             Conversion Functions                           ;
+                      =1    57     ;                                   EE/CS 51                                 ;
+                      =1    58     ;                                                                            ;
+                      =1    59     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    60     
+                      =1    61     
+                      =1    62     ; This file contains the definitions for the queue structure and several
+                      =1    63     ; constants.
+                      =1    64     ;
+                      =1    65     ; Revision History:
+                      =1    66     ;   10/20/15    Tim Liu   Wrote struct definition
+                      =1    67     ;   10/21/15    Tim Liu   Changed names to avoid protected names
+                      =1    68     ;   10/22/15    Tim Liu   Updated comments
+                      =1    69     ;   4/21/16     Tim Liu   Changed array_size to 256 bytes
+                      =1    70     
+                      =1    71     ;Queue definitions
+                      =1    72     
+  0100                =1    73     array_size         EQU     256    ;number of bytes in a queue
+  00FF                =1    74     ModByteMask        EQU     255    ;number to AND with to get mod 1024
+  007F                =1    75     ModWordMask        EQU     127     ;number to AND with to get mod 512
+                      =1    76     
+  0001                =1    77     WordQueueType      EQU        1    ;make a word queue
+  0000                =1    78     ByteQueueType      EQU        0    ;make a byte queue
+                      =1    79     
+                      =1    80     ; Structure for queue
+                      =1    81     
+----                  =1    82     QueueStruct    STRUC
+0000                  =1    83         word_byte  DB                 ?     ;size of each element
+0001                  =1    84         filled     DW                 ?     ;number of elements filled
+0003                  =1    85         head       DW                 ?     ;value of head index
+0005                  =1    86         tail       DW                 ?     ;value of tail index
+0007                  =1    87         content    DB array_size DUP (?)    ;array for storing contents
+----                  =1    88     QueueStruct    ENDS
+                            89     
+                            90     
+                            91     CGROUP    GROUP    CODE
+                            92     DGROUP    GROUP    DATA
+                            93     
+----                        94     CODE SEGMENT PUBLIC 'CODE'
+                            95     
+                            96             ASSUME  CS:CGROUP, DS:DGROUP
+                            97     
+                            98     ;external function declarations
+                            99     
+                           100         EXTRN    QueueInit:NEAR                 ;initializes a queue
+                           101         EXTRN    QueueFull:NEAR                 ;check if queue is full
+                           102         EXTRN    Enqueue:NEAR                   ;add event to queue
+                           103         EXTRN    QueueEmpty:NEAR                ;check if the queue is empty
+                           104         EXTRN    Dequeue:NEAR                   ;remove element from queue
+                           105     
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           106     ;Name:               InitButtons
+                           107     ;
+                           108     ;Description:        This function initializes the shared variables for the
+                           109     ;                    button functions. The function sets the value of
+                           110     ;                    DebounceCnt to zero and sets LastRead to NoKeyPressed.
+                           111     ;
+                           112     ;Operation:          The function sets each of the three shared variables
+                           113     ;                    to the listed values. DebounceCnt is set to zero and
+                           114     ;                    LastRead is set to NobuttonPressed.
+                           115     ;
+                           116     ;Arguments:          None
+                           117     ;
+                           118     ;Return Values:      None
+                           119     ;
+                           120     ;Local Variables:    None
+                           121     ;
+                           122     ;Shared Variables:   KeyCode (W) - code for the key being pressed
+                           123     ;                    LastRead
+                           124     ;
+                           125     ;Input:              None
+                           126     ;
+                           127     ;Output:             None
+                           128     ;
+                           129     ;Error Handling:     None
+                           130     ;
+                           131     ;Algorithms:         None
+                           132     ;
+                           133     ;Registers Used:     None
+                           134     ;
+                           135     ;Known Bugs:         None
+                           136     ;
+                           137     ;Limitations:        None
+                           138     ;
+                           139     ;Last Modified:      2/4/16
+                           140     
+                           141     ;Outline
+                           142     ;InitButtons()
+                           143     ;    DebounceCnt = 0                     ;clear the debounce timer
+                           144     ;    LastRead = NoButtonPressed          ;indicate no key is pressed
+                           145     ;    RETURN
+                           146     
+                           147     
+                           148     
+0000                       149     InitButtons    PROC    NEAR
+                           150                    PUBLIC  InitButtons
+                           151     
+0000                       152     InitButtonsStart:
+0000 C70600003200   R      153         MOV    DebounceCnt, DebounceTime     ;load the debounce counter
+0006 C6060200FF90   R      154         MOV    LastRead, NoButtonPressed     ;nothing pressed yet
+                           155     
+000C                       156     InitButtonsQueue:                        ;label for initializing queue
+000C 56                    157         PUSH   SI                            ;save registers
+000D 53                    158         PUSH   BX
+                           159     
+000E                       160     InitButtonsQueueArgs:                    ;set up arguments for QueueInit
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    4
+
+
+LOC  OBJ                  LINE     SOURCE
+
+000E 8D360300       R      161         LEA    SI, ButtonQueue               ;load address of the queue
+0012 B300                  162         MOV    BL, ByteQueueType             ;make ButtonQueue a byte queue
+0014 E80000         E      163         CALL   QueueInit                     ;initialize queue
+                           164     
+0017                       165     InitButtonsEnd:                          ;finished - restore registers
+0017 5B                    166         POP    BX
+0018 5E                    167         POP    SI
+                           168     
+0019 C3                    169         RET
+                           170     
+                           171     InitButtons ENDP
+                           172     
+                           173     
+                           174     
+                           175     ;Name:               ButtonDebounce()
+                           176     ;
+                           177     ;Description:        This function reads the address of the buttons to
+                           178     ;                    see if a button is pressed. If a button is pressed,
+                           179     ;                    the function debounces the press and enqueues the button
+                           180     ;                    code to the buttonQueue using the function EnqueueEvent.
+                           181     ;                    This function also implements auto repeat. If the 
+                           182     ;                    same button is held down, then the button press will
+                           183     ;                    be recorded every RepeatRate milliseconds. Only one
+                           184     ;                    button can be pushed at a time. If multiple buttons
+                           185     ;                    are pressed, the function will act like no
+                           186     ;                    buttons are being pressed. This function is called by
+                           187     ;                    the interrupt handler buttonHandler every millisecond.
+                           188     ;
+                           189     ;Operation:          When called, the function reads in from the address
+                           190     ;                    buttonAddress. If the value of the input is equal to
+                           191     ;                    NoButtonPressed or if the value of the input is not
+                           192     ;                    equal to LastRead, then the function resets the debounce
+                           193     ;                    counter. If the value of the input is different from
+                           194     ;                    the last input, then LastRead is updated. If the input
+                           195     ;                    is the same as LastRead, then the function decrements
+                           196     ;                    DebounceCnt. Once DebounceCnt reaches zero, the function
+                           197     ;                    calls EnqueueEvent and enqueues the key press to the
+                           198     ;                    buttonQueue.
+                           199     ;
+                           200     ;Arguments:          None
+                           201     ;
+                           202     ;Return Values:      None
+                           203     ;
+                           204     ;Local Variables:    KeyInput (AL) - input from the key being pressed.
+                           205     ;
+                           206     ;Shared Variables:   DebounceCnt (R/W) - how many additional interrupts
+                           207     ;                    must occur before the button press is debounced
+                           208     ;                    LastRead (R/W) - the value of the last key that was
+                           209     ;                    pressed.
+                           210     ;
+                           211     ;Input:              8 possible button presses from 8 different buttons
+                           212     ;
+                           213     ;Output:             None
+                           214     ;
+                           215     ;Error Handling:     None
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    5
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           216     ;
+                           217     ;Algorithms:         None
+                           218     ;
+                           219     ;Registers Used:     None
+                           220     ;
+                           221     ;Known Bugs:         None
+                           222     ;
+                           223     ;Limitations:        None
+                           224     ;
+                           225     ;Last Modified:      2/4/16
+                           226     ;
+                           227     ;Outline
+                           228     ;
+                           229     ;buttonDebounce()
+                           230     
+                           231     ;Input(ReadAddress, buttonInput)          ;read a word from the port
+                           232     ;
+                           233     ;IF (ButtonInput == NoKeyPressed) OR      ;check if button was pressed
+                           234     ;    (ButtonInput != LastRead):           ;check if button is same
+                           235     ;    DebounceCnt = DebounceTime           ;reset the debounce counter
+                           236     ;    LastRead = KeyInput                  ;update which button was pressed
+                           237     ;
+                           238     ;ELSE:                                    ;if a button was pressed
+                           239     ;    DebounceCnt --                       ;debounce the button
+                           240     ;    IF DebounceCnt == 0:                 ;button is debounced
+                           241     ;        CALL EnQueue                     ;enqueue the button press event
+                           242     ;        DebounceCnt = RepeatRate         ;implement auto-repeat
+                           243     ;
+                           244     ;RETURN
+                           245     
+                           246     
+001A                       247     ButtonDebounce        PROC    NEAR
+                           248                           PUBLIC  ButtonDebounce
+                           249     
+                           250     
+001A                       251     ButtonDebounceRead:
+001A E400                  252         IN     AL, ButtonAddress               ;read the button byte
+                           253     
+001C                       254     CheckButtonPressed:
+001C 3CFF                  255         CMP    AL, NoButtonPressed             ;check if no button is pressed
+001E 7409                  256         JE     ResetPress                      ;if no key pressed, go to label
+                           257     
+0020 3A060200       R      258         CMP    AL, LastRead                    ;check if button is same as last
+0024 7503                  259         JNE    ResetPress                      ;reset if different button
+0026 EB1490                260         JMP    HaveButton                      ;otherwise take care of button
+                           261     
+0029                       262     ResetPress:
+0029 C70600003200   R      263         MOV    DebounceCnt, DebounceTime       ;reset the debounce counter
+002F 3CFF                  264         CMP    AL, NoButtonPressed             ;if a different key is pressed
+0031 7503                  265         JNE    UpdateLastPressed               ;then update the last pressed
+0033 EB1B90                266         JMP    ButtonDebounceEnd               ;finish the function
+                           267     
+0036                       268     UpdateLastpressed:
+0036 A20200         R      269         MOV    LastRead, AL                     ;update last read key
+0039 EB1590                270         JMP    ButtonDebounceEnd                ;end
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    6
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           271     
+003C                       272     HaveButton:
+003C FF0E0000       R      273         DEC    DebounceCnt                      ;one fewer cycle to wait
+0040 833E000000     R      274         CMP    DebounceCnt, 0                   ;check if debounce is over
+0045 7403                  275         JE     SendButtonPress                  ;if debounced go to label
+0047 EB0790                276         JMP    ButtonDebounceEnd                ;otherwise end the function
+                           277     
+004A                       278     SendButtonPress:
+                           279         
+004A C70600002C01   R      280         MOV    DebounceCnt, RepeatRate          ;set up auto repeat
+                           281                     ;Add code to enqueue the event!!!
+                           282         ;JMP   KeyDebounceEnd                   ;go to function end
+                           283     
+0050                       284     ButtonDebounceEnd:
+0050 C3                    285         RET                                     ;end of function - return
+                           286     
+                           287     ButtonDebounce ENDP
+                           288     
+                           289     
+                           290     
+                           291     
+                           292     ;Name:               Key_Available
+                           293     ;
+                           294     ;Description:        This function checks if there is a button press ready
+                           295     ;                    for processing. The function calls QueueEmpty to check
+                           296     ;                    if the buttonQueue is empty. If buttonQueue is empty,
+                           297     ;                    then the function returns TRUE and if there is no
+                           298     ;                    button press ready the function returns FALSE.
+                           299     ;
+                           300     ;Operation:          Call QueueEmpty to check if the buttonQueue has any
+                           301     ;                    elements in it. If QueueEmpty returns with the 
+                           302     ;                    buttonQueue empty, the function returns with FALSE in
+                           303     ;                    AX. Otherwise, the function returns TRUE in AX.
+                           304     ;
+                           305     ;Arguments:          None
+                           306     ;
+                           307     ;Return Values:      Havebutton (AX) - TRUE if a button is ready to be
+                           308     ;                    processed; FALSE if no button press
+                           309     ;
+                           310     ;Local Variables:    QueueAddress (SI) - address of queue. Argument to
+                           311     ;                    QueueEmpty
+                           312     ;
+                           313     ;Shared Variables:   None
+                           314     ;
+                           315     ;Output:             None
+                           316     ;
+                           317     ;Error Handling:     None
+                           318     ;
+                           319     ;Algorithms:         None
+                           320     ;
+                           321     ;Registers Used:     None
+                           322     ;
+                           323     ;Known Bugs:         None
+                           324     ;
+                           325     ;Limitations:        None
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    7
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           326     ;
+                           327     ;Last Modified:      2/4/16
+                           328     
+                           329     ;Outline
+                           330     ;Key_Available():
+                           331     ;    QueueAddress = Address(buttonQueue)        ;load the argument
+                           332     ;    IF QueueEmpty(QueueAddress) == TRUE:       ;call function to check if
+                           333     ;                                               ;button queue is empty
+                           334     ;        HaveButton == FALSE                    ;no button available
+                           335     ;    ELSE:                                      ;otherwise, thereb^^s a button
+                           336     ;        HaveButton == TRUE                     ;indicate a button is ready
+                           337     ;    RETURN
+                           338     
+                           339     
+----                       340     CODE ENDS
+                           341     
+                           342     ;start data segment
+                           343     
+----                       344     DATA    SEGMENT PUBLIC  'DATA'
+                           345     
+0000 ????                  346     DebounceCnt        DW    ?     ;how many more irq before calling Enqueue
+0002 ??                    347     LastRead           DB    ?     ;value of last key read after masking
+0003 ??                    348     ButtonQueue    QueueStruct<>   ;allocate the button queue
+0004 ????
+0006 ????
+0008 ????
+000A (256
+     ??
+     )
+                           349     
+                           350     
+----                       351     DATA ENDS
+                           352     
+                           353     
+                           354     END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

@@ -14,6 +14,9 @@
 ;        2/3/16    Tim Liu    created file
 ;        2/4/16    Tim Liu    finished writing outline
 ;        4/4/16    Tim Liu    changed button to buttons
+;        4/21/16   Tim Liu    wrote stub function for ButtonDebounce
+;        4/21/16   Tim Liu    wrote InitButtons
+;        4/21/16   Tim Liu    wrote ButtonDebounce
 ;
 ;
 ; Table of Contents
@@ -22,6 +25,27 @@
 ;        ButtonDebounce - scans a the key address and debounces
 ;        key_available - returns TRUE if there is a valid key
 ;        getkey - returns the key code for the debounced key
+
+; local include files
+
+$INCLUDE(BUTTON.INC)
+$INCLUDE(QUEUE.INC)
+
+
+CGROUP    GROUP    CODE
+DGROUP    GROUP    DATA
+
+CODE SEGMENT PUBLIC 'CODE'
+
+        ASSUME  CS:CGROUP, DS:DGROUP
+
+;external function declarations
+
+    EXTRN    QueueInit:NEAR                 ;initializes a queue
+    EXTRN    QueueFull:NEAR                 ;check if queue is full
+    EXTRN    Enqueue:NEAR                   ;add event to queue
+    EXTRN    QueueEmpty:NEAR                ;check if the queue is empty
+    EXTRN    Dequeue:NEAR                   ;remove element from queue
 
 ;Name:               InitButtons
 ;
@@ -66,8 +90,29 @@
 
 
 
-; ###### FUNCTION CODE  ######
+InitButtons    PROC    NEAR
+               PUBLIC  InitButtons
 
+InitButtonsStart:
+    MOV    DebounceCnt, DebounceTime     ;load the debounce counter
+    MOV    LastRead, NoButtonPressed     ;nothing pressed yet
+
+InitButtonsQueue:                        ;label for initializing queue
+    PUSH   SI                            ;save registers
+    PUSH   BX
+
+InitButtonsQueueArgs:                    ;set up arguments for QueueInit
+    LEA    SI, ButtonQueue               ;load address of the queue
+    MOV    BL, ByteQueueType             ;make ButtonQueue a byte queue
+    CALL   QueueInit                     ;initialize queue
+
+InitButtonsEnd:                          ;finished - restore registers
+    POP    BX
+    POP    SI
+
+    RET
+
+InitButtons ENDP
 
 
 
@@ -143,8 +188,47 @@
 ;RETURN
 
 
-; ###### ButtonDebounce CODE  ######
+ButtonDebounce        PROC    NEAR
+                      PUBLIC  ButtonDebounce
 
+
+ButtonDebounceRead:
+    IN     AL, ButtonAddress               ;read the button byte
+
+CheckButtonPressed:
+    CMP    AL, NoButtonPressed             ;check if no button is pressed
+    JE     ResetPress                      ;if no key pressed, go to label
+
+    CMP    AL, LastRead                    ;check if button is same as last
+    JNE    ResetPress                      ;reset if different button
+    JMP    HaveButton                      ;otherwise take care of button
+
+ResetPress:
+    MOV    DebounceCnt, DebounceTime       ;reset the debounce counter
+    CMP    AL, NoButtonPressed             ;if a different key is pressed
+    JNE    UpdateLastPressed               ;then update the last pressed
+    JMP    ButtonDebounceEnd               ;finish the function
+
+UpdateLastpressed:
+    MOV    LastRead, AL                     ;update last read key
+    JMP    ButtonDebounceEnd                ;end
+
+HaveButton:
+    DEC    DebounceCnt                      ;one fewer cycle to wait
+    CMP    DebounceCnt, 0                   ;check if debounce is over
+    JE     SendButtonPress                  ;if debounced go to label
+    JMP    ButtonDebounceEnd                ;otherwise end the function
+
+SendButtonPress:
+    
+    MOV    DebounceCnt, RepeatRate          ;set up auto repeat
+                ;Add code to enqueue the event!!!
+    ;JMP   KeyDebounceEnd                   ;go to function end
+
+ButtonDebounceEnd:
+    RET                                     ;end of function - return
+
+ButtonDebounce ENDP
 
 
 
@@ -197,10 +281,18 @@
 ;    RETURN
 
 
+CODE ENDS
+
+;start data segment
+
+DATA    SEGMENT PUBLIC  'DATA'
+
+DebounceCnt        DW    ?     ;how many more irq before calling Enqueue
+LastRead           DB    ?     ;value of last key read after masking
+ButtonQueue    QueueStruct<>   ;allocate the button queue
+
+
+DATA ENDS
+
 
 END
-
-
-
-
-

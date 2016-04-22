@@ -27,12 +27,12 @@
 ;       12/1/15     Timothy Liu     Changed all Timer to Timer0
 ;       12/1/15     Timothy Liu     Added IRQ.INC file
 ;       4/5/16      Timothy Liu     Changed name to Timer0M for MP3 player
-;       4/5/16      Timothy Liu     Changed MuxKeypandEventHandler to ButtonEH
+;       4/21/16      Timothy Liu     Changed MuxKeypandEventHandler to ButtonEH
 ; local include files
 
-$INCLUDE(TIMER0.INC)
-$INCLUDE(GENERAL.INC)
-$INCLUDE(IRQ.INC)
+$INCLUDE(TIMER0M.INC)
+$INCLUDE(MIRQ.INC)
+
 
 CGROUP    GROUP    CODE
 
@@ -172,7 +172,7 @@ EndButtonEH:                            ;done taking care of the timer
 
 
 
-MuxKeypadEventHandler       ENDP
+ButtonEH       ENDP
 
 
 CODE ENDS

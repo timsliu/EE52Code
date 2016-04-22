@@ -110,7 +110,6 @@ void  display_artist(const char far *a)
 }
 
 
-
 /* IDE interface function */
 
 int  get_blocks(unsigned long int b, int n, unsigned short int far *p)

@@ -24,6 +24,7 @@
 
 ;Revision History:
 ;    4/4/16
+;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
 
 $INCLUDE(MIRQ.INC)
 
@@ -37,7 +38,7 @@ CODE SEGMENT PUBLIC 'CODE'
 
     ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
     ;EXTRN    DemandEH           ;CON_MP3 data demand handler
-    ;EXTRN    ButtonEH           ;checks if a button is pressed
+    EXTRN    ButtonEH:NEAR           ;checks if a button is pressed
 
 ; ClrIRQVectors
 ;
@@ -278,22 +279,22 @@ IllegalEventHandler     ENDP
 ; Author:            Timothy Liu
 ; Last Modified:     4/4/16
 
-;InstallTimer0Handler  PROC    NEAR
-;                      PUBLIC  InstallTimer0Handler
-;
-;
-;        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-;        MOV     ES, AX
-;                                ;store the vector - put location of timer event
-;								;handler into ES
-;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(MuxKeypadEventHandler)
-;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(MuxKeypadEventHandler)
-;
-;
-;        RET                     ;all done, return
-;
-;
-;InstallTimer0Handler  ENDP
+InstallTimer0Handler  PROC    NEAR
+                      PUBLIC  InstallTimer0Handler
+
+
+        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+        MOV     ES, AX
+                                ;store the vector - put location of timer event
+								;handler into ES
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
+
+
+        RET                     ;all done, return
+
+
+InstallTimer0Handler  ENDP
     
 
 

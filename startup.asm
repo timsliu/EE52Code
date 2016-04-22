@@ -36,6 +36,8 @@
 ;    4/19/16  Timothy Liu       Changed name to STARTUP
 ;    4/19/16  Timothy Liu       Reordered assumes and group declarations
 ;    4/19/16  Timothy Liu       Added START and END START CS:IP init
+;    4/20/16  Timothy Liu       Added write to LMCS before func calls
+;    4/21/16  Timothy Liu       Added calls to set up timer0 and buttons
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -57,14 +59,17 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
 
 
 
-        ;EXTRN   main:NEAR               ;declare the main function
+        EXTRN    main:NEAR              ;declare the main function
         EXTRN    InitCS:NEAR            ;initialize chip selects
         EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
+        EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
+        EXTRN    InitTimer0:NEAR        ;start up timer0
+        EXTRN    InitButtons:NEAR       ;initialize the buttons
 
 START:
 
 
-MAIN:                                  ;start the program
+BEGIN:                                  ;start the program
         CLI                             ;disable interrupts
         MOV     AX, DGROUP              ;initialize the stack pointer
         MOV     SS, AX
@@ -77,21 +82,23 @@ MAIN:                                  ;start the program
         ; user initialization code goes here ;
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        MOV     DX, LMCSreg     ;setup to write to MPCS register
+        MOV     DX, LMCSreg             ;setup to write to MPCS register
         MOV     AX, LMCSval
-        OUT     DX, AL          ;write MPCSval to MPCS
+        OUT     DX, AL                  ;write MPCSval to MPCS
 
         CALL    InitCS                  ;initialize chip selects
         CALL    ClrIRQVectors           ;clear interrupt vector table
 
-        ;CALL    main                    ;run the main function (no arguments)
+        CALL    InitButtons             ;initialize the buttons
 
-        ;JMP     Start                   ;if return - reinitialize and try again
+        CALL    InstallTimer0Handler    ;install handler
+        CALL    InitTimer0              ;initialize timer0 for button interrupt
 
-InfiniteLoop:
+        STI                             ;enable interrupts
 
-        JMP      InfiniteLoop            ;loop infinitely
+        CALL    main                    ;run the main function (no arguments)
 
+        JMP     Start                   ;if return - reinitialize and try again
 
 
 CODE    ENDS
@@ -119,4 +126,4 @@ DATA    ENDS
 
 
 
-        END    START
+        END START

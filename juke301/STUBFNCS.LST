@@ -1,0 +1,333 @@
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE STUBFNCS
+OBJECT MODULE PLACED IN STUBFNCS.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                STUBFNCS                                  */
+    4             /*                          Audio Stub Functions                            */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS 52                                  */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains stub functions for the hardware interfacing code.  The
+   12                file is meant to allow linking of the main code without necessarily having
+   13                all the low-level functions.  The functions included are:
+   14                   update         - check if ready for an update
+   15                   elapsed_time   - get the time since the last call to this function
+   16                   key_available  - check if a key is available
+   17                   getkey         - get a key
+   18                   display_time   - display the passed time
+   19                   display_track  - display the passed track number
+   20                   display_status - display the passed status
+   21                   display_title  - display the passed track title
+   22                   display_artist - display the passed track artist
+   23                   get_blocks     - get data from the hard drive
+   24                   audio_play     - start audio output
+   25                   audio_halt     - halt audio input or output
+   26             
+   27                The local functions included are:
+   28                   none
+   29             
+   30                The locally global variable definitions included are:
+   31                   none
+   32             
+   33             
+   34                Revision History
+   35                   6/6/00   Glen George       Initial revision (from the 3/6/99 version of
+   36                                              stubfncs.c for the Digital Audio Recorder
+   37                                              Project).
+   38                   6/2/02   Glen George       Removed ffrev_start() and ffrev_halt(), they
+   39                                              are no longer part of the user-written code.
+   40                   6/5/03   Glen George       Removed display_track(), is is no longer part
+   41                                              of the user-written code.
+   42                   4/29/06  Glen George       Updated definitions of get_blocks(),
+   43                                              update(), and audio_play() to use words
+   44                              instead of bytes.
+   45             */
+   46             
+   47             
+   48             
+   49             /* library include files */
+   50               /* none */
+   51             
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   2
+
+
+   52             /* local include files */
+   53             #include  "mp3defs.h"
+   54             
+   55             
+   56             
+   57             
+   58             /* update function */
+   59             
+   60             unsigned char  update(unsigned short int far *p, int n)
+   61             {
+   62     1           return  FALSE;
+   63     1       }
+   64             
+   65             
+   66             
+   67             /* timing function */
+   68             
+   69             int  elapsed_time()
+   70             {
+   71     1           return  0;
+   72     1       }
+   73             
+   74             
+   75             
+   76             /* keypad functions */
+   77             
+   78             unsigned char  key_available()
+   79             {
+   80     1           return  FALSE;
+   81     1       }
+   82             
+   83             int  getkey()
+   84             {
+   85     1           return  KEY_ILLEGAL;
+   86     1       }
+   87             
+   88             
+   89             
+   90             /* display functions  */
+   91             
+   92             void  display_time(unsigned int t)
+   93             {
+   94     1           return;
+   95     1       }
+   96             
+   97             void  display_status(unsigned int s)
+   98             {
+   99     1           return;
+  100     1       }
+  101             
+  102             void  display_title(const char far *t)
+  103             {
+  104     1           return;
+  105     1       }
+  106             
+  107             void  display_artist(const char far *a)
+  108             {
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   3
+
+
+  109     1           return;
+  110     1       }
+  111             
+  112             
+  113             /* IDE interface function */
+  114             
+  115             int  get_blocks(unsigned long int b, int n, unsigned short int far *p)
+  116             {
+  117     1           return  n;
+  118     1       }
+  119             
+  120             
+  121             
+  122             /* audio functions */
+  123             
+  124             void  audio_play(unsigned short int far *p, int n)
+  125             {
+  126     1           return;
+  127     1       }
+  128             
+  129             void  audio_halt()
+  130             {
+  131     1           return;
+  132     1       }
+  133             
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   4
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 61
+                           update      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 62
+             0005  31C0            XOR     AX,AX
+             0007  5D              POP     BP
+             0008  5F              POP     DI
+             0009  5E              POP     SI
+             000A  C3              RET
+                                                   ; STATEMENT # 63
+                           update      ENDP
+                                                   ; STATEMENT # 70
+                           elapsed_time      PROC NEAR
+             000C  56              PUSH    SI
+             000D  57              PUSH    DI
+             000E  55              PUSH    BP
+             000F  8BEC            MOV     BP,SP
+                           @2:
+                                                   ; STATEMENT # 71
+             0011  31C0            XOR     AX,AX
+             0013  5D              POP     BP
+             0014  5F              POP     DI
+             0015  5E              POP     SI
+             0016  C3              RET
+                                                   ; STATEMENT # 72
+                           elapsed_time      ENDP
+                                                   ; STATEMENT # 79
+                           key_available      PROC NEAR
+             0018  56              PUSH    SI
+             0019  57              PUSH    DI
+             001A  55              PUSH    BP
+             001B  8BEC            MOV     BP,SP
+                           @3:
+                                                   ; STATEMENT # 80
+             001D  31C0            XOR     AX,AX
+             001F  5D              POP     BP
+             0020  5F              POP     DI
+             0021  5E              POP     SI
+             0022  C3              RET
+                                                   ; STATEMENT # 81
+                           key_available      ENDP
+                                                   ; STATEMENT # 84
+                           getkey      PROC NEAR
+             0024  56              PUSH    SI
+             0025  57              PUSH    DI
+             0026  55              PUSH    BP
+             0027  8BEC            MOV     BP,SP
+                           @4:
+                                                   ; STATEMENT # 85
+             0029  B80700          MOV     AX,7H
+             002C  5D              POP     BP
+             002D  5F              POP     DI
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   5
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             002E  5E              POP     SI
+             002F  C3              RET
+                                                   ; STATEMENT # 86
+                           getkey      ENDP
+                                                   ; STATEMENT # 93
+                           display_time      PROC NEAR
+             0030  56              PUSH    SI
+             0031  57              PUSH    DI
+             0032  55              PUSH    BP
+             0033  8BEC            MOV     BP,SP
+                           @5:
+                                                   ; STATEMENT # 94
+             0035  5D              POP     BP
+             0036  5F              POP     DI
+             0037  5E              POP     SI
+             0038  C3              RET
+                                                   ; STATEMENT # 95
+                           display_time      ENDP
+                                                   ; STATEMENT # 98
+                           display_status      PROC NEAR
+             003A  56              PUSH    SI
+             003B  57              PUSH    DI
+             003C  55              PUSH    BP
+             003D  8BEC            MOV     BP,SP
+                           @6:
+                                                   ; STATEMENT # 99
+             003F  5D              POP     BP
+             0040  5F              POP     DI
+             0041  5E              POP     SI
+             0042  C3              RET
+                                                   ; STATEMENT # 100
+                           display_status      ENDP
+                                                   ; STATEMENT # 103
+                           display_title      PROC NEAR
+             0044  56              PUSH    SI
+             0045  57              PUSH    DI
+             0046  55              PUSH    BP
+             0047  8BEC            MOV     BP,SP
+                           @7:
+                                                   ; STATEMENT # 104
+             0049  5D              POP     BP
+             004A  5F              POP     DI
+             004B  5E              POP     SI
+             004C  C3              RET
+                                                   ; STATEMENT # 105
+                           display_title      ENDP
+                                                   ; STATEMENT # 108
+                           display_artist      PROC NEAR
+             004E  56              PUSH    SI
+             004F  57              PUSH    DI
+             0050  55              PUSH    BP
+             0051  8BEC            MOV     BP,SP
+                           @8:
+                                                   ; STATEMENT # 109
+             0053  5D              POP     BP
+             0054  5F              POP     DI
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   6
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0055  5E              POP     SI
+             0056  C3              RET
+                                                   ; STATEMENT # 110
+                           display_artist      ENDP
+                                                   ; STATEMENT # 116
+                           get_blocks      PROC NEAR
+             0058  56              PUSH    SI
+             0059  57              PUSH    DI
+             005A  55              PUSH    BP
+             005B  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 117
+             005D  8B460C          MOV     AX,[BP].n
+             0060  5D              POP     BP
+             0061  5F              POP     DI
+             0062  5E              POP     SI
+             0063  C3              RET
+                                                   ; STATEMENT # 118
+                           get_blocks      ENDP
+                                                   ; STATEMENT # 125
+                           audio_play      PROC NEAR
+             0064  56              PUSH    SI
+             0065  57              PUSH    DI
+             0066  55              PUSH    BP
+             0067  8BEC            MOV     BP,SP
+                           @10:
+                                                   ; STATEMENT # 126
+             0069  5D              POP     BP
+             006A  5F              POP     DI
+             006B  5E              POP     SI
+             006C  C3              RET
+                                                   ; STATEMENT # 127
+                           audio_play      ENDP
+                                                   ; STATEMENT # 130
+                           audio_halt      PROC NEAR
+             006E  56              PUSH    SI
+             006F  57              PUSH    DI
+             0070  55              PUSH    BP
+             0071  8BEC            MOV     BP,SP
+                           @11:
+                                                   ; STATEMENT # 131
+             0073  5D              POP     BP
+             0074  5F              POP     DI
+             0075  5E              POP     SI
+             0076  C3              RET
+                                                   ; STATEMENT # 132
+                           audio_halt      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 0077H    119D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 000CH     12D
+iC-86  COMPILER   STUBFNCS                                                                   04/21/;6 17:34:32  PAGE   7
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

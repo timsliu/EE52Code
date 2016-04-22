@@ -1,0 +1,1088 @@
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE SIMIDE
+OBJECT MODULE PLACED IN SIMIDE.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                  SIMIDE                                  */
+    4             /*                         IDE Simulation Functions                         */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                 EE/CS 52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains a function for simulation an IDE hard drive for the MP3
+   12                Jukebox project.  This function can be used to test the software without a
+   13                physical hard drive being connected.  The functions included are:
+   14                   get_blocks - retrieve blocks of data from the simulated hard drive.
+   15             
+   16                The local functions included are:
+   17                   none
+   18             
+   19                The locally global variable definitions included are:
+   20                   none
+   21             
+   22             
+   23                Revision History
+   24                   6/7/00   Glen George       Initial revision.
+   25                   6/10/00  Glen George       Changed hex character constants to octal so
+   26                                              will compile under Intel C.
+   27                   6/2/02   Glen George       Fixed format for simulated index file, it was
+   28                                              inconsistent with current code.
+   29                   6/2/02   Glen George       Updated comments.
+   30                   5/11/03  Glen George       Fixed const-ness for character arrays so will
+   31                                              compile using rom model.
+   32                   6/5/03   Glen George       Updated function headers.
+   33                   5/13/05  Glen George       Updated the function to allow simulation for
+   34                                              version 2 of the code.
+   35                   4/29/06  Glen George       Made arrays of faked data be unsigned char.
+   36                   4/29/06  Glen George       Updated the function to match the new
+   37                                              specification for get_update() to use words
+   38                                              instead of bytes.
+   39                   3/20/13  Glen George       Updated the function to match the new code
+   40                                              that uses ID3 tags and FAT entries.
+   41             */
+   42             
+   43             
+   44             
+   45             /* library include files */
+   46               /* none */
+   47             
+   48             /* local include files */
+   49             #include  "mp3defs.h"
+   50             #include  "interfac.h"
+   51             
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   2
+
+
+   52             
+   53             
+   54             /* useful definitions */
+   55             #define  MAX_READ_SIZE   3      /* maximum number of blocks to read */
+   56             
+   57             #define  NO_ENTRIES      3      /* number of song entries */
+   58             
+   59             #define  BLOCK_LENGTH    8      /* number of words in the block number */
+   60             #define  CHAR_COUNT      26     /* number of characters to put in a block */
+   61             
+   62             
+   63             
+   64             
+   65             /*
+   66                get_blocks
+   67             
+   68                Description:      This function simulates the reading of blocks from an IDE
+   69                                  hard drive.  The data "read" is written to the memory
+   70                                  pointed to by the third argument.  The number of blocks
+   71                                  requested is given as the second argument.  If this value
+   72                                  is greater than the MAX_READ_SIZE, only MAX_READ_SIZE
+   73                                  blocks are read.  The starting block number to read is
+   74                                  passed as the first argument.  If this is between 0 and
+   75                                  NO_ENTRIES a fake track information block is returned.
+   76                                  Otherwise the block returned has the hex string for the
+   77                                  block number followed by a thru z and then all 0 values.
+   78                                  The function returns the number of blocks "read" (the
+   79                                  smaller of MAX_READ_SIZE and the second argument).
+   80             
+   81                Arguments:        block (unsigned long int)       - block number at which
+   82                                                                    to start the read.
+   83                                  length (int)                    - number of blocks to be
+   84                                                                    read.
+   85                                  dest (unsigned short int far *) - pointer to the memory
+   86                                                                    where the read data is
+   87                                                                    to be written.
+   88                Return Value:     The number of blocks actually written (for this code it
+   89                                  is always either the passed length or MAX_READ_SIZE).
+   90             
+   91                Input:            None.
+   92                Output:           None.
+   93             
+   94                Error Handling:   None.
+   95             
+   96                Algorithms:       None.
+   97                Data Structures:  None.
+   98             
+   99                Shared Variables: None.
+  100             
+  101                Author:           Glen George
+  102                Last Modified:    March 20, 2013
+  103             
+  104             */
+  105             
+  106             int  get_blocks(unsigned long int block, int length, unsigned short int far *dest)
+  107             {
+  108     1           /* variables */
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   3
+
+
+  109     1       
+  110     1           /* array containing the "fake" data for the boot sector */
+  111     1           static const unsigned char  boot_sector[] = {
+  112     1               0, 0, 0,                /* boot jump */
+  113     1               'F', 'a', 'k', 'e',     /* OEM name */
+  114     1               'B', 'o', 'o', 't',
+  115     1               0, 2,                   /* 512 bytes per sector */
+  116     1               64,                     /* sectors per allocation unit */
+  117     1               1, 0,                   /* 1 reserved sector */
+  118     1               2,                      /* 2 FATs */
+  119     1               0, 4,                   /* 1024 root directory entries */
+  120     1               0, 0,                   /* 0 sectors per logical volume */
+  121     1               0xF8,                   /* media type */
+  122     1               0, 1,                   /* 256 FAT sectors */
+  123     1               63, 0,                  /* 63 sectors per track */
+  124     1               255, 0,                 /* 255 heads */
+  125     1               63, 0, 0, 0,            /* 63 hidden sectors */
+  126     1               0x86, 0xFA, 0x3F, 0,    /* 4192902 sectors in the volume */
+  127     1               0x80,                   /* drive number 0x80 */
+  128     1               0,                      /* reserved byte */
+  129     1               0x29,                   /* extended boot record signature */
+  130     1               1, 2, 3, 4              /* volume ID */
+  131     1           };
+  132     1       
+  133     1           /* array containing the "fake" data for the first FAT sector */
+  134     1           static const unsigned char  FAT_sector[] = {
+  135     1               0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x04, 0x00, /* cluster 0 - 3 */
+  136     1               0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00,
+  137     1               0x09, 0x00, 0x0A, 0x00, 0x0B, 0x00, 0x0C, 0x00,
+  138     1               0x0D, 0x00, 0x0E, 0x00, 0x0F, 0x00, 0x10, 0x00,
+  139     1               0x11, 0x00, 0x12, 0x00, 0x13, 0x00, 0x14, 0x00, /* cluster 16 - 19 */
+  140     1               0x15, 0x00, 0x16, 0x00, 0x17, 0x00, 0x18, 0x00,
+  141     1               0x19, 0x00, 0x1A, 0x00, 0x1B, 0x00, 0x1C, 0x00,
+  142     1               0x1D, 0x00, 0x1E, 0x00, 0x1F, 0x00, 0x20, 0x00,
+  143     1               0x21, 0x00, 0x22, 0x00, 0xFF, 0xFF, 0x00, 0x00, /* cluster 32 - 35 */
+  144     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  145     1               0x29, 0x00, 0x30, 0x00, 0x00, 0x00, 0x2C, 0x00,
+  146     1               0x2D, 0x00, 0x2E, 0x00, 0x2F, 0x00, 0x68, 0x00,
+  147     1               0x31, 0x00, 0x32, 0x00, 0x34, 0x00, 0x00, 0x00, /* cluster 48 - 51 */
+  148     1               0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  149     1               0x39, 0x00, 0x3A, 0x00, 0x3B, 0x00, 0x3C, 0x00,
+  150     1               0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  151     1               0x41, 0x00, 0x42, 0x00, 0x43, 0x00, 0x44, 0x00, /* cluster 64 - 67 */
+  152     1               0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  153     1               0x49, 0x00, 0x4A, 0x00, 0x4B, 0x00, 0x4C, 0x00,
+  154     1               0x4D, 0x00, 0x4E, 0x00, 0x71, 0x00, 0x00, 0x00,
+  155     1               0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* cluster 80 - 83 */
+  156     1               0x55, 0x00, 0x56, 0x00, 0x57, 0x00, 0x58, 0x00,
+  157     1               0x59, 0x00, 0x5A, 0x00, 0x48, 0x00, 0x00, 0x00,
+  158     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  159     1               0x61, 0x00, 0x62, 0x00, 0xFF, 0xFF, 0x00, 0x00, /* cluster 96 - 99 */
+  160     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  161     1               0x69, 0x00, 0x6A, 0x00, 0x6B, 0x00, 0x6D, 0x00,
+  162     1               0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
+  163     1               0x54, 0x00, 0x72, 0x00, 0x73, 0x00, 0x74, 0x00, /* cluster 112 - 115 */
+  164     1               0x75, 0x00, 0x2B, 0x00, 0x00, 0x00, 0x00, 0x00,
+  165     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   4
+
+
+  166     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  167     1           };
+  168     1       
+  169     1           /* array containing the "fake" data for the first directory sector */
+  170     1           static const unsigned char  dir_sector[] = {
+  171     1               0x42, 0x65, 0x00, 0x65, 0x00, 0x6E, 0x00, 0x20,     /* first song */
+  172     1               0x00, 0x44, 0x00, 0x0F, 0x00, 0xA2, 0x61, 0x00,
+  173     1               0x79, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  174     1               0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  175     1               0x01, 0x50, 0x00, 0x61, 0x00, 0x6E, 0x00, 0x69,
+  176     1               0x00, 0x63, 0x00, 0x0F, 0x00, 0xA2, 0x20, 0x00,
+  177     1               0x53, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x67, 0x00,
+  178     1               0x7F, 0x00, 0x00, 0x00, 0x47, 0x00, 0x72, 0x00,
+  179     1               0x50, 0x41, 0x4E, 0x49, 0x43, 0x53, 0x4F, 0x4E,
+  180     1               0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0x62, 0x00,
+  181     1               0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0x62, 0x00,
+  182     1               0xAD, 0x32, 0x02, 0x00, 0x62, 0x00, 0x10, 0x00,
+  183     1               0x42, 0x20, 0x00, 0x44, 0x00, 0x6F, 0x00, 0x75,     /* second song */
+  184     1               0x00, 0x62, 0x00, 0x0F, 0x00, 0xCB, 0x74, 0x00,
+  185     1               0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  186     1               0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  187     1               0x01, 0x53, 0x00, 0x70, 0x00, 0x69, 0x00, 0x64,
+  188     1               0x00, 0x65, 0x00, 0x0F, 0x00, 0xCB, 0x72, 0x00,
+  189     1               0x77, 0x00, 0x65, 0x00, 0x62, 0x00, 0x73, 0x00,
+  190     1               0x7F, 0x00, 0x00, 0x00, 0x4E, 0x00, 0x6F, 0x00,
+  191     1               0x53, 0x50, 0x49, 0x44, 0x45, 0x52, 0x57, 0x45,
+  192     1               0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0x8D, 0x00,
+  193     1               0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0x8D, 0x00,
+  194     1               0xAD, 0x32, 0x28, 0x00, 0x00, 0x00, 0x0A, 0x00,
+  195     1               0x43, 0x6B, 0x00, 0x20, 0x00, 0x31, 0x00, 0x38,     /* third song */
+  196     1               0x00, 0x32, 0x00, 0x0F, 0x00, 0x38, 0x00, 0x00,
+  197     1               0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  198     1               0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  199     1               0x02, 0x20, 0x00, 0x43, 0x00, 0x6F, 0x00, 0x6C,
+  200     1               0x00, 0x6C, 0x00, 0x0F, 0x00, 0x38, 0x65, 0x00,
+  201     1               0x67, 0x00, 0x65, 0x00, 0x7F, 0x00, 0x42, 0x00,
+  202     1               0x6C, 0x00, 0x00, 0x00, 0x69, 0x00, 0x6E, 0x00,
+  203     1               0x01, 0x47, 0x00, 0x6F, 0x00, 0x69, 0x00, 0x6E,
+  204     1               0x00, 0x67, 0x00, 0x0F, 0x00, 0x38, 0x20, 0x00,
+  205     1               0x41, 0x00, 0x77, 0x00, 0x61, 0x00, 0x79, 0x00,
+  206     1               0x20, 0x00, 0x00, 0x00, 0x74, 0x00, 0x6F, 0x00,
+  207     1               0x47, 0x4F, 0x49, 0x4E, 0x47, 0x41, 0x57, 0x41,
+  208     1               0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0xA3, 0x00,
+  209     1               0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0xA3, 0x00,
+  210     1               0xAD, 0x32, 0x70, 0x00, 0x7F, 0x80, 0x0E, 0x00
+  211     1           };
+  212     1       
+  213     1       
+  214     1           /* arrays containing the "fake" ID3 tag information for each song */
+  215     1           static const unsigned char  ID3_tags[][128] = {
+  216     1               "TAG"                                           /* song 1 */
+  217     1               "Panic Song\0                   "
+  218     1               "Green Day\0                    "
+  219     1               "                              "
+  220     1               "    "
+  221     1               "                        \0\x40\x42\x79\0\0\0",
+  222     1               "TAG"                                           /* song 2 */
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   5
+
+
+  223     1               "Spiderwebs\0                   "
+  224     1               "No Doubt\0                     "
+  225     1               "                              "
+  226     1               "    "
+  227     1               "                        \0\x40\x44\x4C\0\0\0",
+  228     1               "TAG"                                           /* song 3 */
+  229     1               "Going Away to College\0        "
+  230     1               "Blink-182\0                    "
+  231     1               "                              "
+  232     1               "    "
+  233     1               "                        \0\x40\x44\x73\0\0\0"
+  234     1           };
+  235     1       
+  236     1       
+  237     1           int  no_blocks;             /* number of blocks to "read" */
+  238     1       
+  239     1           int  digit;                 /* a hex digit to output */
+  240     1       
+  241     1           int  i;                     /* general loop indices */
+  242     1           int  j;
+  243     1           int  k;
+  244     1       
+  245     1       
+  246     1       
+  247     1           /* first figure how many blocks to transfer */
+  248     1           if (length > MAX_READ_SIZE)
+  249     1               /* too many requested, only "read" MAX_READ_SIZE */
+  250     1               no_blocks = MAX_READ_SIZE;
+  251     1           else
+  252     1               /* can "read" all the requested blocks */
+  253     1               no_blocks = length;
+  254     1       
+  255     1       
+  256     1           /* fill the blocks */
+  257     1           for (i = 0; i < no_blocks; i++)  {
+  258     2       
+  259     2               /* check the block number to figure out what to transfer */
+  260     2               if ((block + i) == 0)  {
+  261     3       
+  262     3                   /* trying to read the master boot record, mostly it is 0 */
+  263     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)
+  264     3                       dest[j] = 0;
+  265     3       
+  266     3                   /* set the start of the first partition */
+  267     3                   dest[227] = 64;
+  268     3                   /* set the partition type */
+  269     3                   dest[225] = 6;
+  270     3               }
+  271     2               else if ((block + i) == 64)  {
+  272     3       
+  273     3                   /* trying to read the boot sector, transfer fake boot sector */
+  274     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  275     4                       /* information or boot code */
+  276     4                       if (j < (sizeof(boot_sector) / 2))
+  277     4                           /* still boot sector information - copy it */
+  278     4                           *dest++ = boot_sector[2 * j] | (boot_sector[2 * j + 1] << 8);
+  279     4                       else
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   6
+
+
+  280     4                           /* now in the boot code part of the sector - just zero it */
+  281     4                           *dest++ = 0;
+  282     4                   }
+  283     3               }
+  284     2               else if ((block + i) == 65)  {
+  285     3       
+  286     3                   /* trying to read first sector of FAT - fill the block */
+  287     3                   /* transfer the fake FAT sector */
+  288     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  289     4                       /* does the fake data exist? */
+  290     4                       if (j < (sizeof(FAT_sector) / 2))
+  291     4                           /* still FAT sector information - copy it */
+  292     4                           *dest++ = FAT_sector[2 * j] | (FAT_sector[2 * j + 1] << 8);
+  293     4                       else
+  294     4                           /* unused part of FAT sector - zero it */
+  295     4                           *dest++ = 0;
+  296     4                   }
+  297     3               }
+  298     2               else if ((block + i) == 577)  {
+  299     3       
+  300     3                   /* trying to read directory information - fill the block */
+  301     3                   /* transfer the fake directory sector */
+  302     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  303     4                       /* does the fake data exist? */
+  304     4                       if (j < (sizeof(dir_sector) / 2))
+  305     4                           /* still directory sector information - copy it */
+  306     4                           *dest++ = dir_sector[2 * j] | (dir_sector[2 * j + 1] << 8);
+  307     4                       else
+  308     4                           /* unused part of directory sector - zero it */
+  309     4                           *dest++ = 0;
+  310     4                   }
+  311     3               }
+  312     2               else if ((block + i) == (34 - 2) * 64 - 1 + 641)  {
+  313     3       
+  314     3                   /* beginning of ID3 tag for song 1 */
+  315     3                   /* transfer the fake sector */
+  316     3                   for (j = 0, k = 0; j < IDE_BLOCK_SIZE; j++)  {
+  317     4                       /* does the fake data exist? */
+  318     4                       if (j < (IDE_BLOCK_SIZE - 15))  {
+  319     5                           /* not in ID3 tag - zero it */
+  320     5                           dest[j] = 0;
+  321     5                       }
+  322     4                       else  {
+  323     5                           /* in the ID3 tag - copy it */
+  324     5                           dest[j] = ID3_tags[0][k] | (ID3_tags[0][k + 1] << 8);
+  325     5                           /* move forward two bytes */
+  326     5                           k += 2;
+  327     5                       }
+  328     4                   }
+  329     3               }
+  330     2               else if ((block + i) == (34 - 2) * 64 + 641)  {
+  331     3       
+  332     3                   /* ending of ID3 tag for song 1 */
+  333     3                   /* transfer the fake sector */
+  334     3                   for (j = 0, k = 30; j < IDE_BLOCK_SIZE; j++, k += 2)  {
+  335     4                       /* does the fake data exist? */
+  336     4                       if (k >= 128)
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   7
+
+
+  337     4                           /* not in ID3 tag - zero it */
+  338     4                           dest[j] = 0;
+  339     4                       else
+  340     4                           /* in the ID3 tag - copy it */
+  341     4                           dest[j] = ID3_tags[0][k] | (ID3_tags[0][k + 1] << 8);
+  342     4                   }
+  343     3               }
+  344     2               else if ((block + i) == (98 - 2) * 64 + 63 + 641)  {
+  345     3       
+  346     3                   /* complete ID3 tag for song 2 */
+  347     3                   /* transfer the fake sector */
+  348     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  349     4                       /* does the fake data exist? */
+  350     4                       if (j < (IDE_BLOCK_SIZE - 64))
+  351     4                           /* not in ID3 tag - zero it */
+  352     4                           dest[j] = 0;
+  353     4                       else
+  354     4                           /* in the ID3 tag - copy it */
+  355     4                           dest[j] = ID3_tags[1][2 * (j - IDE_BLOCK_SIZE + 64)] |
+  356     4                                     (ID3_tags[1][2 * (j - IDE_BLOCK_SIZE + 64) + 1] << 8);
+  357     4                   }
+  358     3               }
+  359     2               else if ((block + i) == (107 - 2) * 64 + 63 + 641)  {
+  360     3       
+  361     3                   /* beginning of ID3 tag for song 3 */
+  362     3                   /* transfer the fake sector */
+  363     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)
+  364     3                       /* fill sector with 0's */
+  365     3                       dest[j] = 0;
+  366     3       
+  367     3                   /* now set the last byte to start of the ID3 tag */
+  368     3                   dest[IDE_BLOCK_SIZE - 1] = ID3_tags[2][0] << 8;
+  369     3               }
+  370     2               else if ((block + i) == (109 - 2) * 64 + 641)  {
+  371     3       
+  372     3                   /* end of ID3 tag for song 3 */
+  373     3                   /* transfer the fake sector */
+  374     3                   for (j = 0, k = 1; j < IDE_BLOCK_SIZE; j++, k+= 2)  {
+  375     4                       /* check if want ID3 tag or past it */
+  376     4                       if (k == 127)
+  377     4                           /* fill sector with ID3 tag */
+  378     4                           dest[j] = ID3_tags[2][k];
+  379     4                       else if (k < 128)
+  380     4                           /* fill sector with ID3 tag */
+  381     4                           dest[j] = ID3_tags[2][k] | (ID3_tags[2][k + 1] << 8);
+  382     4                       else
+  383     4                           /* fill rest if sector with 0's */
+  384     4                           dest[j] = 0;
+  385     4                   }
+  386     3               }
+  387     2               else  {
+  388     3       
+  389     3                   /* trying to read general blocks - fill the blocks */
+  390     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  391     4       
+  392     4                       /* figure out what to output */
+  393     4                       if (j < BLOCK_LENGTH)  {
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   8
+
+
+  394     5       
+  395     5                           /* output the block number in the first words */
+  396     5                           /* get this digit of the block number */
+  397     5                           digit = (((block + i) >> (4 * i)) & 0x00000000FL);
+  398     5       
+  399     5                           /* and output it while converting to a hex digit */
+  400     5                           if (digit < 10)
+  401     5                               *dest++ = digit + '0';
+  402     5                           else
+  403     5                               *dest++ = digit + 'A';
+  404     5                       }
+  405     4                       else if (j < (BLOCK_LENGTH + CHAR_COUNT))  {
+  406     5       
+  407     5                           /* output a-z in the next bytes */
+  408     5                           *dest++ = 'a' + (j - BLOCK_LENGTH);
+  409     5                       }
+  410     4                       else  {
+  411     5       
+  412     5                           /* rest of the block is 0 */
+  413     5                           *dest++ = 0;
+  414     5                       }
+  415     4                   }
+  416     3               }
+  417     2           }
+  418     1       
+  419     1       
+  420     1           /* all done - return the number of blocks actually transferred */
+  421     1           return  no_blocks;
+  422     1       
+  423     1       }
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE   9
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 107
+                           get_blocks      PROC NEAR
+             03EC  56              PUSH    SI
+             03ED  57              PUSH    DI
+             03EE  C80A0000        ENTER   0AH,0H
+                           @1:
+                                                   ; STATEMENT # 248
+             03F2  817E0C0300      CMP     [BP].length,3H
+             03F7  7F03            JG      $+5H
+             03F9  E90800          JMP     @2
+                                                   ; STATEMENT # 250
+             03FC  C746FE0300      MOV     [BP].no_blocks,3H
+                                                   ; STATEMENT # 251
+             0401  E90600          JMP     @3
+                           @2:
+                                                   ; STATEMENT # 253
+             0404  8B460C          MOV     AX,[BP].length
+             0407  8946FE          MOV     [BP].no_blocks,AX
+                           @3:
+                                                   ; STATEMENT # 257
+             040A  C746FA0000      MOV     [BP].i,0H
+             040F  E90300          JMP     @6
+                           @4:
+             0412  FF46FA          INC     [BP].i
+                           @6:
+             0415  8B46FA          MOV     AX,[BP].i
+             0418  3946FE          CMP     [BP].no_blocks,AX
+             041B  7F03            JG      $+5H
+             041D  E9A004          JMP     @5
+                                                   ; STATEMENT # 260
+             0420  99              CWD
+             0421  034608          ADD     AX,[BP].block
+             0424  13560A          ADC     DX,[BP].block+2H
+             0427  09D2            OR      DX,DX
+             0429  7504            JNZ     $+6H
+             042B  81F80000        CMP     AX,0H
+             042F  7403            JZ      $+5H
+             0431  E93B00          JMP     @7
+                                                   ; STATEMENT # 263
+             0434  C746F80000      MOV     [BP].j,0H
+             0439  E90300          JMP     @10
+                           @8:
+             043C  FF46F8          INC     [BP].j
+                           @10:
+             043F  8B5EF8          MOV     BX,[BP].j
+             0442  81FB0001        CMP     BX,100H
+             0446  7C03            JL      $+5H
+             0448  E90D00          JMP     @9
+                                                   ; STATEMENT # 264
+             044B  D1E3            SAL     BX,1
+             044D  C4760E          LES     SI,[BP].dest
+             0450  26C7000000      MOV     ES:[BX].[SI],0H
+             0455  E9E4FF          JMP     @8
+                           @9:
+                                                   ; STATEMENT # 267
+             0458  C45E0E          LES     BX,[BP].dest
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  10
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             045B  26C787C6014000  MOV     ES:[BX+1C6H],40H
+                                                   ; STATEMENT # 269
+             0462  C45E0E          LES     BX,[BP].dest
+             0465  26C787C2010600  MOV     ES:[BX+1C2H],6H
+                                                   ; STATEMENT # 271
+             046C  E94E04          JMP     @11
+                           @7:
+             046F  8B46FA          MOV     AX,[BP].i
+             0472  99              CWD
+             0473  034608          ADD     AX,[BP].block
+             0476  13560A          ADC     DX,[BP].block+2H
+             0479  09D2            OR      DX,DX
+             047B  7504            JNZ     $+6H
+             047D  81F84000        CMP     AX,40H
+             0481  7403            JZ      $+5H
+             0483  E95B00          JMP     @12
+                                                   ; STATEMENT # 274
+             0486  C746F80000      MOV     [BP].j,0H
+             048B  E90300          JMP     @15
+                           @13:
+             048E  FF46F8          INC     [BP].j
+                           @15:
+             0491  8B5EF8          MOV     BX,[BP].j
+             0494  81FB0001        CMP     BX,100H
+             0498  7C03            JL      $+5H
+             049A  E94100          JMP     @14
+                                                   ; STATEMENT # 276
+             049D  81FB1500        CMP     BX,15H
+             04A1  7203            JB      $+5H
+             04A3  E92600          JMP     @16
+                                                   ; STATEMENT # 278
+             04A6  D1E3            SAL     BX,1
+             04A8  53              PUSH    BX      ; 1
+             04A9  43              INC     BX
+             04AA  2E8A870000      MOV     AL,CS:boot_sector[BX]
+             04AF  B400            MOV     AH,0H
+             04B1  C1E008          SAL     AX,8H
+             04B4  5B              POP     BX      ; 1
+             04B5  2E8A8F0000      MOV     CL,CS:boot_sector[BX]
+             04BA  B500            MOV     CH,0H
+             04BC  0BC1            OR      AX,CX
+             04BE  C47E0E          LES     DI,[BP].dest
+             04C1  81460E0200      ADD     [BP].dest,2H
+             04C6  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 279
+             04C9  E90F00          JMP     @17
+                           @16:
+                                                   ; STATEMENT # 281
+             04CC  C4460E          LES     AX,[BP].dest
+             04CF  81460E0200      ADD     [BP].dest,2H
+             04D4  8BD8            MOV     BX,AX
+             04D6  26C7070000      MOV     ES:[BX],0H
+                           @17:
+                                                   ; STATEMENT # 282
+             04DB  E9B0FF          JMP     @13
+                           @14:
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  11
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 284
+             04DE  E9DC03          JMP     @18
+                           @12:
+             04E1  8B46FA          MOV     AX,[BP].i
+             04E4  99              CWD
+             04E5  034608          ADD     AX,[BP].block
+             04E8  13560A          ADC     DX,[BP].block+2H
+             04EB  09D2            OR      DX,DX
+             04ED  7504            JNZ     $+6H
+             04EF  81F84100        CMP     AX,41H
+             04F3  7403            JZ      $+5H
+             04F5  E95B00          JMP     @19
+                                                   ; STATEMENT # 288
+             04F8  C746F80000      MOV     [BP].j,0H
+             04FD  E90300          JMP     @22
+                           @20:
+             0500  FF46F8          INC     [BP].j
+                           @22:
+             0503  8B5EF8          MOV     BX,[BP].j
+             0506  81FB0001        CMP     BX,100H
+             050A  7C03            JL      $+5H
+             050C  E94100          JMP     @21
+                                                   ; STATEMENT # 290
+             050F  81FB8000        CMP     BX,80H
+             0513  7203            JB      $+5H
+             0515  E92600          JMP     @23
+                                                   ; STATEMENT # 292
+             0518  D1E3            SAL     BX,1
+             051A  53              PUSH    BX      ; 1
+             051B  43              INC     BX
+             051C  2E8A872B00      MOV     AL,CS:FAT_sector[BX]
+             0521  B400            MOV     AH,0H
+             0523  C1E008          SAL     AX,8H
+             0526  5B              POP     BX      ; 1
+             0527  2E8A8F2B00      MOV     CL,CS:FAT_sector[BX]
+             052C  B500            MOV     CH,0H
+             052E  0BC1            OR      AX,CX
+             0530  C47E0E          LES     DI,[BP].dest
+             0533  81460E0200      ADD     [BP].dest,2H
+             0538  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 293
+             053B  E90F00          JMP     @24
+                           @23:
+                                                   ; STATEMENT # 295
+             053E  C4460E          LES     AX,[BP].dest
+             0541  81460E0200      ADD     [BP].dest,2H
+             0546  8BD8            MOV     BX,AX
+             0548  26C7070000      MOV     ES:[BX],0H
+                           @24:
+                                                   ; STATEMENT # 296
+             054D  E9B0FF          JMP     @20
+                           @21:
+                                                   ; STATEMENT # 298
+             0550  E96A03          JMP     @25
+                           @19:
+             0553  8B46FA          MOV     AX,[BP].i
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  12
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0556  99              CWD
+             0557  034608          ADD     AX,[BP].block
+             055A  13560A          ADC     DX,[BP].block+2H
+             055D  09D2            OR      DX,DX
+             055F  7504            JNZ     $+6H
+             0561  81F84102        CMP     AX,241H
+             0565  7403            JZ      $+5H
+             0567  E95B00          JMP     @26
+                                                   ; STATEMENT # 302
+             056A  C746F80000      MOV     [BP].j,0H
+             056F  E90300          JMP     @29
+                           @27:
+             0572  FF46F8          INC     [BP].j
+                           @29:
+             0575  8B5EF8          MOV     BX,[BP].j
+             0578  81FB0001        CMP     BX,100H
+             057C  7C03            JL      $+5H
+             057E  E94100          JMP     @28
+                                                   ; STATEMENT # 304
+             0581  81FBA000        CMP     BX,0A0H
+             0585  7203            JB      $+5H
+             0587  E92600          JMP     @30
+                                                   ; STATEMENT # 306
+             058A  D1E3            SAL     BX,1
+             058C  53              PUSH    BX      ; 1
+             058D  43              INC     BX
+             058E  2E8A872B01      MOV     AL,CS:dir_sector[BX]
+             0593  B400            MOV     AH,0H
+             0595  C1E008          SAL     AX,8H
+             0598  5B              POP     BX      ; 1
+             0599  2E8A8F2B01      MOV     CL,CS:dir_sector[BX]
+             059E  B500            MOV     CH,0H
+             05A0  0BC1            OR      AX,CX
+             05A2  C47E0E          LES     DI,[BP].dest
+             05A5  81460E0200      ADD     [BP].dest,2H
+             05AA  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 307
+             05AD  E90F00          JMP     @31
+                           @30:
+                                                   ; STATEMENT # 309
+             05B0  C4460E          LES     AX,[BP].dest
+             05B3  81460E0200      ADD     [BP].dest,2H
+             05B8  8BD8            MOV     BX,AX
+             05BA  26C7070000      MOV     ES:[BX],0H
+                           @31:
+                                                   ; STATEMENT # 310
+             05BF  E9B0FF          JMP     @27
+                           @28:
+                                                   ; STATEMENT # 312
+             05C2  E9F802          JMP     @32
+                           @26:
+             05C5  8B46FA          MOV     AX,[BP].i
+             05C8  99              CWD
+             05C9  034608          ADD     AX,[BP].block
+             05CC  13560A          ADC     DX,[BP].block+2H
+             05CF  09D2            OR      DX,DX
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  13
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             05D1  7504            JNZ     $+6H
+             05D3  81F8800A        CMP     AX,0A80H
+             05D7  7403            JZ      $+5H
+             05D9  E96100          JMP     @33
+                                                   ; STATEMENT # 316
+             05DC  C746F80000      MOV     [BP].j,0H
+             05E1  C746F60000      MOV     [BP].k,0H
+             05E6  E90300          JMP     @36
+                           @34:
+             05E9  FF46F8          INC     [BP].j
+                           @36:
+             05EC  8B5EF8          MOV     BX,[BP].j
+             05EF  81FB0001        CMP     BX,100H
+             05F3  7C03            JL      $+5H
+             05F5  E94200          JMP     @35
+                                                   ; STATEMENT # 318
+             05F8  81FBF100        CMP     BX,0F1H
+             05FC  7C03            JL      $+5H
+             05FE  E90D00          JMP     @37
+                                                   ; STATEMENT # 320
+             0601  D1E3            SAL     BX,1
+             0603  C4760E          LES     SI,[BP].dest
+             0606  26C7000000      MOV     ES:[BX].[SI],0H
+                                                   ; STATEMENT # 322
+             060B  E92900          JMP     @38
+                           @37:
+                                                   ; STATEMENT # 324
+             060E  8B5EF6          MOV     BX,[BP].k
+             0611  53              PUSH    BX      ; 1
+             0612  43              INC     BX
+             0613  2E8A876B02      MOV     AL,CS:ID3_tags[BX]
+             0618  B400            MOV     AH,0H
+             061A  C1E008          SAL     AX,8H
+             061D  5B              POP     BX      ; 1
+             061E  2E8A8F6B02      MOV     CL,CS:ID3_tags[BX]
+             0623  B500            MOV     CH,0H
+             0625  0BC1            OR      AX,CX
+             0627  8B5EF8          MOV     BX,[BP].j
+             062A  D1E3            SAL     BX,1
+             062C  C4760E          LES     SI,[BP].dest
+             062F  268900          MOV     ES:[BX].[SI],AX
+                                                   ; STATEMENT # 326
+             0632  8146F60200      ADD     [BP].k,2H
+                                                   ; STATEMENT # 327
+                           @38:
+                                                   ; STATEMENT # 328
+             0637  E9AFFF          JMP     @34
+                           @35:
+                                                   ; STATEMENT # 330
+             063A  E98002          JMP     @39
+                           @33:
+             063D  8B46FA          MOV     AX,[BP].i
+             0640  99              CWD
+             0641  034608          ADD     AX,[BP].block
+             0644  13560A          ADC     DX,[BP].block+2H
+             0647  09D2            OR      DX,DX
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  14
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0649  7504            JNZ     $+6H
+             064B  81F8810A        CMP     AX,0A81H
+             064F  7403            JZ      $+5H
+             0651  E96200          JMP     @40
+                                                   ; STATEMENT # 334
+             0654  C746F80000      MOV     [BP].j,0H
+             0659  C746F61E00      MOV     [BP].k,1EH
+             065E  E90800          JMP     @43
+                           @41:
+             0661  FF46F8          INC     [BP].j
+             0664  8146F60200      ADD     [BP].k,2H
+                           @43:
+             0669  8B5EF8          MOV     BX,[BP].j
+             066C  81FB0001        CMP     BX,100H
+             0670  7C03            JL      $+5H
+             0672  E93E00          JMP     @42
+                                                   ; STATEMENT # 336
+             0675  817EF68000      CMP     [BP].k,80H
+             067A  7D03            JGE     $+5H
+             067C  E90D00          JMP     @44
+                                                   ; STATEMENT # 338
+             067F  D1E3            SAL     BX,1
+             0681  C4760E          LES     SI,[BP].dest
+             0684  26C7000000      MOV     ES:[BX].[SI],0H
+                                                   ; STATEMENT # 339
+             0689  E92400          JMP     @45
+                           @44:
+                                                   ; STATEMENT # 341
+             068C  8B5EF6          MOV     BX,[BP].k
+             068F  53              PUSH    BX      ; 1
+             0690  43              INC     BX
+             0691  2E8A876B02      MOV     AL,CS:ID3_tags[BX]
+             0696  B400            MOV     AH,0H
+             0698  C1E008          SAL     AX,8H
+             069B  5B              POP     BX      ; 1
+             069C  2E8A8F6B02      MOV     CL,CS:ID3_tags[BX]
+             06A1  B500            MOV     CH,0H
+             06A3  0BC1            OR      AX,CX
+             06A5  8B5EF8          MOV     BX,[BP].j
+             06A8  D1E3            SAL     BX,1
+             06AA  C4760E          LES     SI,[BP].dest
+             06AD  268900          MOV     ES:[BX].[SI],AX
+                           @45:
+                                                   ; STATEMENT # 342
+             06B0  E9AEFF          JMP     @41
+                           @42:
+                                                   ; STATEMENT # 344
+             06B3  E90702          JMP     @46
+                           @40:
+             06B6  8B46FA          MOV     AX,[BP].i
+             06B9  99              CWD
+             06BA  034608          ADD     AX,[BP].block
+             06BD  13560A          ADC     DX,[BP].block+2H
+             06C0  09D2            OR      DX,DX
+             06C2  7504            JNZ     $+6H
+             06C4  81F8C01A        CMP     AX,1AC0H
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  15
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             06C8  7403            JZ      $+5H
+             06CA  E96100          JMP     @47
+                                                   ; STATEMENT # 348
+             06CD  C746F80000      MOV     [BP].j,0H
+             06D2  E90300          JMP     @50
+                           @48:
+             06D5  FF46F8          INC     [BP].j
+                           @50:
+             06D8  8B5EF8          MOV     BX,[BP].j
+             06DB  81FB0001        CMP     BX,100H
+             06DF  7C03            JL      $+5H
+             06E1  E94700          JMP     @49
+                                                   ; STATEMENT # 350
+             06E4  81FBC000        CMP     BX,0C0H
+             06E8  7C03            JL      $+5H
+             06EA  E90D00          JMP     @51
+                                                   ; STATEMENT # 352
+             06ED  D1E3            SAL     BX,1
+             06EF  C4760E          LES     SI,[BP].dest
+             06F2  26C7000000      MOV     ES:[BX].[SI],0H
+                                                   ; STATEMENT # 353
+             06F7  E92E00          JMP     @52
+                           @51:
+                                                   ; STATEMENT # 356
+             06FA  8B5EF8          MOV     BX,[BP].j
+             06FD  81EB0001        SUB     BX,100H
+             0701  81C34000        ADD     BX,40H
+             0705  D1E3            SAL     BX,1
+             0707  53              PUSH    BX      ; 1
+             0708  43              INC     BX
+             0709  2E8A87EB02      MOV     AL,CS:ID3_tags[BX+80H]
+             070E  B400            MOV     AH,0H
+             0710  C1E008          SAL     AX,8H
+             0713  5B              POP     BX      ; 1
+             0714  2E8A8FEB02      MOV     CL,CS:ID3_tags[BX+80H]
+             0719  B500            MOV     CH,0H
+             071B  0BC1            OR      AX,CX
+             071D  8B5EF8          MOV     BX,[BP].j
+             0720  D1E3            SAL     BX,1
+             0722  C4760E          LES     SI,[BP].dest
+             0725  268900          MOV     ES:[BX].[SI],AX
+                           @52:
+                                                   ; STATEMENT # 357
+             0728  E9AAFF          JMP     @48
+                           @49:
+                                                   ; STATEMENT # 359
+             072B  E98F01          JMP     @53
+                           @47:
+             072E  8B46FA          MOV     AX,[BP].i
+             0731  99              CWD
+             0732  034608          ADD     AX,[BP].block
+             0735  13560A          ADC     DX,[BP].block+2H
+             0738  09D2            OR      DX,DX
+             073A  7504            JNZ     $+6H
+             073C  81F8001D        CMP     AX,1D00H
+             0740  7403            JZ      $+5H
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  16
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0742  E93900          JMP     @54
+                                                   ; STATEMENT # 363
+             0745  C746F80000      MOV     [BP].j,0H
+             074A  E90300          JMP     @57
+                           @55:
+             074D  FF46F8          INC     [BP].j
+                           @57:
+             0750  8B5EF8          MOV     BX,[BP].j
+             0753  81FB0001        CMP     BX,100H
+             0757  7C03            JL      $+5H
+             0759  E90D00          JMP     @56
+                                                   ; STATEMENT # 365
+             075C  D1E3            SAL     BX,1
+             075E  C4760E          LES     SI,[BP].dest
+             0761  26C7000000      MOV     ES:[BX].[SI],0H
+             0766  E9E4FF          JMP     @55
+                           @56:
+                                                   ; STATEMENT # 368
+             0769  2E8A066B03      MOV     AL,CS:ID3_tags+100H
+             076E  B400            MOV     AH,0H
+             0770  C1E008          SAL     AX,8H
+             0773  C45E0E          LES     BX,[BP].dest
+             0776  268987FE01      MOV     ES:[BX+1FEH],AX
+                                                   ; STATEMENT # 370
+             077B  E93F01          JMP     @58
+                           @54:
+             077E  8B46FA          MOV     AX,[BP].i
+             0781  99              CWD
+             0782  034608          ADD     AX,[BP].block
+             0785  13560A          ADC     DX,[BP].block+2H
+             0788  09D2            OR      DX,DX
+             078A  7504            JNZ     $+6H
+             078C  81F8411D        CMP     AX,1D41H
+             0790  7403            JZ      $+5H
+             0792  E98300          JMP     @59
+                                                   ; STATEMENT # 374
+             0795  C746F80000      MOV     [BP].j,0H
+             079A  C746F60100      MOV     [BP].k,1H
+             079F  E90800          JMP     @62
+                           @60:
+             07A2  FF46F8          INC     [BP].j
+             07A5  8146F60200      ADD     [BP].k,2H
+                           @62:
+             07AA  8B5EF8          MOV     BX,[BP].j
+             07AD  81FB0001        CMP     BX,100H
+             07B1  7C03            JL      $+5H
+             07B3  E95F00          JMP     @61
+                                                   ; STATEMENT # 376
+             07B6  8B76F6          MOV     SI,[BP].k
+             07B9  81FE7F00        CMP     SI,7FH
+             07BD  7403            JZ      $+5H
+             07BF  E91200          JMP     @63
+                                                   ; STATEMENT # 378
+             07C2  D1E3            SAL     BX,1
+             07C4  2E8A846B03      MOV     AL,CS:ID3_tags[SI+100H]
+             07C9  B400            MOV     AH,0H
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  17
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             07CB  C4760E          LES     SI,[BP].dest
+             07CE  268900          MOV     ES:[BX].[SI],AX
+                                                   ; STATEMENT # 379
+             07D1  E93E00          JMP     @64
+                           @63:
+             07D4  8B5EF6          MOV     BX,[BP].k
+             07D7  81FB8000        CMP     BX,80H
+             07DB  7C03            JL      $+5H
+             07DD  E92500          JMP     @65
+                                                   ; STATEMENT # 381
+             07E0  43              INC     BX
+             07E1  2E8A876B03      MOV     AL,CS:ID3_tags[BX+100H]
+             07E6  B400            MOV     AH,0H
+             07E8  C1E008          SAL     AX,8H
+             07EB  8B5EF6          MOV     BX,[BP].k
+             07EE  2E8A8F6B03      MOV     CL,CS:ID3_tags[BX+100H]
+             07F3  B500            MOV     CH,0H
+             07F5  0BC1            OR      AX,CX
+             07F7  8B5EF8          MOV     BX,[BP].j
+             07FA  D1E3            SAL     BX,1
+             07FC  C4760E          LES     SI,[BP].dest
+             07FF  268900          MOV     ES:[BX].[SI],AX
+                                                   ; STATEMENT # 382
+             0802  E90D00          JMP     @66
+                           @65:
+                                                   ; STATEMENT # 384
+             0805  8B5EF8          MOV     BX,[BP].j
+             0808  D1E3            SAL     BX,1
+             080A  C4760E          LES     SI,[BP].dest
+             080D  26C7000000      MOV     ES:[BX].[SI],0H
+                           @66:
+                           @64:
+                                                   ; STATEMENT # 385
+             0812  E98DFF          JMP     @60
+                           @61:
+                                                   ; STATEMENT # 387
+             0815  E9A500          JMP     @67
+                           @59:
+                                                   ; STATEMENT # 390
+             0818  C746F80000      MOV     [BP].j,0H
+             081D  E90300          JMP     @70
+                           @68:
+             0820  FF46F8          INC     [BP].j
+                           @70:
+             0823  8B46F8          MOV     AX,[BP].j
+             0826  81F80001        CMP     AX,100H
+             082A  7C03            JL      $+5H
+             082C  E98E00          JMP     @69
+                                                   ; STATEMENT # 393
+             082F  81F80800        CMP     AX,8H
+             0833  7C03            JL      $+5H
+             0835  E95100          JMP     @71
+                                                   ; STATEMENT # 397
+             0838  8B46FA          MOV     AX,[BP].i
+             083B  99              CWD
+             083C  034608          ADD     AX,[BP].block
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  18
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             083F  13560A          ADC     DX,[BP].block+2H
+             0842  6B4EFA04        IMUL    CX,[BP].i,4H
+             0846  E306            JCXZ    $+8H
+             0848  D1EA            SHR     DX,1
+             084A  D1D8            RCR     AX,1
+             084C  E2FA            LOOP    $-4H
+             084E  81E00F00        AND     AX,0FH
+             0852  81E20000        AND     DX,0H
+             0856  8946FC          MOV     [BP].digit,AX
+                                                   ; STATEMENT # 400
+             0859  81F80A00        CMP     AX,0AH
+             085D  7C03            JL      $+5H
+             085F  E91200          JMP     @72
+                                                   ; STATEMENT # 401
+             0862  81C03000        ADD     AX,30H
+             0866  C47E0E          LES     DI,[BP].dest
+             0869  81460E0200      ADD     [BP].dest,2H
+             086E  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 402
+             0871  E91200          JMP     @73
+                           @72:
+                                                   ; STATEMENT # 403
+             0874  8B46FC          MOV     AX,[BP].digit
+             0877  81C04100        ADD     AX,41H
+             087B  C47E0E          LES     DI,[BP].dest
+             087E  81460E0200      ADD     [BP].dest,2H
+             0883  268905          MOV     ES:[DI],AX
+                           @73:
+                                                   ; STATEMENT # 405
+             0886  E93100          JMP     @74
+                           @71:
+             0889  8B46F8          MOV     AX,[BP].j
+             088C  81F82200        CMP     AX,22H
+             0890  7C03            JL      $+5H
+             0892  E91600          JMP     @75
+                                                   ; STATEMENT # 408
+             0895  81E80800        SUB     AX,8H
+             0899  81C06100        ADD     AX,61H
+             089D  C47E0E          LES     DI,[BP].dest
+             08A0  81460E0200      ADD     [BP].dest,2H
+             08A5  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 410
+             08A8  E90F00          JMP     @76
+                           @75:
+                                                   ; STATEMENT # 413
+             08AB  C4460E          LES     AX,[BP].dest
+             08AE  81460E0200      ADD     [BP].dest,2H
+             08B3  8BD8            MOV     BX,AX
+             08B5  26C7070000      MOV     ES:[BX],0H
+                                                   ; STATEMENT # 414
+                           @76:
+                           @74:
+                                                   ; STATEMENT # 415
+             08BA  E963FF          JMP     @68
+                           @69:
+                                                   ; STATEMENT # 416
+iC-86  COMPILER   SIMIDE                                                                     04/21/;6 17:34:32  PAGE  19
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           @67:
+                           @58:
+                           @53:
+                           @46:
+                           @39:
+                           @32:
+                           @25:
+                           @18:
+                           @11:
+                                                   ; STATEMENT # 417
+             08BD  E952FB          JMP     @4
+                           @5:
+                                                   ; STATEMENT # 421
+             08C0  8B46FE          MOV     AX,[BP].no_blocks
+             08C3  C9              LEAVE
+             08C4  5F              POP     DI
+             08C5  5E              POP     SI
+             08C6  C3              RET
+                                                   ; STATEMENT # 423
+                           get_blocks      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 04DCH   1244D
+     CONSTANT AREA SIZE           = 03EBH   1003D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 0018H     24D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS
