@@ -30,6 +30,7 @@
 
 $INCLUDE(BUTTON.INC)
 $INCLUDE(QUEUE.INC)
+$INCLUDE(GENERAL.INC)
 
 
 CGROUP    GROUP    CODE
@@ -160,13 +161,13 @@ InitButtons ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Changed:  Flag registers
 ;
 ;Known Bugs:         None
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/24/16
 ;
 ;Outline
 ;
@@ -191,6 +192,10 @@ InitButtons ENDP
 ButtonDebounce        PROC    NEAR
                       PUBLIC  ButtonDebounce
 
+
+ButtonDebounceStart:
+    PUSH  AX                               ;save registers
+    PUSH  SI
 
 ButtonDebounceRead:
     IN     AL, ButtonAddress               ;read the button byte
@@ -221,11 +226,21 @@ HaveButton:
 
 SendButtonPress:
     
+    LEA    SI, ButtonQueue                  ;load address - arg for queue funds
+    CALL   QueueFull                        ;Check if the queue is full
+    JZ     ButtonDebounceQFull              ;full - jump to emergency label
+
+    CALL   EnQueue                          ;if not full, enqueue key pattern
     MOV    DebounceCnt, RepeatRate          ;set up auto repeat
-                ;Add code to enqueue the event!!!
-    ;JMP   KeyDebounceEnd                   ;go to function end
+    JMP    ButtonDebounceEnd                ;go to function end
+
+ButtonDebounceQFull:
+    JMP   ButtonDebounceEnd                 ;nothing for now - later set
+                                            ;an abort flag
 
 ButtonDebounceEnd:
+    POP    SI                               ;restore registers
+    POP    AX
     RET                                     ;end of function - return
 
 ButtonDebounce ENDP
@@ -279,6 +294,26 @@ ButtonDebounce ENDP
 ;    ELSE:                                      ;otherwise, there’s a button
 ;        HaveButton == TRUE                     ;indicate a button is ready
 ;    RETURN
+
+Key_Available    PROC    NEAR
+                 PUBLIC  Key_Available
+
+Key_AvailableStart:
+    PUSH    SI                                  ;save register
+
+Key_AvailableCheck:                             ;check if queue is empty
+    LEA     SI, ButtonQueue                     ;load QueueEmpty argument
+    CALL    QueueEmpty                          ;check if queue is empty
+
+Key_AvailableYes:
+
+Key_AvailableNo:
+
+Key_AvailableDone:                              ;end of function
+    POP     SI
+    RET
+
+Key_Available    ENDP
 
 
 CODE ENDS

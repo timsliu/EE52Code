@@ -86,3 +86,13 @@ R14, R11, R80
 
 4/20/16
 Inserted 74ALS245 into U11 (switch buffer)
+
+4/22/16
+Swapped U1 74ALS573 for 74AL573 to try and eliminate ground bounce and
+make serial debugger more reliable - didn’t work
+
+4/23/16
+R41, R62, R35, R16, R55, R36, U17 socket
+Resoldered some of the joints on U10 ROM socket and soldered a joint
+that hadn’t been soldered - that joint was probably source of reliability
+problems :P

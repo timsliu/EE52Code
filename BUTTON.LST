@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE BUTTON
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     
   00FF                =1    49     NoButtonPressed      EQU   0FFh         ;indicates no button pressed
                       =1    50     
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103         EXTRN    QueueEmpty:NEAR                ;check if the queue is empty
                            104         EXTRN    Dequeue:NEAR                   ;remove element from queue
                            105     
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
 000D 53                    158         PUSH   BX
                            159     
 000E                       160     InitButtonsQueueArgs:                    ;set up arguments for QueueInit
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;Output:             None
                            214     ;
                            215     ;Error Handling:     None
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -246,13 +246,13 @@ LOC  OBJ                  LINE     SOURCE
                            216     ;
                            217     ;Algorithms:         None
                            218     ;
-                           219     ;Registers Used:     None
+                           219     ;Registers Changed:  Flag registers
                            220     ;
                            221     ;Known Bugs:         None
                            222     ;
                            223     ;Limitations:        None
                            224     ;
-                           225     ;Last Modified:      2/4/16
+                           225     ;Last Modified:      4/24/16
                            226     ;
                            227     ;Outline
                            228     ;
@@ -278,125 +278,139 @@ LOC  OBJ                  LINE     SOURCE
                            248                           PUBLIC  ButtonDebounce
                            249     
                            250     
-001A                       251     ButtonDebounceRead:
-001A E400                  252         IN     AL, ButtonAddress               ;read the button byte
-                           253     
-001C                       254     CheckButtonPressed:
-001C 3CFF                  255         CMP    AL, NoButtonPressed             ;check if no button is pressed
-001E 7409                  256         JE     ResetPress                      ;if no key pressed, go to label
+001A                       251     ButtonDebounceStart:
+001A 50                    252         PUSH  AX                               ;save registers
+001B 56                    253         PUSH  SI
+                           254     
+001C                       255     ButtonDebounceRead:
+001C E400                  256         IN     AL, ButtonAddress               ;read the button byte
                            257     
-0020 3A060200       R      258         CMP    AL, LastRead                    ;check if button is same as last
-0024 7503                  259         JNE    ResetPress                      ;reset if different button
-0026 EB1490                260         JMP    HaveButton                      ;otherwise take care of button
+001E                       258     CheckButtonPressed:
+001E 3CFF                  259         CMP    AL, NoButtonPressed             ;check if no button is pressed
+0020 7409                  260         JE     ResetPress                      ;if no key pressed, go to label
                            261     
-0029                       262     ResetPress:
-0029 C70600003200   R      263         MOV    DebounceCnt, DebounceTime       ;reset the debounce counter
-002F 3CFF                  264         CMP    AL, NoButtonPressed             ;if a different key is pressed
-0031 7503                  265         JNE    UpdateLastPressed               ;then update the last pressed
-0033 EB1B90                266         JMP    ButtonDebounceEnd               ;finish the function
-                           267     
-0036                       268     UpdateLastpressed:
-0036 A20200         R      269         MOV    LastRead, AL                     ;update last read key
-0039 EB1590                270         JMP    ButtonDebounceEnd                ;end
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    6
+0022 3A060200       R      262         CMP    AL, LastRead                    ;check if button is same as last
+0026 7503                  263         JNE    ResetPress                      ;reset if different button
+0028 EB1490                264         JMP    HaveButton                      ;otherwise take care of button
+                           265     
+002B                       266     ResetPress:
+002B C70600003200   R      267         MOV    DebounceCnt, DebounceTime       ;reset the debounce counter
+0031 3CFF                  268         CMP    AL, NoButtonPressed             ;if a different key is pressed
+0033 7503                  269         JNE    UpdateLastPressed               ;then update the last pressed
+0035 EB2D90                270         JMP    ButtonDebounceEnd               ;finish the function
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            271     
-003C                       272     HaveButton:
-003C FF0E0000       R      273         DEC    DebounceCnt                      ;one fewer cycle to wait
-0040 833E000000     R      274         CMP    DebounceCnt, 0                   ;check if debounce is over
-0045 7403                  275         JE     SendButtonPress                  ;if debounced go to label
-0047 EB0790                276         JMP    ButtonDebounceEnd                ;otherwise end the function
-                           277     
-004A                       278     SendButtonPress:
-                           279         
-004A C70600002C01   R      280         MOV    DebounceCnt, RepeatRate          ;set up auto repeat
-                           281                     ;Add code to enqueue the event!!!
-                           282         ;JMP   KeyDebounceEnd                   ;go to function end
-                           283     
-0050                       284     ButtonDebounceEnd:
-0050 C3                    285         RET                                     ;end of function - return
-                           286     
-                           287     ButtonDebounce ENDP
-                           288     
-                           289     
-                           290     
+0038                       272     UpdateLastpressed:
+0038 A20200         R      273         MOV    LastRead, AL                     ;update last read key
+003B EB2790                274         JMP    ButtonDebounceEnd                ;end
+                           275     
+003E                       276     HaveButton:
+003E FF0E0000       R      277         DEC    DebounceCnt                      ;one fewer cycle to wait
+0042 833E000000     R      278         CMP    DebounceCnt, 0                   ;check if debounce is over
+0047 7403                  279         JE     SendButtonPress                  ;if debounced go to label
+0049 EB1990                280         JMP    ButtonDebounceEnd                ;otherwise end the function
+                           281     
+004C                       282     SendButtonPress:
+                           283         
+004C 8D360300       R      284         LEA    SI, ButtonQueue                  ;load address - arg for queue funds
+0050 E80000         E      285         CALL   QueueFull                        ;Check if the queue is full
+0053 740C                  286         JZ     ButtonDebounceQFull              ;full - jump to emergency label
+                           287     
+0055 E80000         E      288         CALL   EnQueue                          ;if not full, enqueue key pattern
+0058 C70600002C01   R      289         MOV    DebounceCnt, RepeatRate          ;set up auto repeat
+005E EB0490                290         JMP    ButtonDebounceEnd                ;go to function end
                            291     
-                           292     ;Name:               Key_Available
-                           293     ;
-                           294     ;Description:        This function checks if there is a button press ready
-                           295     ;                    for processing. The function calls QueueEmpty to check
-                           296     ;                    if the buttonQueue is empty. If buttonQueue is empty,
-                           297     ;                    then the function returns TRUE and if there is no
-                           298     ;                    button press ready the function returns FALSE.
-                           299     ;
-                           300     ;Operation:          Call QueueEmpty to check if the buttonQueue has any
-                           301     ;                    elements in it. If QueueEmpty returns with the 
-                           302     ;                    buttonQueue empty, the function returns with FALSE in
-                           303     ;                    AX. Otherwise, the function returns TRUE in AX.
-                           304     ;
-                           305     ;Arguments:          None
-                           306     ;
-                           307     ;Return Values:      Havebutton (AX) - TRUE if a button is ready to be
-                           308     ;                    processed; FALSE if no button press
-                           309     ;
-                           310     ;Local Variables:    QueueAddress (SI) - address of queue. Argument to
-                           311     ;                    QueueEmpty
-                           312     ;
-                           313     ;Shared Variables:   None
-                           314     ;
-                           315     ;Output:             None
-                           316     ;
-                           317     ;Error Handling:     None
+0061                       292     ButtonDebounceQFull:
+0061 EB0190                293         JMP   ButtonDebounceEnd                 ;nothing for now - later set
+                           294                                                 ;an abort flag
+                           295     
+0064                       296     ButtonDebounceEnd:
+0064 5E                    297         POP    SI                               ;restore registers
+0065 58                    298         POP    AX
+0066 C3                    299         RET                                     ;end of function - return
+                           300     
+                           301     ButtonDebounce ENDP
+                           302     
+                           303     
+                           304     
+                           305     
+                           306     ;Name:               Key_Available
+                           307     ;
+                           308     ;Description:        This function checks if there is a button press ready
+                           309     ;                    for processing. The function calls QueueEmpty to check
+                           310     ;                    if the buttonQueue is empty. If buttonQueue is empty,
+                           311     ;                    then the function returns TRUE and if there is no
+                           312     ;                    button press ready the function returns FALSE.
+                           313     ;
+                           314     ;Operation:          Call QueueEmpty to check if the buttonQueue has any
+                           315     ;                    elements in it. If QueueEmpty returns with the 
+                           316     ;                    buttonQueue empty, the function returns with FALSE in
+                           317     ;                    AX. Otherwise, the function returns TRUE in AX.
                            318     ;
-                           319     ;Algorithms:         None
+                           319     ;Arguments:          None
                            320     ;
-                           321     ;Registers Used:     None
-                           322     ;
-                           323     ;Known Bugs:         None
-                           324     ;
-                           325     ;Limitations:        None
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   01:44:27  04/22/;6  PAGE    7
+                           321     ;Return Values:      Havebutton (AX) - TRUE if a button is ready to be
+                           322     ;                    processed; FALSE if no button press
+                           323     ;
+                           324     ;Local Variables:    QueueAddress (SI) - address of queue. Argument to
+                           325     ;                    QueueEmpty
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   13:04:58  04/24/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            326     ;
-                           327     ;Last Modified:      2/4/16
-                           328     
-                           329     ;Outline
-                           330     ;Key_Available():
-                           331     ;    QueueAddress = Address(buttonQueue)        ;load the argument
-                           332     ;    IF QueueEmpty(QueueAddress) == TRUE:       ;call function to check if
-                           333     ;                                               ;button queue is empty
-                           334     ;        HaveButton == FALSE                    ;no button available
-                           335     ;    ELSE:                                      ;otherwise, thereb^^s a button
-                           336     ;        HaveButton == TRUE                     ;indicate a button is ready
-                           337     ;    RETURN
-                           338     
-                           339     
-----                       340     CODE ENDS
-                           341     
-                           342     ;start data segment
-                           343     
-----                       344     DATA    SEGMENT PUBLIC  'DATA'
-                           345     
-0000 ????                  346     DebounceCnt        DW    ?     ;how many more irq before calling Enqueue
-0002 ??                    347     LastRead           DB    ?     ;value of last key read after masking
-0003 ??                    348     ButtonQueue    QueueStruct<>   ;allocate the button queue
+                           327     ;Shared Variables:   None
+                           328     ;
+                           329     ;Output:             None
+                           330     ;
+                           331     ;Error Handling:     None
+                           332     ;
+                           333     ;Algorithms:         None
+                           334     ;
+                           335     ;Registers Used:     None
+                           336     ;
+                           337     ;Known Bugs:         None
+                           338     ;
+                           339     ;Limitations:        None
+                           340     ;
+                           341     ;Last Modified:      2/4/16
+                           342     
+                           343     ;Outline
+                           344     ;Key_Available():
+                           345     ;    QueueAddress = Address(buttonQueue)        ;load the argument
+                           346     ;    IF QueueEmpty(QueueAddress) == TRUE:       ;call function to check if
+                           347     ;                                               ;button queue is empty
+                           348     ;        HaveButton == FALSE                    ;no button available
+                           349     ;    ELSE:                                      ;otherwise, thereb^^s a button
+                           350     ;        HaveButton == TRUE                     ;indicate a button is ready
+                           351     ;    RETURN
+                           352     
+                           353     
+----                       354     CODE ENDS
+                           355     
+                           356     ;start data segment
+                           357     
+----                       358     DATA    SEGMENT PUBLIC  'DATA'
+                           359     
+0000 ????                  360     DebounceCnt        DW    ?     ;how many more irq before calling Enqueue
+0002 ??                    361     LastRead           DB    ?     ;value of last key read after masking
+0003 ??                    362     ButtonQueue    QueueStruct<>   ;allocate the button queue
 0004 ????
 0006 ????
 0008 ????
 000A (256
      ??
      )
-                           349     
-                           350     
-----                       351     DATA ENDS
-                           352     
-                           353     
-                           354     END
+                           363     
+                           364     
+----                       365     DATA ENDS
+                           366     
+                           367     
+                           368     END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND
