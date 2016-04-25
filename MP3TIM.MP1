@@ -4,15 +4,23 @@ DOS 5.0 (038-N) 8086 LINKER, V2.7
 INPUT FILES: TIM1.LNK, GLEN1.LNK, GLEN2.LNK, GLEN3.LNK, IC86.LIB
 OUTPUT FILE: MP3TIM.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  04/24/;6  TIME:  13:04:58
+DATE:  04/25/;6  TIME:  02:31:17
 
+WARNING 10:  DIFFERENT VALUES FOR
+  FILE:  GLEN2.LNK
+  MODULE:  PLAYMP3
+  SYMBOL:  GETKEY
+WARNING 10:  DIFFERENT VALUES FOR
+  FILE:  GLEN2.LNK
+  MODULE:  PLAYMP3
+  SYMBOL:  KEY_AVAILABLE
 
 LINK MAP OF MODULE STARTUP
 
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 2AFBH ------    G    CODE            CODE                          
+ 2B1BH ------    G    CODE            CODE                          
  0B80H ------    G    DATA            DATA                          
  0538H ------    W    STACK           STACK                         
 

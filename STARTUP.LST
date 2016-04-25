@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:04:58  04/24/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:31:17  04/25/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;                                   EE/CS 52                                 ;
                       =1    49     ;                                                                            ;
                       =1    50     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:04:58  04/24/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:31:17  04/25/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103                                             ;00--------------  reserved
                       =1   104                                             ;--11000000------  start address F0000
                       =1   105                                             ;----------000---  reserved
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:04:58  04/24/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:31:17  04/25/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                            159             ; user initialization code goes here ;
                            160             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:04:58  04/24/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:31:17  04/25/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE

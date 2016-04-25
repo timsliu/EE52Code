@@ -17,6 +17,9 @@
 ;        4/21/16   Tim Liu    wrote stub function for ButtonDebounce
 ;        4/21/16   Tim Liu    wrote InitButtons
 ;        4/21/16   Tim Liu    wrote ButtonDebounce
+;        4/24/16   Tim Liu    added enqueue call to ButtonDebounce
+;        4/24/16   Tim Liu    wrote Key_available
+;        4/24/16   Tim Liu    wrote GetKey
 ;
 ;
 ; Table of Contents
@@ -283,7 +286,7 @@ ButtonDebounce ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/24/16
 
 ;Outline
 ;Key_Available():
@@ -323,23 +326,21 @@ Key_AvailableDone:                              ;end of function
 Key_Available    ENDP
 
 
-;Name:               Key_Available
+;Name:               getkey
 ;
-;Description:        This function checks if there is a button press ready
-;                    for processing. The function calls QueueEmpty to check
-;                    if the buttonQueue is empty. If buttonQueue is empty,
-;                    then the function returns TRUE and if there is no
-;                    button press ready the function returns FALSE.
+;Description:        This function returns the key code for a debounced
+;                    key. The function does not return until it has
+;                    a valid key.                    
 ;
-;Operation:          Call QueueEmpty to check if the buttonQueue has any
-;                    elements in it. If QueueEmpty returns with the 
-;                    buttonQueue empty, the function returns with FALSE in
-;                    AX. Otherwise, the function returns TRUE in AX.
+;Operation:          Load the starting address of the button queue to
+;                    register SI. Clear out AX. Then, call Dequeue
+;                    to remove a button event from the button queue.
+;                    Return with the button key code.
 ;
 ;Arguments:          None
 ;
-;Return Values:      Havebutton (AX) - TRUE if a button is ready to be
-;                    processed; FALSE if no button press
+;Return Values:      KeyCode (AX) - key code corresponding to one of the
+;                    key presses.
 ;
 ;Local Variables:    QueueAddress (SI) - address of queue. Argument to
 ;                    QueueEmpty
@@ -358,9 +359,26 @@ Key_Available    ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/24/16
 
 ;Outline
+
+GetKey        PROC    NEAR
+              PUBLIC  GetKey
+
+GetKeyStart:                               ;starting label
+    PUSH    SI                             ;save the registers
+    XOR     AX, AX                         ;clear out return register
+
+GetKeyDequeue:
+    LEA    SI, ButtonQueue                 ;argument for Dequeue
+    CALL   DeQueue                         ;remove button press from queue
+
+GetKeyDone:                                ;end of function
+    POP    SI                              ;restore register
+    RET
+
+GetKey    ENDP
 
 
 
