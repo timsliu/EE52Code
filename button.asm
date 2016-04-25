@@ -277,7 +277,7 @@ ButtonDebounce ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Used:     AX
 ;
 ;Known Bugs:         None
 ;
@@ -304,16 +304,64 @@ Key_AvailableStart:
 Key_AvailableCheck:                             ;check if queue is empty
     LEA     SI, ButtonQueue                     ;load QueueEmpty argument
     CALL    QueueEmpty                          ;check if queue is empty
+    JZ      Key_AvailableNo                     ;Queue empty - no key
+    JMP     Key_AvailableYes                    ;otherwise there is key
+    
 
-Key_AvailableYes:
+Key_AvailableYes:                               ;label if key is available
+    MOV    AX, TRUE                             ;load return value
+    JMP    Key_AvailableDone                    ;finish function
 
-Key_AvailableNo:
+Key_AvailableNo:                                ;label if no key available
+    MOV    AX, FALSE                            ;load return value
+    JMP    Key_AvailableDone                    ;finish function
 
 Key_AvailableDone:                              ;end of function
-    POP     SI
+    POP     SI                                  ;restore register
     RET
 
 Key_Available    ENDP
+
+
+;Name:               Key_Available
+;
+;Description:        This function checks if there is a button press ready
+;                    for processing. The function calls QueueEmpty to check
+;                    if the buttonQueue is empty. If buttonQueue is empty,
+;                    then the function returns TRUE and if there is no
+;                    button press ready the function returns FALSE.
+;
+;Operation:          Call QueueEmpty to check if the buttonQueue has any
+;                    elements in it. If QueueEmpty returns with the 
+;                    buttonQueue empty, the function returns with FALSE in
+;                    AX. Otherwise, the function returns TRUE in AX.
+;
+;Arguments:          None
+;
+;Return Values:      Havebutton (AX) - TRUE if a button is ready to be
+;                    processed; FALSE if no button press
+;
+;Local Variables:    QueueAddress (SI) - address of queue. Argument to
+;                    QueueEmpty
+;
+;Shared Variables:   None
+;
+;Output:             None
+;
+;Error Handling:     None
+;
+;Algorithms:         None
+;
+;Registers Used:     AX
+;
+;Known Bugs:         None
+;
+;Limitations:        None
+;
+;Last Modified:      2/4/16
+
+;Outline
+
 
 
 CODE ENDS
