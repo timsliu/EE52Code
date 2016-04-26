@@ -218,8 +218,8 @@ ResetPress:
     JMP    ButtonDebounceEnd               ;finish the function
 
 UpdateLastpressed:
-    MOV    LastRead, AL                     ;update last read key
-    JMP    ButtonDebounceEnd                ;end
+    MOV    LastRead, AL                    ;update last read key
+    JMP    ButtonDebounceEnd               ;end
 
 HaveButton:
     DEC    DebounceCnt                      ;one fewer cycle to wait
