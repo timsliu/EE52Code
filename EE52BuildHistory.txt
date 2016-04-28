@@ -96,3 +96,10 @@ R41, R62, R35, R16, R55, R36, U17 socket
 Resoldered some of the joints on U10 ROM socket and soldered a joint
 that hadn’t been soldered - that joint was probably source of reliability
 problems :P
+
+4/25/16
+Soldered in LCD1 sockets and R75 (backlight resistor) and R37 pot
+Removed pull up resistor for SRDY and instead soldered wire wrap wire
+between SRDY1 and SRDY
+Inserted U17 CPLD into socket
+Serial debugger still connects (phew)

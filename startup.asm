@@ -65,6 +65,7 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
         EXTRN    InitTimer0:NEAR        ;start up timer0
         EXTRN    InitButtons:NEAR       ;initialize the buttons
+        EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
 
 START:
 
@@ -90,6 +91,7 @@ BEGIN:                                  ;start the program
         CALL    ClrIRQVectors           ;clear interrupt vector table
 
         CALL    InitButtons             ;initialize the buttons
+        CALL    InitDisplayLCD          ;initialize the LCD display
 
         CALL    InstallTimer0Handler    ;install handler
         CALL    InitTimer0              ;initialize timer0 for button interrupt

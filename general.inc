@@ -32,6 +32,7 @@ ASCII_O              EQU       79         ;O character for off (laser off)
 ASCII_S              EQU       83         ;S character
 ASCII_NULL           EQU        0         ;ASCII null character
 ASCII_SPACE          EQU       32         ;ASCII space
+ASCII_COLON          EQU       58         ;ASCII colon
 
 TRUE                 EQU        1         ;true
 FALSE                EQU        0         ;false

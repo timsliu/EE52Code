@@ -12,6 +12,7 @@
 ;
 ; Revision History:
 ;        2/4/16    Tim Liu    created file
+;        4/27/16   Tim Liu    wrote InitDisplay and added data/code segments
 ;
 ;
 ; Table of Contents
@@ -24,10 +25,25 @@
 ;    Display_Title - displays track title on the LCD
 ;    Display_Artist - displays track artist on the LCD
 
+; local include files
+$INCLUDE(GENERAL.INC)
+$INCLUDE(DISPLCD.INC)
+
+CGROUP    GROUP    CODE
+DGROUP    GROUP    DATA
+
+CODE SEGMENT PUBLIC 'CODE'
+
+        ASSUME  CS:CGROUP, DS:DGROUP
+
+;external function declarations
+
 ;Name:               InitDisplayLCD
 ;
 ;Description:        This function initializes the shared variables for
-;                    the display functions.
+;                    the display functions. The function also writes 
+;                    InitLCDVal to LCDInsReg to turn on the display
+;                    and turn on the cursor.
 ;
 ;Operation:          None
 ;
@@ -53,13 +69,32 @@
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/27/16
 
 ;Outline
 
 
-; ###### FUNCTION CODE  ######
+InitDisplayLCD        PROC    NEAR
+                      PUBLIC  InitDisplayLCD
+InitDisplayStart:              ;starting label
+    PUSH   AX                  ;save register
 
+InitDisplayOut:                ;output setup command to LCD
+    MOV    AL, LCDInitVal      ;load LCD initialization command
+    OUT    LCDInsReg, AL       ;write display control command
+
+    MOV    AL, LCDFunSetVal    ;load function set command
+    OUT    LCDInsReg, AL       ;write function set command
+
+
+InitDisplayPermChar:           ;write permanent characters to buffers
+
+InitDisplayLCDDone:            ;done with function
+    POP   AX                   ;restore register
+
+    RET                        
+
+InitDisplayLCD    ENDP
 
 
 
@@ -197,7 +232,7 @@
 ;SecToTime()
 ;    IF Time_Remaining <= MAX_TIME:      ;check time doesn’t exceed limit    
 ;        Time_remaining /= 10            ;convert to seconds
-;        Seconds = Time_remaining % 60   ;mod 60 to get seconds
+;        Seconds = Time_remaining mod 60   ;mod 60 to get seconds
 ;        Minutes = Time_remaining / 60   ;divide by 60 to get minutes
 ;        Dec2String(TimeBuffer, Minutes) ;convert minutes to ASCII string
 ;                                    ;and write to time buffer
@@ -424,22 +459,35 @@
 
 ; ###### FUNCTION CODE  ######
 
+; Name: PermCharTable
+;
+; Description:    This table contains structs that describe the characters
+;                 that are permanently displayed on the LCD display.
+;                 These characters include spaces and colons. The function
+;                 InitDisplay loops through this table to write all of 
+;                 the permanent characters to the display
 
+PermCharTable    LABEL    PermCharTable
+
+    PermChar<13, ASCII_SPACE>     ;space between track and status
+    PermChar<76, ASCII_SPACE>     ;space between artist and time
+    PermChar<79, ASCII_COLON>     ;colon in mm:ss time
+
+
+CODE ENDS
+
+;start data segment
+
+DATA    SEGMENT PUBLIC  'DATA'
+
+TimeBuffer    DB TimeBufSize   DUP (?)        ;allocate buffer for the time
+TrackBuffer   DB TrackBufSize  DUP (?)        ;allocate buffer for track name
+StatusBuffer  DB StatusBufSize DUP (?)        ;allocate buffer for status
+ArtistBuffer  DB ArtistBufSize DUP (?)        ;allocate buffer for artist
+
+
+
+DATA ENDS
 
 
 END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

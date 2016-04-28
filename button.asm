@@ -28,6 +28,7 @@
 ;        ButtonDebounce - scans a the key address and debounces
 ;        key_available - returns TRUE if there is a valid key
 ;        getkey - returns the key code for the debounced key
+;        KeyCodeTable - maps button bit pattern to getkey keycodes  
 
 ; local include files
 
@@ -201,6 +202,7 @@ ButtonDebounceStart:
     PUSH  SI
 
 ButtonDebounceRead:
+    XOR    AH, AH                          ;clear high byte
     IN     AL, ButtonAddress               ;read the button byte
 
 CheckButtonPressed:
@@ -224,11 +226,19 @@ UpdateLastpressed:
 HaveButton:
     DEC    DebounceCnt                      ;one fewer cycle to wait
     CMP    DebounceCnt, 0                   ;check if debounce is over
-    JE     SendButtonPress                  ;if debounced go to label
+    JE     ConButton2Code                   ;convert bit pattern to key code
     JMP    ButtonDebounceEnd                ;otherwise end the function
 
+ConButton2Code:                            ;convert bit pattern to key code
+    SUB    AX, KeyCodeOffset               ;bit pattern to table offset
+    MOV    BX, AX                          ;copy table offset to indexing register
+    MOV    AL, CS:KeyCodeTable[BX]         ;look up key code
+    CMP    AX, MaxKeyCode                  ;check if key code is valid
+    JA     ButtonDebounceEnd               ;invalid key code
+    JMP    SendButtonPress                 ;otherwise send the press
+
 SendButtonPress:
-    
+        
     LEA    SI, ButtonQueue                  ;load address - arg for queue funds
     CALL   QueueFull                        ;Check if the queue is full
     JZ     ButtonDebounceQFull              ;full - jump to emergency label
@@ -368,6 +378,7 @@ GetKey        PROC    NEAR
 
 GetKeyStart:                               ;starting label
     PUSH    SI                             ;save the registers
+    PUSH    BX                             
     XOR     AX, AX                         ;clear out return register
 
 GetKeyDequeue:
@@ -375,10 +386,92 @@ GetKeyDequeue:
     CALL   DeQueue                         ;remove button press from queue
 
 GetKeyDone:                                ;end of function
-    POP    SI                              ;restore register
+    POP    BX                              ;restore registers
+    POP    SI
     RET
 
 GetKey    ENDP
+
+; Name:  KeyCodeTable
+;
+; Description:   This table maps the bit patterns read in from the keys to
+;                the key codes that will be returned by get_key. The lowest
+;                bit pattern read in from the keys is 191 in base 10. 191
+;                is subtracted from the bit patterns, and the result is used
+;                to index into the table.
+; Author:        Timothy Liu
+; Last Modified  4/26/16
+
+KeyCodeTable        LABEL    BYTE
+                    PUBLIC   KeyCodeTable
+
+;        DB        KeyCode
+         DB        0        ;SW3 - 0
+         DB        7        ;Invalid key - 1     
+         DB        7        ;Invalid key - 2     
+         DB        7        ;Invalid key - 3     
+         DB        7        ;Invalid key - 4     
+         DB        7        ;Invalid key - 5     
+         DB        7        ;Invalid key - 6     
+         DB        7        ;Invalid key - 7     
+         DB        7        ;Invalid key - 8     
+         DB        7        ;Invalid key - 9     
+         DB        7        ;Invalid key - 10     
+         DB        7        ;Invalid key - 11     
+         DB        7        ;Invalid key - 12     
+         DB        7        ;Invalid key - 13     
+         DB        7        ;Invalid key - 14     
+         DB        7        ;Invalid key - 15     
+         DB        7        ;Invalid key - 16     
+         DB        7        ;Invalid key - 17     
+         DB        7        ;Invalid key - 18     
+         DB        7        ;Invalid key - 19     
+         DB        7        ;Invalid key - 20     
+         DB        7        ;Invalid key - 21    
+         DB        7        ;Invalid key - 22    
+         DB        7        ;Invalid key - 23    
+         DB        7        ;Invalid key - 24    
+         DB        7        ;Invalid key - 25    
+         DB        7        ;Invalid key - 26    
+         DB        7        ;Invalid key - 27    
+         DB        7        ;Invalid key - 28    
+         DB        7        ;Invalid key - 29    
+         DB        7        ;Invalid key - 30    
+         DB        7        ;Invalid key - 31    
+         DB        1        ;SW4 - 32    
+         DB        7        ;Invalid key - 33    
+         DB        7        ;Invalid key - 34    
+         DB        7        ;Invalid key - 35    
+         DB        7        ;Invalid key - 36    
+         DB        7        ;Invalid key - 37    
+         DB        7        ;Invalid key - 38    
+         DB        7        ;Invalid key - 39    
+         DB        7        ;Invalid key - 40    
+         DB        7        ;Invalid key - 41    
+         DB        7        ;Invalid key - 42    
+         DB        7        ;Invalid key - 43    
+         DB        7        ;Invalid key - 44    
+         DB        7        ;Invalid key - 45    
+         DB        7        ;Invalid key - 46    
+         DB        7        ;Invalid key - 47    
+         DB        2        ;SW5 - 48    
+         DB        7        ;Invalid key - 49    
+         DB        7        ;Invalid key - 50    
+         DB        7        ;Invalid key - 51    
+         DB        7        ;Invalid key - 52    
+         DB        7        ;Invalid key - 53    
+         DB        7        ;Invalid key - 54    
+         DB        7        ;Invalid key - 55    
+         DB        3        ;SW6 - 56    
+         DB        7        ;Invalid key - 57    
+         DB        7        ;Invalid key - 58    
+         DB        7        ;Invalid key - 59    
+         DB        4        ;SW7 - 60    
+         DB        7        ;Invalid key - 61
+         DB        5        ;SW8 - 62    
+         DB        6        ;SW9 - 63    
+    
+     
 
 
 

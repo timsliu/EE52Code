@@ -1,0 +1,8 @@
+Switch    Bit Pattern    Base10    Action    Base10-191
+SW3        10111111       191      Trackup      0
+SW4        11011111       223      Trackdown    32
+SW5        11101111       239      Play         48
+SW6        11110111       247      RptPlay      56
+SW7        11111011       251      FastFwd      60
+SW8        11111101       253      Reverse      62
+SW9        11111110       254      Stop         63
