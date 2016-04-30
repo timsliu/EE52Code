@@ -15,6 +15,7 @@
 ;        4/27/16   Tim Liu    wrote InitDisplay and added data/code segments
 ;        4/28/16   Tim Liu    Added busy flag read and looping to InitDisplay
 ;        4/29/16   Tim Liu    wrote SecToTime
+;        4/29/16   Tim Liu    wrote DisplayLCD
 ;
 ;
 ; Table of Contents
@@ -159,7 +160,7 @@ InitDisplayLCD    ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/28/16
 
 ;Outline
 ;DisplayLCD(String, Type)
@@ -181,7 +182,30 @@ DisplayLCDStart:                           ;save registers
     PUSH    SI
     PUSH    AX
 
-DisplayLCDEnd:
+DisplayLCDLookUp:                          ;lookup start address of info type
+    MOV    AL, CS:DisplayInfoTable[BX]     ;AL stores LCD DDRAM location
+
+DisplayLCDSetStart:                        ;set cursor to start position
+    OUT   LCDInsReg, AL                    ;write cursor pos to ins reg
+
+DisplayLCDCheckEnd:                        ;check if end of buffer reached
+    CMP   BYTE PTR ES:[SI], ASCII_NULL     ;buffers are null terminated
+    JE    DisplayLCDEnd                    ;reach end of buffer
+
+DisplayLCDBusy:                            ;check if busy flag is set
+    IN     AL, LCDInsReg                   ;read the status register
+    AND    AL, BusyFlagMask                ;mask out lower 7 bits
+    CMP    AL, BusyReady                   ;check if busy flag is set
+    JE     DisplayLCDWrite                 ;ready - go write to display
+    JMP    DisplayLCDBusy                  ;not ready - keep looping
+
+DisplayLCDWrite:
+    MOV    AL, ES:[SI]                     ;copy character to output register
+    OUT    LCDDatReg, AL                   ;output to display
+    INC    SI                              ;next element of buffer
+    JMP    DisplayLCDCheckEnd              ;go check for null char
+    
+DisplayLCDEnd:                              ;end - restore registers
     POP    AX
     POP    SI
     RET
@@ -542,6 +566,17 @@ SecToTime    ENDP
 ;               looks up the start position for each information type
 ;               from this table.
 ;
+;Author:        Timothy Liu
+;
+;Last Modified  4/29/16
+
+DisplayInfoTable        LABEL    BYTE
+
+;        DB        StartAddress
+         DB        080h        ;track name
+         DB        08Eh        ;action address
+         DB        0C0h        ;artist name
+         DB        0CBh        ;time
 
 
 CODE ENDS

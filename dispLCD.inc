@@ -11,6 +11,7 @@
 ; Revision History:
 ;    4/26/16   Timothy Liu    created file - initial revision
 ;    4/27/16   Tim Liu   Added buffer sizes and LCD reg addresses and values
+;    4/29/16   Tim Liu   Added buffer indexes
 
 LCDInsReg       EQU    80h         ;address of LCD instruction register
 LCDDatReg       EQU    81h         ;address of LCD data register
@@ -31,6 +32,7 @@ BusyReady       EQU    0           ;busy flag is now ready
 MaxTime         EQU    35990       ;max time that can be displayed (tenths
                                    ;of second)
 TIME_NONE       EQU    65535       ;display no time
+
 
 ;buffer indexes
 SecPos            EQU    3         ;index of where to start writing sec

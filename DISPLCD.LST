@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE DISPLCD
@@ -24,688 +24,742 @@ LOC  OBJ                  LINE     SOURCE
                             14     ;        2/4/16    Tim Liu    created file
                             15     ;        4/27/16   Tim Liu    wrote InitDisplay and added data/code segments
                             16     ;        4/28/16   Tim Liu    Added busy flag read and looping to InitDisplay
-                            17     ;
+                            17     ;        4/29/16   Tim Liu    wrote SecToTime
                             18     ;
-                            19     ; Table of Contents
-                            20     ;
-                            21     ;    InitDisplay - initializes shared variables for display
-                            22     ;    DisplayLCD - writes characters to the LCD
-                            23     ;    SecToTime - converts time elapsed to mm:ss ASCII format
-                            24     ;    Display_Time - displays the passed time to the LCD
-                            25     ;    Display_Status - displays the passed status to the LCD
-                            26     ;    Display_Title - displays track title on the LCD
-                            27     ;    Display_Artist - displays track artist on the LCD
-                            28     
-                            29     ; local include files
-                            30 +1  $INCLUDE(GENERAL.INC)
-                      =1    31     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    32     ;                                                                            ;
-                      =1    33     ;                                  General.INC                               ;
-                      =1    34     ;                               General include file                         ;
-                      =1    35     ;                                   EE/CS 51                                 ;
-                      =1    36     ;                                                                            ;
-                      =1    37     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    38     
-                      =1    39     ; This file contains general definitions and constants.
-                      =1    40     ;
-                      =1    41     ; Revision History:
-                      =1    42     ;    11/3/15     Timothy Liu     initial revision
-                      =1    43     ;    11/5/15     Timothy Liu     fixed formatting
-                      =1    44     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
-                      =1    45     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
-                      =1    46     ;    11/19/15    Timothy Liu     removed interrupt related definitions
-                      =1    47     ;    12/5/15     Timothy Liu     added ASCII definitions
-                      =1    48     
+                            19     ;
+                            20     ; Table of Contents
+                            21     ;
+                            22     ;    InitDisplay - initializes shared variables for display
+                            23     ;    DisplayLCD - writes characters to the LCD
+                            24     ;    SecToTime - converts time elapsed to mm:ss ASCII format
+                            25     ;    Display_Time - displays the passed time to the LCD
+                            26     ;    Display_Status - displays the passed status to the LCD
+                            27     ;    Display_Title - displays track title on the LCD
+                            28     ;    Display_Artist - displays track artist on the LCD
+                            29     
+                            30     ; local include files
+                            31 +1  $INCLUDE(GENERAL.INC)
+                      =1    32     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    33     ;                                                                            ;
+                      =1    34     ;                                  General.INC                               ;
+                      =1    35     ;                               General include file                         ;
+                      =1    36     ;                                   EE/CS 51                                 ;
+                      =1    37     ;                                                                            ;
+                      =1    38     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    39     
+                      =1    40     ; This file contains general definitions and constants.
+                      =1    41     ;
+                      =1    42     ; Revision History:
+                      =1    43     ;    11/3/15     Timothy Liu     initial revision
+                      =1    44     ;    11/5/15     Timothy Liu     fixed formatting
+                      =1    45     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
+                      =1    46     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
+                      =1    47     ;    11/19/15    Timothy Liu     removed interrupt related definitions
+                      =1    48     ;    12/5/15     Timothy Liu     added ASCII definitions
                       =1    49     
                       =1    50     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
 
-  0004                =1    51     BitsPerNibble        EQU        4         ;number of bits in a nibble
-                      =1    52     
-  0002                =1    53     OffSize              EQU        2         ;offset size in bytes
-                      =1    54     
-                      =1    55     ;Ascii definitions
-  000D                =1    56     ASCII_CR             EQU       13         ;ASCII carriage return
-  0044                =1    57     ASCII_D              EQU       68         ;ASCII code for D
-  0045                =1    58     ASCII_E              EQU       69         ;ASCII E
-  0046                =1    59     ASCII_F              EQU       70         ;F character for fire (laser on)
-  004C                =1    60     ASCII_L              EQU       76         ;L character
-  004F                =1    61     ASCII_O              EQU       79         ;O character for off (laser off)
-  0053                =1    62     ASCII_S              EQU       83         ;S character
-  0000                =1    63     ASCII_NULL           EQU        0         ;ASCII null character
-  0020                =1    64     ASCII_SPACE          EQU       32         ;ASCII space
-  003A                =1    65     ASCII_COLON          EQU       58         ;ASCII colon
-                      =1    66     
-  0001                =1    67     TRUE                 EQU        1         ;true
-  0000                =1    68     FALSE                EQU        0         ;false
-                      =1    69     
-  0002                =1    70     WORD_SIZE            EQU        2         ;2 bytes per word
-                            71 +1  $INCLUDE(DISPLCD.INC)
-                      =1    72     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    73     ;                                                                            ;
-                      =1    74     ;                                   dispLCD.inc                              ;
-                      =1    75     ;                            LCD Display Include File                        ;
-                      =1    76     ;                                   EE/CS 52                                 ;
-                      =1    77     ;                                                                            ;
-                      =1    78     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    79     
-                      =1    80     ; This files contains the definitions for dispLCD
-                      =1    81     ;
-                      =1    82     ; Revision History:
-                      =1    83     ;    4/26/16   Timothy Liu    created file - initial revision
-                      =1    84     ;    4/27/16   Tim Liu   Added buffer sizes and LCD reg addresses and values
-                      =1    85     
-  0080                =1    86     LCDInsReg       EQU    80h         ;address of LCD instruction register
-  0081                =1    87     LCDDatReg       EQU    81h         ;address of LCD data register
-  000F                =1    88     LCDInitVal      EQU    0fh         ;00001--- display on/off control
-                      =1    89                                        ;-----1-- display on
-                      =1    90                                        ;------1- cursor on
-                      =1    91                                        ;-------1 blinking on
-                      =1    92     
-  0038                =1    93     LCDFunSetVal    EQU    38h         ;00111000
-                      =1    94                                        ;--1----- function set control
-                      =1    95                                        ;---1---- 8 bit data
-                      =1    96                                        ;----1--- 2 lines
-                      =1    97                                        ;-----000 donb^^t care
-                      =1    98     
-  0080                =1    99     BusyFlagMask    EQU    10000000b   ;mask out low 7 bits to get busy flag
-  0000                =1   100     BusyReady       EQU    0           ;busy flag is now ready
-                      =1   101     
-  8C96                =1   102     MaxTime         EQU    35990       ;max time that can be displayed (tenths
-                      =1   103                                        ;of second)
-  FFFF                =1   104     TIME_NONE       EQU    65535       ;display no time
-                      =1   105     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    3
+                      =1    51     
+  0004                =1    52     BitsPerNibble        EQU        4         ;number of bits in a nibble
+                      =1    53     
+  0002                =1    54     OffSize              EQU        2         ;offset size in bytes
+                      =1    55     
+                      =1    56     ;Ascii definitions
+  000D                =1    57     ASCII_CR             EQU       13         ;ASCII carriage return
+  0044                =1    58     ASCII_D              EQU       68         ;ASCII code for D
+  0045                =1    59     ASCII_E              EQU       69         ;ASCII E
+  0046                =1    60     ASCII_F              EQU       70         ;F character for fire (laser on)
+  004C                =1    61     ASCII_L              EQU       76         ;L character
+  004F                =1    62     ASCII_O              EQU       79         ;O character for off (laser off)
+  0053                =1    63     ASCII_S              EQU       83         ;S character
+  0000                =1    64     ASCII_NULL           EQU        0         ;ASCII null character
+  0020                =1    65     ASCII_SPACE          EQU       32         ;ASCII space
+  003A                =1    66     ASCII_COLON          EQU       58         ;ASCII colon
+                      =1    67     
+  0001                =1    68     TRUE                 EQU        1         ;true
+  0000                =1    69     FALSE                EQU        0         ;false
+                      =1    70     
+  0002                =1    71     WORD_SIZE            EQU        2         ;2 bytes per word
+                            72 +1  $INCLUDE(DISPLCD.INC)
+                      =1    73     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    74     ;                                                                            ;
+                      =1    75     ;                                   dispLCD.inc                              ;
+                      =1    76     ;                            LCD Display Include File                        ;
+                      =1    77     ;                                   EE/CS 52                                 ;
+                      =1    78     ;                                                                            ;
+                      =1    79     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    80     
+                      =1    81     ; This files contains the definitions for dispLCD
+                      =1    82     ;
+                      =1    83     ; Revision History:
+                      =1    84     ;    4/26/16   Timothy Liu    created file - initial revision
+                      =1    85     ;    4/27/16   Tim Liu   Added buffer sizes and LCD reg addresses and values
+                      =1    86     
+  0080                =1    87     LCDInsReg       EQU    80h         ;address of LCD instruction register
+  0081                =1    88     LCDDatReg       EQU    81h         ;address of LCD data register
+  000F                =1    89     LCDInitVal      EQU    0fh         ;00001--- display on/off control
+                      =1    90                                        ;-----1-- display on
+                      =1    91                                        ;------1- cursor on
+                      =1    92                                        ;-------1 blinking on
+                      =1    93     
+  0038                =1    94     LCDFunSetVal    EQU    38h         ;00111000
+                      =1    95                                        ;--1----- function set control
+                      =1    96                                        ;---1---- 8 bit data
+                      =1    97                                        ;----1--- 2 lines
+                      =1    98                                        ;-----000 donb^^t care
+                      =1    99     
+  0080                =1   100     BusyFlagMask    EQU    10000000b   ;mask out low 7 bits to get busy flag
+  0000                =1   101     BusyReady       EQU    0           ;busy flag is now ready
+                      =1   102     
+  8C96                =1   103     MaxTime         EQU    35990       ;max time that can be displayed (tenths
+                      =1   104                                        ;of second)
+  FFFF                =1   105     TIME_NONE       EQU    65535       ;display no time
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1   106     ;buffer indexes
-  0003                =1   107     SecPos            EQU    3         ;index of where to start writing sec
-  0005                =1   108     ColonPos          EQU    5         ;index of where to write colon
-  0003                =1   109     TimeBufStartInd   EQU    3         ;index of where the time starts - 
-                      =1   110                                        ;extra spaces in the buffer are padding 0
-                      =1   111     
-                      =1   112     ;Buffer sizes
-  0009                =1   113     TimeBufSize       EQU    9         ;size of time buffer in bytes
-                      =1   114                                        ;buffer is extra large b/c Dec2String
-                      =1   115                                        ;writes padding zeroes
-  000E                =1   116     TrackBufSize      EQU    14        ;size of track buffer in bytes
-  0003                =1   117     StatusBufSize     EQU    3         ;size of status buffer in bytes
-  000B                =1   118     ArtistBufSize     EQU    11        ;size of artist buffer in bytes
-                           119     
-                           120     CGROUP    GROUP    CODE
-                           121     DGROUP    GROUP    DATA
-                           122     
-----                       123     CODE SEGMENT PUBLIC 'CODE'
+                      =1   106     
+                      =1   107     
+                      =1   108     ;buffer indexes
+  0003                =1   109     SecPos            EQU    3         ;index of where to start writing sec
+  0005                =1   110     ColonPos          EQU    5         ;index of where to write colon
+  0003                =1   111     TimeBufStartInd   EQU    3         ;index of where the time starts - 
+                      =1   112                                        ;extra spaces in the buffer are padding 0
+                      =1   113     
+                      =1   114     ;Buffer sizes
+  0009                =1   115     TimeBufSize       EQU    9         ;size of time buffer in bytes
+                      =1   116                                        ;buffer is extra large b/c Dec2String
+                      =1   117                                        ;writes padding zeroes
+  000E                =1   118     TrackBufSize      EQU    14        ;size of track buffer in bytes
+  0003                =1   119     StatusBufSize     EQU    3         ;size of status buffer in bytes
+  000B                =1   120     ArtistBufSize     EQU    11        ;size of artist buffer in bytes
+                           121     
+                           122     CGROUP    GROUP    CODE
+                           123     DGROUP    GROUP    DATA
                            124     
-                           125             ASSUME  CS:CGROUP, DS:DGROUP
+----                       125     CODE SEGMENT PUBLIC 'CODE'
                            126     
-                           127     ;external function declarations
+                           127             ASSUME  CS:CGROUP, DS:DGROUP
                            128     
-                           129             EXTRN    Dec2String:NEAR            ;convert decimals to strings
+                           129     ;external function declarations
                            130     
-                           131     ;Name:               InitDisplayLCD
-                           132     ;
-                           133     ;Description:        This function initializes the shared variables for
-                           134     ;                    the display functions. The function also writes 
-                           135     ;                    InitLCDVal to LCDInsReg to turn on the display
-                           136     ;                    and turn on the cursor.
-                           137     ;
-                           138     ;Operation:          None
+                           131             EXTRN    Dec2String:NEAR            ;convert decimals to strings
+                           132     
+                           133     ;Name:               InitDisplayLCD
+                           134     ;
+                           135     ;Description:        This function initializes the shared variables for
+                           136     ;                    the display functions. The function also writes 
+                           137     ;                    InitLCDVal to LCDInsReg to turn on the display
+                           138     ;                    and turn on the cursor.
                            139     ;
-                           140     ;Arguments:          None
+                           140     ;Operation:          None
                            141     ;
-                           142     ;Return Values:      None
+                           142     ;Arguments:          None
                            143     ;
-                           144     ;Local Variables:    None
+                           144     ;Return Values:      None
                            145     ;
-                           146     ;Shared Variables:   None
+                           146     ;Local Variables:    None
                            147     ;
-                           148     ;Input:              None
+                           148     ;Shared Variables:   None
                            149     ;
-                           150     ;Output:             None
+                           150     ;Input:              None
                            151     ;
-                           152     ;Error Handling:     None
+                           152     ;Output:             None
                            153     ;
-                           154     ;Algorithms:         None
+                           154     ;Error Handling:     None
                            155     ;
-                           156     ;Registers Used:     None
+                           156     ;Algorithms:         None
                            157     ;
-                           158     ;Known Bugs:         None
+                           158     ;Registers Used:     None
                            159     ;
-                           160     ;Limitations:        None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    4
+                           160     ;Known Bugs:         None
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            161     ;
-                           162     ;Last Modified:      4/28/16
-                           163     
-                           164     ;Outline
+                           162     ;Limitations:        None
+                           163     ;
+                           164     ;Last Modified:      4/28/16
                            165     
-                           166     
-0000                       167     InitDisplayLCD        PROC    NEAR
-                           168                           PUBLIC  InitDisplayLCD
-0000                       169     InitDisplayStart:              ;starting label
-0000 50                    170         PUSH   AX                  ;save register
-                           171     
-0001                       172     InitDisplayOut:                ;output setup command to LCD
-0001 B00F                  173         MOV    AL, LCDInitVal      ;load LCD initialization command
-0003 E680                  174         OUT    LCDInsReg, AL       ;write display control command
-                           175     
-0005                       176     InitDisplayCheckBusy:
-0005 E480                  177         IN     AL, LCDInsReg       ;read the status register
-0007 2480                  178         AND    AL, BusyFlagMask    ;mask out lower 7 bits
-0009 3C00                  179         CMP    AL, BusyReady       ;check if busy flag is set
-000B 7402                  180         JE     InitDisplayFunSet   ;not busy - output function set
-000D EBF6                  181         JMP    InitDisplayCheckBusy;not ready - keep looping
-                           182     
-000F                       183     InitDisplayFunSet:             ;output function set command to LCD
-000F B038                  184         MOV    AL, LCDFunSetVal    ;load function set command
-0011 E680                  185         OUT    LCDInsReg, AL       ;write function set command
-                           186     
-                           187     
-0013                       188     InitDisplayLCDDone:            ;done with function
-0013 58                    189         POP   AX                   ;restore register
-                           190     
-0014 C3                    191         RET                        
+                           166     ;Outline
+                           167     
+                           168     
+0000                       169     InitDisplayLCD        PROC    NEAR
+                           170                           PUBLIC  InitDisplayLCD
+0000                       171     InitDisplayStart:              ;starting label
+0000 50                    172         PUSH   AX                  ;save register
+                           173     
+0001                       174     InitDisplayOut:                ;output setup command to LCD
+0001 B00F                  175         MOV    AL, LCDInitVal      ;load LCD initialization command
+0003 E680                  176         OUT    LCDInsReg, AL       ;write display control command
+                           177     
+0005                       178     InitDisplayCheckBusy:
+0005 E480                  179         IN     AL, LCDInsReg       ;read the status register
+0007 2480                  180         AND    AL, BusyFlagMask    ;mask out lower 7 bits
+0009 3C00                  181         CMP    AL, BusyReady       ;check if busy flag is set
+000B 7402                  182         JE     InitDisplayFunSet   ;not busy - output function set
+000D EBF6                  183         JMP    InitDisplayCheckBusy;not ready - keep looping
+                           184     
+000F                       185     InitDisplayFunSet:             ;output function set command to LCD
+000F B038                  186         MOV    AL, LCDFunSetVal    ;load function set command
+0011 E680                  187         OUT    LCDInsReg, AL       ;write function set command
+                           188     
+                           189     
+0013                       190     InitDisplayLCDDone:            ;done with function
+0013 58                    191         POP   AX                   ;restore register
                            192     
-                           193     InitDisplayLCD    ENDP
+0014 C3                    193         RET                        
                            194     
-                           195     
+                           195     InitDisplayLCD    ENDP
                            196     
-                           197     ;Name:               DisplayLCD
-                           198     ;
-                           199     ;Description:        This function takes two arguments. The first argument is
-                           200     ;                    the address of a string for it to display. The second
-                           201     ;                    argument is an integer describing the type of
-                           202     ;                    information to be displayed. The second argument is used
-                           203     ;                    as an index into a table of structs. A table lookup
-                           204     ;                    is used to find the starting location on the LCD
-                           205     ;                    to write to for the given information type and the
-                           206     ;                    maximum allowed length. The function then writes
+                           197     
+                           198     
+                           199     ;Name:               DisplayLCD
+                           200     ;
+                           201     ;Description:        This function takes two arguments. The first argument is
+                           202     ;                    the address of a string for it to display. The second
+                           203     ;                    argument is an integer describing the type of
+                           204     ;                    information to be displayed. The second argument is used
+                           205     ;                    as an index into a byte table that stores the starting
+                           206     ;                    address of each type of data. The function then writes
                            207     ;                    ASCII characters to the LCD one character at a time.
-                           208     ;                    The function checks that the information is not
-                           209     ;                    written beyond its allowed space. Once the function
+                           208     ;                    The function stops writing when it reaches a null
+                           209     ;                    character in the string passed to it. Once the function
                            210     ;                    is done writing, the function will return.
                            211     ;
                            212     ;Operation:          The string to write is passed to the function through
                            213     ;                    ES:SI. The type of information is passed through BX
-                           214     ;                    as an integer. The integer is multiplied by the 
-                           215     ;                    size of each struct and added to the starting location
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    5
+                           214     ;                    as an integer. The integer is used to index into
+                           215     ;                    DisplayInfoTable to find the starting cursor position
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     ;                    of DisplayInfoTable, which is a table of structs.
-                           217     ;                    A table lookup into DisplayInfoTable is done to
-                           218     ;                    find the starting cursor position and the maximum
-                           219     ;                    space allotted to the information. The maximum
-                           220     ;                    number of characters is stored in CX. The function
-                           221     ;                    loops through the string that was passed and writes
-                           222     ;                    to the LCD. After each character is written, the 
-                           223     ;                    function increments the cursor to the next character
-                           224     ;                    and decrements the number of spaces allowed. Once
-                           225     ;                    the ASCII null character is reached or if the function
-                           226     ;                    reaches the end of the maximum allowed spaces for the 
-                           227     ;                    information, the function returns.
+                           216     ;                    for each type of information. The function
+                           217     ;                    loops through the string that was passed and writes
+                           218     ;                    to the LCD. After each character is written, the 
+                           219     ;                    function increments the cursor to the next character.
+                           220     ;                    The function loops checking the busy flag after each
+                           221     ;                    write to the LCD. Only once the LCD busy flag is clear
+                           222     ;                    will the function write the next character.
+                           223     ;                    Once the ASCII null character is reached the function
+                           224     ;                    returns.
+                           225     ;
+                           226     ;Arguments:          String(ES:SI) - pointer to string to display
+                           227     ;                    Type (BX) - integer indicating type of info to display
                            228     ;
-                           229     ;Arguments:          String(ES:SI) - pointer to string to display
-                           230     ;                    Type (BX) - integer indicating type of info to display
-                           231     ;
-                           232     ;Return Values:      None
+                           229     ;Return Values:      None
+                           230     ;
+                           231     ;Local Variables:    Cursor - position of the cursor
+                           232     ;
                            233     ;
-                           234     ;Local Variables:    Cursor - position of the cursor
-                           235     ;                    CharLeft - counter for how many more characters are
-                           236     ;                    allowed for the information type
+                           234     ;Shared Variables:   None
+                           235     ;
+                           236     ;Input:              None
                            237     ;
-                           238     ;Shared Variables:   None
+                           238     ;Output:             None
                            239     ;
-                           240     ;Input:              None
+                           240     ;Error Handling:     None
                            241     ;
-                           242     ;Output:             None
+                           242     ;Algorithms:         None
                            243     ;
-                           244     ;Error Handling:     None
+                           244     ;Registers Used:     None
                            245     ;
-                           246     ;Algorithms:         None
+                           246     ;Known Bugs:         None
                            247     ;
-                           248     ;Registers Used:     None
+                           248     ;Limitations:        None
                            249     ;
-                           250     ;Known Bugs:         None
-                           251     ;
-                           252     ;Limitations:        None
-                           253     ;
-                           254     ;Last Modified:      2/4/16
-                           255     
-                           256     ;Outline
-                           257     ;DisplayLCD(String, Type)
-                           258     ;    Type *= SizeOf(DataInfoStruct)        ;multiply by size of table entry    
-                           259     ;    Type += Offset(DataInfoTable)         ;add to table start location
-                           260     ;    Cursor = DataInfoTable[Type].Start    ;set cursor to start position
-                           261     ;    CharLeft = DataInfoTable[Type].MaxSize;set max chars allowed for type
-                           262     ;    WHILE (CharLeft != 0 AND              ;check havenb^^t written too far
-                           263     ;          ES:[SI] != ASCII_NULL)          ;check for end of string
-                           264     ;        OUT(ES:[SI], LCDDataAddress)      ;output to the display
-                           265     ;        Cursor ++                         ;write at the next position
-                           266     ;        CharLeft b^^-                       ;one fewer space left to write
+                           250     ;Last Modified:      2/4/16
+                           251     
+                           252     ;Outline
+                           253     ;DisplayLCD(String, Type)
+                           254     ;    Type *= SizeOf(DataInfoStruct)        ;multiply by size of table entry    
+                           255     ;    Type += Offset(DataInfoTable)         ;add to table start location
+                           256     ;    Cursor = DataInfoTable[Type].Start    ;set cursor to start position
+                           257     ;    CharLeft = DataInfoTable[Type].MaxSize;set max chars allowed for type
+                           258     ;    WHILE (CharLeft != 0 AND              ;check havenb^^t written too far
+                           259     ;          ES:[SI] != ASCII_NULL)          ;check for end of string
+                           260     ;        OUT(ES:[SI], LCDDataAddress)      ;output to the display
+                           261     ;        Cursor ++                         ;write at the next position
+                           262     ;        CharLeft b^^-                       ;one fewer space left to write
+                           263     
+                           264     
+0015                       265     DisplayLCD        PROC    NEAR
+                           266                       PUBLIC  DisplayLCD
                            267     
-                           268     
-                           269     
-                           270     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    6
+0015                       268     DisplayLCDStart:                           ;save registers
+0015 56                    269         PUSH    SI
+0016 50                    270         PUSH    AX
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ; ###### DisplayLCD CODE  ######
-                           272     
-                           273     
-                           274     ;Name:               SecToTime
-                           275     ;
-                           276     ;Description:        The function is passed an unsigned integer as an
-                           277     ;                    and argument. The argument represents the amount of
-                           278     ;                    time remaining in the track in tenths of a second.
-                           279     ;                    This function converts the time remaining in tenths
-                           280     ;                    of a second to minute:second (mm:ss) format. The
-                           281     ;                    function truncates the number of seconds. If the 
-                           282     ;                    amount of time remaining exceeds MAX_TIME, or if
-                           283     ;                    the time to be displayed is TIME_NONE, then the function
-                           284     ;                    displays blank segment patterns where the time should
-                           285     ;                    be displayed.
-                           286     ;                    
-                           287     ;
-                           288     ;Operation:          The function first divides the amount of time remaining
-                           289     ;                    by ten to get the number of seconds. The function then
-                           290     ;                    divides the number of seconds by 60 seconds in a minute
-                           291     ;                    to get the number of minutes remaining. The function
-                           292     ;                    calls Dec2String to convert the number of minutes
-                           293     ;                    to an ASCII string. The ASCII string is written to the
-                           294     ;                    first two characters of TimeBuffer.The function takes
-                           295     ;                    the remainder of the division and calls Dec2String to
-                           296     ;                    convert the number of seconds to a string. The function
-                           297     ;                    writes to location SecondStart of TimeBuffer. The
-                           298     ;                    function then writes ASCII_COLON to location TimeColon
-                           299     ;                    of TimeBuffer. If Time_remaining exceeds MAX_TIME, the
-                           300     ;                    function writes a blank character patterns to the
-                           301     ;                    TimeBuffer.
-                           302     ;
-                           303     ;Arguments:          Time_remaining (AX) - number of tenths of seconds
-                           304     ;                    remaining in the track.
-                           305     ;
-                           306     ;Return Values:      None
-                           307     ;
-                           308     ;Local Variables:    None
-                           309     ;
-                           310     ;Shared Variables:   TimeBuffer (R/W) - buffer for holding time in mm:ss
-                           311     ;                    format
-                           312     ;
-                           313     ;Input:              None
-                           314     ;
-                           315     ;Output:             None
+                           271     
+0017                       272     DisplayLCDLookUp:                          ;lookup start address of info type
+0017 2E8A878D00     R      273         MOV    AL, CS:DisplayInfoTable[BX]     ;AL stores LCD DDRAM location
+                           274     
+001C                       275     DisplayLCDSetStart:                        ;set cursor to start position
+001C E680                  276         OUT   LCDInsReg, AL                    ;write cursor pos to ins reg
+                           277     
+001E                       278     DisplayLCDCheckEnd:                        ;check if end of buffer reached
+001E 26803C00              279         CMP   BYTE PTR ES:[SI], ASCII_NULL     ;buffers are null terminated
+0022 7412                  280         JE    DisplayLCDEnd                    ;reach end of buffer
+                           281     
+0024                       282     DisplayLCDBusy:                            ;check if busy flag is set
+0024 E480                  283         IN     AL, LCDInsReg                   ;read the status register
+0026 2480                  284         AND    AL, BusyFlagMask                ;mask out lower 7 bits
+0028 3C00                  285         CMP    AL, BusyReady                   ;check if busy flag is set
+002A 7402                  286         JE     DisplayLCDWrite                 ;ready - go write to display
+002C EBF6                  287         JMP    DisplayLCDBusy                  ;not ready - keep looping
+                           288     
+002E                       289     DisplayLCDWrite:
+002E 268A04                290         MOV    AL, ES:[SI]                     ;copy character to output register
+0031 E681                  291         OUT    LCDDatReg, AL                   ;output to display
+0033 46                    292         INC    SI                              ;next element of buffer
+0034 EBE8                  293         JMP    DisplayLCDCheckEnd              ;go check for null char
+                           294         
+0036                       295     DisplayLCDEnd:                              ;end - restore registers
+0036 58                    296         POP    AX
+0037 5E                    297         POP    SI
+0038 C3                    298         RET
+                           299     
+                           300     
+                           301     DisplayLCD        ENDP
+                           302     
+                           303     ;Name:               SecToTime
+                           304     ;
+                           305     ;Description:        The function is passed an unsigned integer as an
+                           306     ;                    and argument. The argument represents the amount of
+                           307     ;                    time remaining in the track in tenths of a second.
+                           308     ;                    This function converts the time remaining in tenths
+                           309     ;                    of a second to minute:second (mm:ss) format. The
+                           310     ;                    function truncates the number of seconds. If the 
+                           311     ;                    amount of time remaining exceeds MAX_TIME, or if
+                           312     ;                    the time to be displayed is TIME_NONE, then the function
+                           313     ;                    displays blank segment patterns where the time should
+                           314     ;                    be displayed.
+                           315     ;                    
                            316     ;
-                           317     ;Error Handling:     Checks that the passed time does not exceed MAX_TIME
-                           318     ;
-                           319     ;Algorithms:         None
-                           320     ;
-                           321     ;Registers Used:     AX
-                           322     ;
-                           323     ;Known Bugs:         None
-                           324     ;
-                           325     ;Limitations:        None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    7
+                           317     ;Operation:          The function first divides the amount of time remaining
+                           318     ;                    by ten to get the number of seconds. The function then
+                           319     ;                    divides the number of seconds by 60 seconds in a minute
+                           320     ;                    to get the number of minutes remaining. The function
+                           321     ;                    calls Dec2String to convert the number of minutes
+                           322     ;                    to an ASCII string. The ASCII string is written to the
+                           323     ;                    first two characters of TimeBuffer.The function takes
+                           324     ;                    the remainder of the division and calls Dec2String to
+                           325     ;                    convert the number of seconds to a string. The function
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           326     ;
-                           327     ;Last Modified:      4/28/16
-                           328     
-                           329     ;Outline
-                           330     ;SecToTime()
-                           331     ;    IF Time_Remaining <= MAX_TIME:      ;check time doesnb^^t exceed limit    
-                           332     ;        Time_remaining /= 10            ;convert to seconds
-                           333     ;        Seconds = Time_remaining mod 60   ;mod 60 to get seconds
-                           334     ;        Minutes = Time_remaining / 60   ;divide by 60 to get minutes
-                           335     ;        Dec2String(TimeBuffer, Minutes) ;convert minutes to ASCII string
-                           336     ;                                    ;and write to time buffer
-                           337     ;        Dec2String(TimeBuffer + SecondStart, Seconds)
-                           338     ;                                    ;write seconds to time buffer
-                           339     ;        TimeBuffer[TimeColon] = ASCII_Colon  ;write colon between mm:ss
-                           340     ;        Carry Flag = 0                  ;clear carry flag for no error
-                           341     ;    ELSE:
-                           342     ;        Carry Flag = 1                  ;MAX_TIME exceeded
-                           343     ;    RETURN
-                           344     
-0015                       345     SecToTime        PROC    NEAR
-                           346                      PUBLIC  SecToTime
-                           347     
-0015                       348     SecToTimeStart:                          ;starting label - save registers
-0015 53                    349         PUSH   BX                            ;save registers
-0016 52                    350         PUSH   DX                            
-0017 56                    351         PUSH   SI
-                           352     
-0018                       353     SecToTimeCheck:                          ;check time doesnb^^t exceed MAX_TIME
-0018 3D968C                354         CMP    AX, MAXTIME                   ;
-001B 772E                  355         JA     SecToTimeBlankLoad            ;time too high to display
-                           356         ;JMP   SecToTimeDivide               ;time under limit-start calculating
+                           326     ;                    writes to location SecondStart of TimeBuffer. The
+                           327     ;                    function then writes ASCII_COLON to location TimeColon
+                           328     ;                    of TimeBuffer. If Time_remaining exceeds MAX_TIME, the
+                           329     ;                    function writes a blank character patterns to the
+                           330     ;                    TimeBuffer.
+                           331     ;
+                           332     ;Arguments:          Time_remaining (AX) - number of tenths of seconds
+                           333     ;                    remaining in the track.
+                           334     ;
+                           335     ;Return Values:      None
+                           336     ;
+                           337     ;Local Variables:    None
+                           338     ;
+                           339     ;Shared Variables:   TimeBuffer (R/W) - buffer for holding time in mm:ss
+                           340     ;                    format
+                           341     ;
+                           342     ;Input:              None
+                           343     ;
+                           344     ;Output:             None
+                           345     ;
+                           346     ;Error Handling:     Checks that the passed time does not exceed MAX_TIME
+                           347     ;
+                           348     ;Algorithms:         None
+                           349     ;
+                           350     ;Registers Used:     AX
+                           351     ;
+                           352     ;Known Bugs:         None
+                           353     ;
+                           354     ;Limitations:        None
+                           355     ;
+                           356     ;Last Modified:      4/28/16
                            357     
-001D                       358     SecToTimeDivide:
-001D BB0A00                359         MOV    BX, 10                        ;tenths of a second in a second
-0020 33D2                  360         XOR    DX, DX                        ;clear out the high order byte
-0022 F7F3                  361         DIV    BX                            ;divide time to get seconds left
-                           362     
-0024 BB3C00                363         MOV    BX, 60                        ;divide by seconds in a minute
-0027 33D2                  364         XOR    DX, DX                        ;clear out high order byte
-0029 F7F3                  365         DIV    BX                            ;minutes in AX seconds in DX
-                           366     
-                           367     
-002B                       368     SecToTimeWriteTime:                      ;write time to TimeBuffer
-002B 92                    369         XCHG   AX, DX                        ;swap minutes and seconds
-                           370                                              ;so that sec in AX and min in DX
-002C 8D360000       R      371         LEA    SI, TimeBuffer                ;load argument for Dec2String
-0030 83C603                372         ADD    SI, SecPos                    ;compute location for writing sec
-0033 E80000         E      373         CALL   Dec2String                    ;write seconds to TimeBuf
-0036 8BC2                  374         MOV    AX, DX                        ;copy minutes to Dec2String arg
-0038 8D360000       R      375         LEA    SI, TimeBuffer                ;address to write minutes to
-003C E80000         E      376         CALL   Dec2String                    ;write seconds to TimeBuffer
-                           377     
-003F                       378     SectoTimeWriteColon:                     ;write colon between min and sec
-003F BB0500                379         MOV    BX, ColonPos                  ;load index of colon
-0042 C68700003A90   R      380         MOV    TimeBuffer[BX], ASCII_COLON   ;write colon
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    8
+                           358     ;Outline
+                           359     ;SecToTime()
+                           360     ;    IF Time_Remaining <= MAX_TIME:      ;check time doesnb^^t exceed limit    
+                           361     ;        Time_remaining /= 10            ;convert to seconds
+                           362     ;        Seconds = Time_remaining mod 60   ;mod 60 to get seconds
+                           363     ;        Minutes = Time_remaining / 60   ;divide by 60 to get minutes
+                           364     ;        Dec2String(TimeBuffer, Minutes) ;convert minutes to ASCII string
+                           365     ;                                    ;and write to time buffer
+                           366     ;        Dec2String(TimeBuffer + SecondStart, Seconds)
+                           367     ;                                    ;write seconds to time buffer
+                           368     ;        TimeBuffer[TimeColon] = ASCII_Colon  ;write colon between mm:ss
+                           369     ;        Carry Flag = 0                  ;clear carry flag for no error
+                           370     ;    ELSE:
+                           371     ;        Carry Flag = 1                  ;MAX_TIME exceeded
+                           372     ;    RETURN
+                           373     
+0039                       374     SecToTime        PROC    NEAR
+                           375                      PUBLIC  SecToTime
+                           376     
+0039                       377     SecToTimeStart:                          ;starting label - save registers
+0039 53                    378         PUSH   BX                            ;save registers
+003A 52                    379         PUSH   DX                            
+003B 56                    380         PUSH   SI
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
 
-0048 EB1B90                381         JMP    SecToTimeDone                 ;done with function
-                           382         
-004B                       383     SecToTimeBlankLoad:                      ;write blank segment patterns
-004B BB0000                384         MOV    BX, 0                         ;array index
-                           385     
-004E                       386     SecToTimeBlankLoop:
-004E 83FB09                387         CMP    BX, TimeBufSize               ;check if array has been filled
-0051 7409                  388         JE     SecToTimeBlankEnd             ;done writing 5 blanks
-                           389     
-0053                       390     SecToTimeWriteBlank:                     ;write blanks to the TimeBuffer
-0053 C68700002090   R      391         MOV    TimeBuffer[BX], ASCII_SPACE   ;
-0059 43                    392         INC    BX                            ;move index to next element
-005A EBF2                  393         JMP    SecToTimeBlankLoop            ;go back to loop
-                           394     
-005C                       395     SecToTimeBlankEnd:
-005C BB0800                396         MOV    BX, TimeBufSize - 1           ;index of last element of buffer
-005F C68700000090   R      397         MOV    TimeBuffer[BX], ASCII_NULL    ;time buffer is null terminated
-                           398     
-0065                       399     SecToTimeDone:
-0065 5E                    400         POP    SI                            ;restore registers
-0066 5A                    401         POP    DX
-0067 5B                    402         POP    BX
-0068 C3                    403         RET
-                           404     
-                           405     
-                           406     SecToTime    ENDP
-                           407     
-                           408     ;Name:               DisplayTime(Deci_Left)
-                           409     ;
-                           410     ;Description:        This function calls the DisplayLCD function to
-                           411     ;                    display the time remaining in the track. The 
-                           412     ;                    function first calls the SecToTime function to
-                           413     ;                    convert the number of seconds the ASCII mm:ss format.
-                           414     ;                    The function then calls DisplayLCD with the starting
-                           415     ;                    address of TimeBuffer to be displayed. The function
-                           416     ;                    also passes Type_Time to Display LCD to indicate
-                           417     ;                    that the time remaining is being displayed. If SecToTime
-                           418     ;                    returns with the carry flag set indicating an error,
-                           419     ;                    the function does not display a time.
-                           420     ;
-                           421     ;Operation:          The function passes the argument of DisplayTime to 
-                           422     ;                    SecToTime to convert the time to an ASCII
-                           423     ;                    string in mm:ss format. If SecToTime returns with
-                           424     ;                    the carry flag set indicating an error, the function
-                           425     ;                    does not display a time. Otherwise, the function
-                           426     ;                    then passes the starting address of TimeBuffer and
-                           427     ;                    DisplayTime_Type to DisplayLCD.
-                           428     ;
-                           429     ;Arguments:          Deci_Left - tenths of seconds left in track
-                           430     ;
-                           431     ;Return Values:      None
-                           432     ;
-                           433     ;Local Variables:    None
-                           434     ;
-                           435     ;Shared Variables:   None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE    9
+                           381     
+003C                       382     SecToTimeCheck:                          ;check time doesnb^^t exceed MAX_TIME
+003C 3D968C                383         CMP    AX, MAXTIME                   ;
+003F 772E                  384         JA     SecToTimeBlankLoad            ;time too high to display
+                           385         ;JMP   SecToTimeDivide               ;time under limit-start calculating
+                           386     
+0041                       387     SecToTimeDivide:
+0041 BB0A00                388         MOV    BX, 10                        ;tenths of a second in a second
+0044 33D2                  389         XOR    DX, DX                        ;clear out the high order byte
+0046 F7F3                  390         DIV    BX                            ;divide time to get seconds left
+                           391     
+0048 BB3C00                392         MOV    BX, 60                        ;divide by seconds in a minute
+004B 33D2                  393         XOR    DX, DX                        ;clear out high order byte
+004D F7F3                  394         DIV    BX                            ;minutes in AX seconds in DX
+                           395     
+                           396     
+004F                       397     SecToTimeWriteTime:                      ;write time to TimeBuffer
+004F 92                    398         XCHG   AX, DX                        ;swap minutes and seconds
+                           399                                              ;so that sec in AX and min in DX
+0050 8D360000       R      400         LEA    SI, TimeBuffer                ;load argument for Dec2String
+0054 83C603                401         ADD    SI, SecPos                    ;compute location for writing sec
+0057 E80000         E      402         CALL   Dec2String                    ;write seconds to TimeBuf
+005A 8BC2                  403         MOV    AX, DX                        ;copy minutes to Dec2String arg
+005C 8D360000       R      404         LEA    SI, TimeBuffer                ;address to write minutes to
+0060 E80000         E      405         CALL   Dec2String                    ;write seconds to TimeBuffer
+                           406     
+0063                       407     SectoTimeWriteColon:                     ;write colon between min and sec
+0063 BB0500                408         MOV    BX, ColonPos                  ;load index of colon
+0066 C68700003A90   R      409         MOV    TimeBuffer[BX], ASCII_COLON   ;write colon
+006C EB1B90                410         JMP    SecToTimeDone                 ;done with function
+                           411         
+006F                       412     SecToTimeBlankLoad:                      ;write blank segment patterns
+006F BB0000                413         MOV    BX, 0                         ;array index
+                           414     
+0072                       415     SecToTimeBlankLoop:
+0072 83FB09                416         CMP    BX, TimeBufSize               ;check if array has been filled
+0075 7409                  417         JE     SecToTimeBlankEnd             ;done writing 5 blanks
+                           418     
+0077                       419     SecToTimeWriteBlank:                     ;write blanks to the TimeBuffer
+0077 C68700002090   R      420         MOV    TimeBuffer[BX], ASCII_SPACE   ;
+007D 43                    421         INC    BX                            ;move index to next element
+007E EBF2                  422         JMP    SecToTimeBlankLoop            ;go back to loop
+                           423     
+0080                       424     SecToTimeBlankEnd:
+0080 BB0800                425         MOV    BX, TimeBufSize - 1           ;index of last element of buffer
+0083 C68700000090   R      426         MOV    TimeBuffer[BX], ASCII_NULL    ;time buffer is null terminated
+                           427     
+0089                       428     SecToTimeDone:
+0089 5E                    429         POP    SI                            ;restore registers
+008A 5A                    430         POP    DX
+008B 5B                    431         POP    BX
+008C C3                    432         RET
+                           433     
+                           434     
+                           435     SecToTime    ENDP
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           436     ;
-                           437     ;Input:              None
+                           436     
+                           437     ;Name:               DisplayTime(Deci_Left)
                            438     ;
-                           439     ;Output:             None
-                           440     ;
-                           441     ;Error Handling:     None
-                           442     ;
-                           443     ;Algorithms:         None
-                           444     ;
-                           445     ;Registers Used:     None
-                           446     ;
-                           447     ;Known Bugs:         None
-                           448     ;
-                           449     ;Limitations:        None
-                           450     ;
-                           451     ;Last Modified:      2/4/16
-                           452     
-                           453     ;Outline
-                           454     ;DisplayTime(Deci_Left)
-                           455     ;    Carry = SecToTime(Deci_Left)           ;convert time to mm:ss
-                           456     ;    IF Carry = 0:                          ;indicates no MAX_TIME error
-                           457     ;        DisplayLCD(TimeBuffer, Type_Time)  ;display the time
-                           458     ;    ELSE:                                  ;otherwise donb^^t do anything
-                           459     ;        PASS
-                           460     ;    RETURN
-                           461     
-                           462     
-                           463     ; ###### Display_Time CODE #######
-                           464     
-                           465     ;Name:               Display_Status(Status)
-                           466     ;
-                           467     ;Description:        This function takes an integer that maps to a status
-                           468     ;                    as its argument. The function looks up the string
-                           469     ;                    associated with the integer in StatusTable, which 
-                           470     ;                    is a table of fixed length strings. The function
-                           471     ;                    calls the function DisplayLCD with the address
-                           472     ;                    of the corresponding string and Type_Status to
-                           473     ;                    indicate that a status string is being displayed.
-                           474     ;
-                           475     ;Operation:          The function multiplies the integer status by the
-                           476     ;                    size of each table entry of StatusTable to find the
-                           477     ;                    offset of the corresponding status string. The
-                           478     ;                    function copies CS to ES and passes the address of the
-                           479     ;                    status string to DisplayLCD. The function also
-                           480     ;                    passes Type_Status to indicate to DisplayLCD that the
-                           481     ;                    status is being displayed.
-                           482     ;
-                           483     ;Arguments:          Status - integer representing status
-                           484     ;
-                           485     ;Return Values:      None
-                           486     ;
-                           487     ;Local Variables:    String (SI) - address of string to write
-                           488     ;
-                           489     ;Shared Variables:   None
-                           490     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE   10
+                           439     ;Description:        This function calls the DisplayLCD function to
+                           440     ;                    display the time remaining in the track. The 
+                           441     ;                    function first calls the SecToTime function to
+                           442     ;                    convert the number of seconds the ASCII mm:ss format.
+                           443     ;                    The function then calls DisplayLCD with the starting
+                           444     ;                    address of TimeBuffer to be displayed. The function
+                           445     ;                    also passes Type_Time to Display LCD to indicate
+                           446     ;                    that the time remaining is being displayed. If SecToTime
+                           447     ;                    returns with the carry flag set indicating an error,
+                           448     ;                    the function does not display a time.
+                           449     ;
+                           450     ;Operation:          The function passes the argument of DisplayTime to 
+                           451     ;                    SecToTime to convert the time to an ASCII
+                           452     ;                    string in mm:ss format. If SecToTime returns with
+                           453     ;                    the carry flag set indicating an error, the function
+                           454     ;                    does not display a time. Otherwise, the function
+                           455     ;                    then passes the starting address of TimeBuffer and
+                           456     ;                    DisplayTime_Type to DisplayLCD.
+                           457     ;
+                           458     ;Arguments:          Deci_Left - tenths of seconds left in track
+                           459     ;
+                           460     ;Return Values:      None
+                           461     ;
+                           462     ;Local Variables:    None
+                           463     ;
+                           464     ;Shared Variables:   None
+                           465     ;
+                           466     ;Input:              None
+                           467     ;
+                           468     ;Output:             None
+                           469     ;
+                           470     ;Error Handling:     None
+                           471     ;
+                           472     ;Algorithms:         None
+                           473     ;
+                           474     ;Registers Used:     None
+                           475     ;
+                           476     ;Known Bugs:         None
+                           477     ;
+                           478     ;Limitations:        None
+                           479     ;
+                           480     ;Last Modified:      2/4/16
+                           481     
+                           482     ;Outline
+                           483     ;DisplayTime(Deci_Left)
+                           484     ;    Carry = SecToTime(Deci_Left)           ;convert time to mm:ss
+                           485     ;    IF Carry = 0:                          ;indicates no MAX_TIME error
+                           486     ;        DisplayLCD(TimeBuffer, Type_Time)  ;display the time
+                           487     ;    ELSE:                                  ;otherwise donb^^t do anything
+                           488     ;        PASS
+                           489     ;    RETURN
+                           490     
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           491     ;Input:              None
-                           492     ;
-                           493     ;Output:             None
-                           494     ;
-                           495     ;Error Handling:     None
-                           496     ;
-                           497     ;Algorithms:         None
-                           498     ;
-                           499     ;Registers Used:     None
-                           500     ;
-                           501     ;Known Bugs:         None
-                           502     ;
-                           503     ;Limitations:        None
-                           504     ;
-                           505     ;Last Modified:      2/4/16
-                           506     
-                           507     ;Outline
-                           508     ;Display_Status(Status)
-                           509     ;    Status *= SIZEOF(StatusTableEntry)      ;multiply by table entry
-                           510     ;    Status += OFFSET(StatusTable)           ;calculate string address
-                           511     ;    ES = CS                                 ;set segment
-                           512     ;    String = StatusTable[Status]            ;string to display
-                           513     ;    DisplayLCD(String, TypeStatus)          ;call Display LCD to show status
-                           514     ;    RETURN
-                           515     
-                           516     
-                           517     
-                           518     ; ###### FUNCTION CODE  ######
-                           519     
-                           520     
-                           521     ;Name:               Display_Title(char far * Title_String)
-                           522     ;
-                           523     ;Description:        This function is passed the address of the string
-                           524     ;                    to be displayed. The function calls the function
-                           525     ;                    DisplayLCD with the string and TypeTitle to indicate
-                           526     ;                    to Display LCD to display the title.
+                           491     
+                           492     ; ###### Display_Time CODE #######
+                           493     
+                           494     ;Name:               Display_Status(Status)
+                           495     ;
+                           496     ;Description:        This function takes an integer that maps to a status
+                           497     ;                    as its argument. The function looks up the string
+                           498     ;                    associated with the integer in StatusTable, which 
+                           499     ;                    is a table of fixed length strings. The function
+                           500     ;                    calls the function DisplayLCD with the address
+                           501     ;                    of the corresponding string and Type_Status to
+                           502     ;                    indicate that a status string is being displayed.
+                           503     ;
+                           504     ;Operation:          The function multiplies the integer status by the
+                           505     ;                    size of each table entry of StatusTable to find the
+                           506     ;                    offset of the corresponding status string. The
+                           507     ;                    function copies CS to ES and passes the address of the
+                           508     ;                    status string to DisplayLCD. The function also
+                           509     ;                    passes Type_Status to indicate to DisplayLCD that the
+                           510     ;                    status is being displayed.
+                           511     ;
+                           512     ;Arguments:          Status - integer representing status
+                           513     ;
+                           514     ;Return Values:      None
+                           515     ;
+                           516     ;Local Variables:    String (SI) - address of string to write
+                           517     ;
+                           518     ;Shared Variables:   None
+                           519     ;
+                           520     ;Input:              None
+                           521     ;
+                           522     ;Output:             None
+                           523     ;
+                           524     ;Error Handling:     None
+                           525     ;
+                           526     ;Algorithms:         None
                            527     ;
-                           528     ;Operation:          The function first copies DS to ES.
-                           529     ;                    The function then calls DisplayLCD with the address of 
-                           530     ;                    the string to display. The function also passes
-                           531     ;                    TypeTitle to indicate that it is a title being
-                           532     ;                    displayed.
+                           528     ;Registers Used:     None
+                           529     ;
+                           530     ;Known Bugs:         None
+                           531     ;
+                           532     ;Limitations:        None
                            533     ;
-                           534     ;Arguments:          Title_String - address of string to display
-                           535     ;
-                           536     ;Return Values:      None
-                           537     ;
-                           538     ;Local Variables:    None
-                           539     ;
-                           540     ;Shared Variables:   None
-                           541     ;
-                           542     ;Input:              None
-                           543     ;
-                           544     ;Output:             None
-                           545     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE   11
+                           534     ;Last Modified:      2/4/16
+                           535     
+                           536     ;Outline
+                           537     ;Display_Status(Status)
+                           538     ;    Status *= SIZEOF(StatusTableEntry)      ;multiply by table entry
+                           539     ;    Status += OFFSET(StatusTable)           ;calculate string address
+                           540     ;    ES = CS                                 ;set segment
+                           541     ;    String = StatusTable[Status]            ;string to display
+                           542     ;    DisplayLCD(String, TypeStatus)          ;call Display LCD to show status
+                           543     ;    RETURN
+                           544     
+                           545     
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           546     ;Error Handling:     None
-                           547     ;
-                           548     ;Algorithms:         None
-                           549     ;
-                           550     ;Registers Used:     None
+                           546     
+                           547     ; ###### FUNCTION CODE  ######
+                           548     
+                           549     
+                           550     ;Name:               Display_Title(char far * Title_String)
                            551     ;
-                           552     ;Known Bugs:         None
-                           553     ;
-                           554     ;Limitations:        None
-                           555     ;
-                           556     ;Last Modified:      2/4/16
-                           557     
-                           558     ;Outline
-                           559     ;Display_Title(Title_String)
-                           560     ;    ES = DS                             ;DisplayLCD takes ES as segment
-                           561     ;    DisplayLCD(Title_String, TypeTitle) ;display title and indicate to
-                           562     ;                                        ;function that itb^^s a title
-                           563     ;    RETURN
-                           564     
-                           565     
-                           566     
-                           567     ; ###### FUNCTION CODE  ######
-                           568     
-                           569     
-                           570     
-                           571     ;Name:               Display_Artist(char far * Artist_String)
+                           552     ;Description:        This function is passed the address of the string
+                           553     ;                    to be displayed. The function calls the function
+                           554     ;                    DisplayLCD with the string and TypeTitle to indicate
+                           555     ;                    to Display LCD to display the title.
+                           556     ;
+                           557     ;Operation:          The function first copies DS to ES.
+                           558     ;                    The function then calls DisplayLCD with the address of 
+                           559     ;                    the string to display. The function also passes
+                           560     ;                    TypeTitle to indicate that it is a title being
+                           561     ;                    displayed.
+                           562     ;
+                           563     ;Arguments:          Title_String - address of string to display
+                           564     ;
+                           565     ;Return Values:      None
+                           566     ;
+                           567     ;Local Variables:    None
+                           568     ;
+                           569     ;Shared Variables:   None
+                           570     ;
+                           571     ;Input:              None
                            572     ;
-                           573     ;Description:        This function is passed the address of the string
-                           574     ;                    to be displayed. The function calls the function
-                           575     ;                    DisplayLCD with the string and TypeArtist to indicate
-                           576     ;                    to Display LCD to display the artist.
-                           577     ;
-                           578     ;Operation:          The function first copies DS to ES.
-                           579     ;                    The function then calls DisplayLCD with the address of 
-                           580     ;                    the string to display. The function also passes
-                           581     ;                    TypeArtist to indicate that it is a title being
-                           582     ;                    displayed.
-                           583     ;
-                           584     ;Arguments:          Artist_String - address of string to display
-                           585     ;
-                           586     ;Return Values:      None
-                           587     ;
-                           588     ;Local Variables:    None
-                           589     ;
-                           590     ;Shared Variables:   None
-                           591     ;
-                           592     ;Input:              None
-                           593     ;
-                           594     ;Output:             None
-                           595     ;
-                           596     ;Error Handling:     None
-                           597     ;
-                           598     ;Algorithms:         None
-                           599     ;
-                           600     ;Registers Used:     None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:06:57  04/30/;6  PAGE   12
+                           573     ;Output:             None
+                           574     ;
+                           575     ;Error Handling:     None
+                           576     ;
+                           577     ;Algorithms:         None
+                           578     ;
+                           579     ;Registers Used:     None
+                           580     ;
+                           581     ;Known Bugs:         None
+                           582     ;
+                           583     ;Limitations:        None
+                           584     ;
+                           585     ;Last Modified:      2/4/16
+                           586     
+                           587     ;Outline
+                           588     ;Display_Title(Title_String)
+                           589     ;    ES = DS                             ;DisplayLCD takes ES as segment
+                           590     ;    DisplayLCD(Title_String, TypeTitle) ;display title and indicate to
+                           591     ;                                        ;function that itb^^s a title
+                           592     ;    RETURN
+                           593     
+                           594     
+                           595     
+                           596     ; ###### FUNCTION CODE  ######
+                           597     
+                           598     
+                           599     
+                           600     ;Name:               Display_Artist(char far * Artist_String)
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            601     ;
-                           602     ;Known Bugs:         None
-                           603     ;
-                           604     ;Limitations:        None
-                           605     ;
-                           606     ;Last Modified:      2/4/16
-                           607     
-                           608     ;Outline
-                           609     ;Display_Artist(Artist_String)
-                           610     ;    ES = DS                               ;DisplayLCD takes ES as segment
-                           611     ;    DisplayLCD(Artist_String, TypeArtist) ;display artist and indicate to
-                           612     ;                                          ;function that itb^^s a artist
-                           613     ;    RETURN
-                           614     
-                           615     
-                           616     
-                           617     ; ###### FUNCTION CODE  ######
-                           618     
-                           619     
-----                       620     CODE ENDS
-                           621     
-                           622     ;start data segment
-                           623     
-----                       624     DATA    SEGMENT PUBLIC  'DATA'
-                           625     
-0000 (9                    626     TimeBuffer    DB TimeBufSize   DUP (?)        ;allocate buffer for the time
+                           602     ;Description:        This function is passed the address of the string
+                           603     ;                    to be displayed. The function calls the function
+                           604     ;                    DisplayLCD with the string and TypeArtist to indicate
+                           605     ;                    to Display LCD to display the artist.
+                           606     ;
+                           607     ;Operation:          The function first copies DS to ES.
+                           608     ;                    The function then calls DisplayLCD with the address of 
+                           609     ;                    the string to display. The function also passes
+                           610     ;                    TypeArtist to indicate that it is a title being
+                           611     ;                    displayed.
+                           612     ;
+                           613     ;Arguments:          Artist_String - address of string to display
+                           614     ;
+                           615     ;Return Values:      None
+                           616     ;
+                           617     ;Local Variables:    None
+                           618     ;
+                           619     ;Shared Variables:   None
+                           620     ;
+                           621     ;Input:              None
+                           622     ;
+                           623     ;Output:             None
+                           624     ;
+                           625     ;Error Handling:     None
+                           626     ;
+                           627     ;Algorithms:         None
+                           628     ;
+                           629     ;Registers Used:     None
+                           630     ;
+                           631     ;Known Bugs:         None
+                           632     ;
+                           633     ;Limitations:        None
+                           634     ;
+                           635     ;Last Modified:      2/4/16
+                           636     
+                           637     ;Outline
+                           638     ;Display_Artist(Artist_String)
+                           639     ;    ES = DS                               ;DisplayLCD takes ES as segment
+                           640     ;    DisplayLCD(Artist_String, TypeArtist) ;display artist and indicate to
+                           641     ;                                          ;function that itb^^s a artist
+                           642     ;    RETURN
+                           643     
+                           644     
+                           645     
+                           646     ; ###### FUNCTION CODE  ######
+                           647     
+                           648     
+                           649     ;Name:          DisplayInfoTable
+                           650     ;
+                           651     ;Description:   The byte table stores the starting address for each type of
+                           652     ;               information to be displayed. The function DisplayLCD
+                           653     ;               looks up the start position for each information type
+                           654     ;               from this table.
+                           655     ;
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  02:20:00  04/30/;6  PAGE   13
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           656     ;Author:        Timothy Liu
+                           657     ;
+                           658     ;Last Modified  4/29/16
+                           659     
+008D                       660     DisplayInfoTable        LABEL    BYTE
+                           661     
+                           662     ;        DB        StartAddress
+008D 80                    663              DB        080h        ;track name
+008E 8E                    664              DB        08Eh        ;action address
+008F C0                    665              DB        0C0h        ;artist name
+0090 CB                    666              DB        0CBh        ;time
+                           667     
+                           668     
+----                       669     CODE ENDS
+                           670     
+                           671     ;start data segment
+                           672     
+----                       673     DATA    SEGMENT PUBLIC  'DATA'
+                           674     
+0000 (9                    675     TimeBuffer    DB TimeBufSize   DUP (?)        ;allocate buffer for the time
      ??
      )
-0009 (14                   627     TrackBuffer   DB TrackBufSize  DUP (?)        ;allocate buffer for track name
+0009 (14                   676     TrackBuffer   DB TrackBufSize  DUP (?)        ;allocate buffer for track name
      ??
      )
-0017 (3                    628     StatusBuffer  DB StatusBufSize DUP (?)        ;allocate buffer for status
+0017 (3                    677     StatusBuffer  DB StatusBufSize DUP (?)        ;allocate buffer for status
      ??
      )
-001A (11                   629     ArtistBuffer  DB ArtistBufSize DUP (?)        ;allocate buffer for artist
+001A (11                   678     ArtistBuffer  DB ArtistBufSize DUP (?)        ;allocate buffer for artist
      ??
      )
-                           630     
-                           631     
-                           632     
-----                       633     DATA ENDS
-                           634     
-                           635     
-                           636     END
+                           679     
+                           680     
+                           681     
+----                       682     DATA ENDS
+                           683     
+                           684     
+                           685     END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND
