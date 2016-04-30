@@ -25,15 +25,23 @@ LCDFunSetVal    EQU    38h         ;00111000
                                    ;----1--- 2 lines
                                    ;-----000 don’t care
 
+BusyFlagMask    EQU    10000000b   ;mask out low 7 bits to get busy flag
+BusyReady       EQU    0           ;busy flag is now ready
+
+MaxTime         EQU    35990       ;max time that can be displayed (tenths
+                                   ;of second)
+TIME_NONE       EQU    65535       ;display no time
+
+;buffer indexes
+SecPos            EQU    3         ;index of where to start writing sec
+ColonPos          EQU    5         ;index of where to write colon
+TimeBufStartInd   EQU    3         ;index of where the time starts - 
+                                   ;extra spaces in the buffer are padding 0
+
 ;Buffer sizes
-TimeBufSize       EQU    6            ;size of time buffer in bytes
-TrackBufSize      EQU    14           ;size of track buffer in bytes
-StatusBufSize     EQU    3            ;size of status buffer in bytes
-ArtistBufSize     EQU    11           ;size of artist buffer in bytes
-
-NumPermChar       EQU     3           ;number of permanent characters
-
-PermChar    STRUC
-    CharPos    DB    ?             ;position of permanent character
-    ASCIIChar  DB    ?             ;ASCII code of permanent character
-PermChar    ENDS
+TimeBufSize       EQU    9         ;size of time buffer in bytes
+                                   ;buffer is extra large b/c Dec2String
+                                   ;writes padding zeroes
+TrackBufSize      EQU    14        ;size of track buffer in bytes
+StatusBufSize     EQU    3         ;size of status buffer in bytes
+ArtistBufSize     EQU    11        ;size of artist buffer in bytes

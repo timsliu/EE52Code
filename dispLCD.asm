@@ -13,6 +13,8 @@
 ; Revision History:
 ;        2/4/16    Tim Liu    created file
 ;        4/27/16   Tim Liu    wrote InitDisplay and added data/code segments
+;        4/28/16   Tim Liu    Added busy flag read and looping to InitDisplay
+;        4/29/16   Tim Liu    wrote SecToTime
 ;
 ;
 ; Table of Contents
@@ -37,6 +39,8 @@ CODE SEGMENT PUBLIC 'CODE'
         ASSUME  CS:CGROUP, DS:DGROUP
 
 ;external function declarations
+
+        EXTRN    Dec2String:NEAR            ;convert decimals to strings
 
 ;Name:               InitDisplayLCD
 ;
@@ -69,7 +73,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Limitations:        None
 ;
-;Last Modified:      4/27/16
+;Last Modified:      4/28/16
 
 ;Outline
 
@@ -83,11 +87,17 @@ InitDisplayOut:                ;output setup command to LCD
     MOV    AL, LCDInitVal      ;load LCD initialization command
     OUT    LCDInsReg, AL       ;write display control command
 
+InitDisplayCheckBusy:
+    IN     AL, LCDInsReg       ;read the status register
+    AND    AL, BusyFlagMask    ;mask out lower 7 bits
+    CMP    AL, BusyReady       ;check if busy flag is set
+    JE     InitDisplayFunSet   ;not busy - output function set
+    JMP    InitDisplayCheckBusy;not ready - keep looping
+
+InitDisplayFunSet:             ;output function set command to LCD
     MOV    AL, LCDFunSetVal    ;load function set command
     OUT    LCDInsReg, AL       ;write function set command
 
-
-InitDisplayPermChar:           ;write permanent characters to buffers
 
 InitDisplayLCDDone:            ;done with function
     POP   AX                   ;restore register
@@ -104,31 +114,26 @@ InitDisplayLCD    ENDP
 ;                    the address of a string for it to display. The second
 ;                    argument is an integer describing the type of
 ;                    information to be displayed. The second argument is used
-;                    as an index into a table of structs. A table lookup
-;                    is used to find the starting location on the LCD
-;                    to write to for the given information type and the
-;                    maximum allowed length. The function then writes
+;                    as an index into a byte table that stores the starting
+;                    address of each type of data. The function then writes
 ;                    ASCII characters to the LCD one character at a time.
-;                    The function checks that the information is not
-;                    written beyond its allowed space. Once the function
+;                    The function stops writing when it reaches a null
+;                    character in the string passed to it. Once the function
 ;                    is done writing, the function will return.
 ;
 ;Operation:          The string to write is passed to the function through
 ;                    ES:SI. The type of information is passed through BX
-;                    as an integer. The integer is multiplied by the 
-;                    size of each struct and added to the starting location
-;                    of DisplayInfoTable, which is a table of structs.
-;                    A table lookup into DisplayInfoTable is done to
-;                    find the starting cursor position and the maximum
-;                    space allotted to the information. The maximum
-;                    number of characters is stored in CX. The function
+;                    as an integer. The integer is used to index into
+;                    DisplayInfoTable to find the starting cursor position
+;                    for each type of information. The function
 ;                    loops through the string that was passed and writes
 ;                    to the LCD. After each character is written, the 
-;                    function increments the cursor to the next character
-;                    and decrements the number of spaces allowed. Once
-;                    the ASCII null character is reached or if the function
-;                    reaches the end of the maximum allowed spaces for the 
-;                    information, the function returns.
+;                    function increments the cursor to the next character.
+;                    The function loops checking the busy flag after each
+;                    write to the LCD. Only once the LCD busy flag is clear
+;                    will the function write the next character.
+;                    Once the ASCII null character is reached the function
+;                    returns.
 ;
 ;Arguments:          String(ES:SI) - pointer to string to display
 ;                    Type (BX) - integer indicating type of info to display
@@ -136,8 +141,7 @@ InitDisplayLCD    ENDP
 ;Return Values:      None
 ;
 ;Local Variables:    Cursor - position of the cursor
-;                    CharLeft - counter for how many more characters are
-;                    allowed for the information type
+;
 ;
 ;Shared Variables:   None
 ;
@@ -170,10 +174,20 @@ InitDisplayLCD    ENDP
 ;        CharLeft —-                       ;one fewer space left to write
 
 
+DisplayLCD        PROC    NEAR
+                  PUBLIC  DisplayLCD
+
+DisplayLCDStart:                           ;save registers
+    PUSH    SI
+    PUSH    AX
+
+DisplayLCDEnd:
+    POP    AX
+    POP    SI
+    RET
 
 
-; ###### DisplayLCD CODE  ######
-
+DisplayLCD        ENDP
 
 ;Name:               SecToTime
 ;
@@ -183,8 +197,11 @@ InitDisplayLCD    ENDP
 ;                    This function converts the time remaining in tenths
 ;                    of a second to minute:second (mm:ss) format. The
 ;                    function truncates the number of seconds. If the 
-;                    amount of time remaining exceeds MAX_TIME, the function
-;                    returns with the carry flag set to indicate an error.
+;                    amount of time remaining exceeds MAX_TIME, or if
+;                    the time to be displayed is TIME_NONE, then the function
+;                    displays blank segment patterns where the time should
+;                    be displayed.
+;                    
 ;
 ;Operation:          The function first divides the amount of time remaining
 ;                    by ten to get the number of seconds. The function then
@@ -198,14 +215,13 @@ InitDisplayLCD    ENDP
 ;                    writes to location SecondStart of TimeBuffer. The
 ;                    function then writes ASCII_COLON to location TimeColon
 ;                    of TimeBuffer. If Time_remaining exceeds MAX_TIME, the
-;                    function sets the carry flag. Otherwise, the function
-;                    returns with the carry flag cleared.
+;                    function writes a blank character patterns to the
+;                    TimeBuffer.
 ;
 ;Arguments:          Time_remaining (AX) - number of tenths of seconds
 ;                    remaining in the track.
 ;
-;Return Values:      Carry_Flag - set if the passed time exceeds MAX_TIME
-;                    otherwise cleared
+;Return Values:      None
 ;
 ;Local Variables:    None
 ;
@@ -220,13 +236,13 @@ InitDisplayLCD    ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Used:     AX
 ;
 ;Known Bugs:         None
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
+;Last Modified:      4/28/16
 
 ;Outline
 ;SecToTime()
@@ -244,9 +260,68 @@ InitDisplayLCD    ENDP
 ;        Carry Flag = 1                  ;MAX_TIME exceeded
 ;    RETURN
 
+SecToTime        PROC    NEAR
+                 PUBLIC  SecToTime
 
-; ###### SecToTime CODE #####
+SecToTimeStart:                          ;starting label - save registers
+    PUSH   BX                            ;save registers
+    PUSH   DX                            
+    PUSH   SI
 
+SecToTimeCheck:                          ;check time doesn’t exceed MAX_TIME
+    CMP    AX, MAXTIME                   ;
+    JA     SecToTimeBlankLoad            ;time too high to display
+    ;JMP   SecToTimeDivide               ;time under limit-start calculating
+
+SecToTimeDivide:
+    MOV    BX, 10                        ;tenths of a second in a second
+    XOR    DX, DX                        ;clear out the high order byte
+    DIV    BX                            ;divide time to get seconds left
+
+    MOV    BX, 60                        ;divide by seconds in a minute
+    XOR    DX, DX                        ;clear out high order byte
+    DIV    BX                            ;minutes in AX seconds in DX
+
+
+SecToTimeWriteTime:                      ;write time to TimeBuffer
+    XCHG   AX, DX                        ;swap minutes and seconds
+                                         ;so that sec in AX and min in DX
+    LEA    SI, TimeBuffer                ;load argument for Dec2String
+    ADD    SI, SecPos                    ;compute location for writing sec
+    CALL   Dec2String                    ;write seconds to TimeBuf
+    MOV    AX, DX                        ;copy minutes to Dec2String arg
+    LEA    SI, TimeBuffer                ;address to write minutes to
+    CALL   Dec2String                    ;write seconds to TimeBuffer
+
+SectoTimeWriteColon:                     ;write colon between min and sec
+    MOV    BX, ColonPos                  ;load index of colon
+    MOV    TimeBuffer[BX], ASCII_COLON   ;write colon
+    JMP    SecToTimeDone                 ;done with function
+    
+SecToTimeBlankLoad:                      ;write blank segment patterns
+    MOV    BX, 0                         ;array index
+
+SecToTimeBlankLoop:
+    CMP    BX, TimeBufSize               ;check if array has been filled
+    JE     SecToTimeBlankEnd             ;done writing 5 blanks
+
+SecToTimeWriteBlank:                     ;write blanks to the TimeBuffer
+    MOV    TimeBuffer[BX], ASCII_SPACE   ;
+    INC    BX                            ;move index to next element
+    JMP    SecToTimeBlankLoop            ;go back to loop
+
+SecToTimeBlankEnd:
+    MOV    BX, TimeBufSize - 1           ;index of last element of buffer
+    MOV    TimeBuffer[BX], ASCII_NULL    ;time buffer is null terminated
+
+SecToTimeDone:
+    POP    SI                            ;restore registers
+    POP    DX
+    POP    BX
+    RET
+
+
+SecToTime    ENDP
 
 ;Name:               DisplayTime(Deci_Left)
 ;
@@ -459,19 +534,14 @@ InitDisplayLCD    ENDP
 
 ; ###### FUNCTION CODE  ######
 
-; Name: PermCharTable
+
+;Name:          DisplayInfoTable
 ;
-; Description:    This table contains structs that describe the characters
-;                 that are permanently displayed on the LCD display.
-;                 These characters include spaces and colons. The function
-;                 InitDisplay loops through this table to write all of 
-;                 the permanent characters to the display
-
-PermCharTable    LABEL    PermCharTable
-
-    PermChar<13, ASCII_SPACE>     ;space between track and status
-    PermChar<76, ASCII_SPACE>     ;space between artist and time
-    PermChar<79, ASCII_COLON>     ;colon in mm:ss time
+;Description:   The byte table stores the starting address for each type of
+;               information to be displayed. The function DisplayLCD
+;               looks up the start position for each information type
+;               from this table.
+;
 
 
 CODE ENDS

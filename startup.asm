@@ -32,12 +32,13 @@
 ;    1/30/02  Glen George       Added proper assume for ES.
 ;    1/27/03  Glen George       Changed to looping if main() returns instead
 ;                                  of halting
-;    4/19/16  Timothy Liu       Added initcs and created infinite loop
-;    4/19/16  Timothy Liu       Changed name to STARTUP
-;    4/19/16  Timothy Liu       Reordered assumes and group declarations
-;    4/19/16  Timothy Liu       Added START and END START CS:IP init
-;    4/20/16  Timothy Liu       Added write to LMCS before func calls
-;    4/21/16  Timothy Liu       Added calls to set up timer0 and buttons
+;    4/19/16  Tim Liu       Added initcs and created infinite loop
+;    4/19/16  Tim Liu       Changed name to STARTUP
+;    4/19/16  Tim Liu       Reordered assumes and group declarations
+;    4/19/16  Tim Liu       Added START and END START CS:IP init
+;    4/20/16  Tim Liu       Added write to LMCS before func calls
+;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
+;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -59,7 +60,7 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
 
 
 
-        EXTRN    main:NEAR              ;declare the main function
+        ;EXTRN    main:NEAR              ;declare the main function
         EXTRN    InitCS:NEAR            ;initialize chip selects
         EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
         EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
@@ -98,7 +99,9 @@ BEGIN:                                  ;start the program
 
         STI                             ;enable interrupts
 
-        CALL    main                    ;run the main function (no arguments)
+        ;CALL    main                    ;run the main function (no arguments)
+Infinite:
+        JMP    Infinite
 
         JMP     Start                   ;if return - reinitialize and try again
 
