@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:20:00  04/30/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:30:59  05/01/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;                       Initialize Registers MP3 Include File                ;
                       =1    49     ;                                   EE/CS 52                                 ;
                       =1    50     ;                                                                            ;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:20:00  04/30/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:30:59  05/01/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
   3003                =1   103     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
                       =1   104                                             ;00--------------  reserved
                       =1   105                                             ;--11000000------  start address F0000
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:20:00  04/30/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:30:59  05/01/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -157,7 +157,7 @@ LOC  OBJ                  LINE     SOURCE
                            137     
                            138     
                            139     
-                           140             ;EXTRN    main:NEAR              ;declare the main function
+                           140             EXTRN    main:NEAR              ;declare the main function
                            141             EXTRN    InitCS:NEAR            ;initialize chip selects
                            142             EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
                            143             EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
 000D 8ED8                  158             MOV     DS, AX
                            159     
                            160             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  02:20:00  04/30/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  13:30:59  05/01/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -201,11 +201,11 @@ LOC  OBJ                  LINE     SOURCE
                            176     
 0028 FB                    177             STI                             ;enable interrupts
                            178     
-                           179             ;CALL    main                    ;run the main function (no arguments)
-0029                       180     Infinite:
-0029 EBFE                  181             JMP    Infinite
+0029 E80000         E      179             CALL    main                    ;run the main function (no arguments)
+002C                       180     Infinite:
+002C EBFE                  181             JMP    Infinite
                            182     
-002B EBD3                  183             JMP     Start                   ;if return - reinitialize and try again
+002E EBD0                  183             JMP     Start                   ;if return - reinitialize and try again
                            184     
                            185     
 ----                       186     CODE    ENDS

@@ -5,7 +5,7 @@ INPUT FILES: TIM1.LNK, TIM2.LNK, GLEN1.LNK, GLEN2.LNK, GLEN3.LNK,
   IC86.LIB
 OUTPUT FILE: MP3TIM.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  04/28/;6  TIME:  02:04:01
+DATE:  05/01/;6  TIME:  13:31:00
 
 
 LINK MAP OF MODULE STARTUP
@@ -13,8 +13,8 @@ LINK MAP OF MODULE STARTUP
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 2B7BH ------    G    CODE            CODE                          
- 0BA8H ------    G    DATA            DATA                          
+ 2C8BH ------    G    CODE            CODE                          
+ 0BACH ------    G    DATA            DATA                          
  0538H ------    W    STACK           STACK                         
 
 INPUT MODULES INCLUDED:

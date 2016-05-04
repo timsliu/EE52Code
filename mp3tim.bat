@@ -5,6 +5,7 @@ asm86chk timer0m.asm
 asm86chk button.asm
 asm86chk queue.asm
 asm86chk displcd.asm
+asm86chk converts.asm
 
 asm86 startup.asm m1 ep db
 asm86 initreg.asm m1 ep db
@@ -13,9 +14,10 @@ asm86 timer0m.asm m1 ep db
 asm86 button.asm  m1 ep db
 asm86 queue.asm   m1 ep db
 asm86 displcd.asm m1 ep db
+asm86 converts.asm m1 ep db
 
 link86 startup.obj, initreg.obj, mirq.obj, timer0m.obj, button.obj to tim1.lnk
-link86 queue.obj, displcd.obj to tim2.lnk
+link86 queue.obj, displcd.obj, converts.obj to tim2.lnk
 link86 fatutil.obj, ffrev.obj, keyupdat.obj, mainloop.obj to glen1.lnk
 link86 playmp3.obj, stubfncs.obj, trakutil.obj to glen2.lnk
 

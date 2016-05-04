@@ -60,7 +60,7 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
 
 
 
-        ;EXTRN    main:NEAR              ;declare the main function
+        EXTRN    main:NEAR              ;declare the main function
         EXTRN    InitCS:NEAR            ;initialize chip selects
         EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
         EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
@@ -99,7 +99,7 @@ BEGIN:                                  ;start the program
 
         STI                             ;enable interrupts
 
-        ;CALL    main                    ;run the main function (no arguments)
+        CALL    main                    ;run the main function (no arguments)
 Infinite:
         JMP    Infinite
 
