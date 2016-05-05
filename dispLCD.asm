@@ -365,13 +365,13 @@ SecToTime    ENDP
 ;Operation:          The function passes the argument of DisplayTime to 
 ;                    SecToTime to convert the time to an ASCII
 ;                    string in mm:ss format. The argument is passed through
-;                    AX. SecToTime writes the time to TimeBuffer. Display
+;                    BX. SecToTime writes the time to TimeBuffer. Display
 ;                    Time then calls the function DisplayLCD to display
 ;                    the time. The address of the time buffer is loaded
 ;                    into SI and incremented by TimeBufStartInd since the 
 ;                    first several elements of TimeBuffer are blanks. DS is copied
 ;                    to ES and ES:SI is passed to DisplayLCD. The constant
-;                    TypeTime is copied to AX and passed to DisplayLCD
+;                    TypeTime is copied to BX and passed to DisplayLCD
 ;                    to indicate that the time should be displayed
 ;
 ;Arguments:          Deci_Left - tenths of seconds left in track
@@ -404,10 +404,13 @@ Display_Time        PROC    NEAR
                     PUBLIC  Display_Time
 
 DisplayTimeStart:                           ;starting label
+    PUSH    BP
+    MOV     BP, SP                          ;copy stack pointer
     PUSH    SI                              ;save register
     PUSH    BX
 
 DisplayTimeWrite:                           ;call function to write time
+    MOV     AX, SS:[BP+4]                   ;copy argument off stack
     CALL    SecToTime                       ;AX has time - write to TimeBuffer
 
 DisplayTimeLoadArg:                         ;load arguments
@@ -415,7 +418,7 @@ DisplayTimeLoadArg:                         ;load arguments
     ADD    SI, TimeBufStart                 ;increment to where time starts
     MOV    BX, DS                           ;copy DS to ES
     MOV    ES, BX                           ;
-    MOV    AX, TypeTime                     ;arg indicating display the time
+    MOV    BX, TypeTime                     ;arg indicating display the time
 
 DisplayTimeDisplay:                         ;call DisplayLCD to display
     CALL   DisplayLCD                       ;display the time
@@ -423,6 +426,7 @@ DisplayTimeDisplay:                         ;call DisplayLCD to display
 DisplayTimeDone:                            ;finished - restore registers
     POP    BX
     POP    SI
+    POP    BP
     RET
 
 
@@ -480,9 +484,53 @@ Display_Time    ENDP
 ;    DisplayLCD(String, TypeStatus)          ;call Display LCD to show status
 ;    RETURN
 
+Display_Status        PROC    NEAR
+                      PUBLIC  Display_Status
+
+DisplayStatusStart:                          ;set up regs to access stack
+    PUSH    BP
+    MOV     BP, SP
+    PUSH    AX                               ;save registers
+    PUSH    BX
+    PUSH    CX
+    PUSH    SI
+
+DisplayStatusPullArg:                        ;pull argument off the stack
+    MOV    BX, SS:[BP+4]                     ;index indicating status
+    MOV    CX, NumStatChar                   ;status chars left to write
+    LEA    SI, StatusBuffer                  ;buffer to write to
+
+DisplayStatusLoop:                           ;loop and write to StatusBuffer
+    CMP    CX, 0                             ;check if no more characters
+    JE     DisplayStatusCall                 ;no more char - done
+
+DisplayStatusWrite:                          ;write characters
+    MOV    AL, CS:StatusTable[BX]            ;look up character to write
+    MOV    [SI], AL                          ;write to buffer
+    ADD    BX, NumStatus                     ;increment to next char
+    INC    SI                                ;write to next location
+    DEC    CX                                ;one fewer char to write
+    JMP    DisplayStatusLoop                 ;jump back to loop
+
+DisplayStatusCall:                           ;call function to display
+    LEA    SI, StatusBuffer                  ;address of buffer arg
+    MOV    AX, DS                            ;copy DS to ES
+    MOV    ES, AX
+    MOV    BX, TypeAction                    ;specify data type
+    CALL   DisplayLCD                        ;call function to display
+
+DisplayStatusDone:                           ;restore registers
+    POP   SI
+    POP   CX
+    POP   BX
+    POP   AX
+    POP   BP
+    RET
 
 
-; ###### FUNCTION CODE  ######
+Display_Status    ENDP
+
+
 
 
 ;Name:               Display_Title(char far * Title_String)
@@ -501,7 +549,7 @@ Display_Time    ENDP
 ;                    string to be displayed to TrackBuffer. Display_Title
 ;                    then copies DS to ES and loads the address of
 ;                    TrackBuffer to SI. The constant TypeTrack is placed
-;                    in AX and the DisplayLCD is called. The function
+;                    in BX and the DisplayLCD is called. The function
 ;                    then restores the saved registers and returns.
 ;
 ;Arguments:          Title_String - address of string to display
@@ -553,7 +601,7 @@ DisplayTitleArgs:                          ;load args for DisplayStringCopy
 DisplayTitleDisplay:                       ;call DisplayLCD
     MOV    AX, DS                          ;copy DS to ES
     MOV    ES, AX
-    MOV    AX, TypeTrack                   ;tells DisplayLCD data type
+    MOV    BX, TypeTrack                   ;tells DisplayLCD data type
     LEA    SI, TrackBuffer                 ;address of buffer to display
     CALL   DisplayLCD                      ;display the string
 
@@ -585,7 +633,7 @@ Display_Title    ENDP
 ;                    string to be displayed to ArtistBuffer. Display_Artist
 ;                    then copies DS to ES and loads the address of
 ;                    ArtistBuffer to SI. The constant TypeArtist is placed
-;                    in AX and the DisplayLCD is called. The function
+;                    in BX and the DisplayLCD is called. The function
 ;                    then restores the saved registers and returns.
 ;
 ;Arguments:          Artist_String - address of string to display
@@ -637,7 +685,7 @@ DisplayArtistArgs:                         ;load args for DisplayStringCopy
 DisplayArtistDisplay:                      ;call DisplayLCD
     MOV    AX, DS                          ;copy DS to ES
     MOV    ES, AX
-    MOV    AX, TypeArtist                  ;tells DisplayLCD data type
+    MOV    BX, TypeArtist                  ;tells DisplayLCD data type
     LEA    SI, ArtistBuffer                ;address of buffer to display
     CALL   DisplayLCD                      ;display the string
 
@@ -757,6 +805,36 @@ DisplayInfoTable        LABEL    BYTE
          DB        08Eh        ;action address
          DB        0C0h        ;artist name
          DB        0CBh        ;time
+
+
+
+;Name:          StatusTable
+;
+;Description:    The table stores the characters to display
+;                for each status. The function DisplayStatus indexes
+;                into this table and looks up what to write to StatusBuffer
+;
+;
+;Last Modified:  5/4/16
+;
+StatusTable    LABEL    BYTE
+
+;        DB      Character
+         DB      ASCII_P             ;play char 1
+         DB      ASCII_F             ;fast forward char 1
+         DB      ASCII_R             ;reverse char 1
+         DB      ASCII_I             ;idle char 1
+         DB      ASCII_L             ;play char 2
+         DB      ASCII_D             ;fast forward char 2
+         DB      ASCII_E             ;reverse char 2
+         DB      ASCII_D             ;idle char 2
+         DB      ASCII_NULL          ;play char 3
+         DB      ASCII_NULL          ;fast forward char 3
+         DB      ASCII_NULL          ;reverse char 3
+         DB      ASCII_NULL          ;stop char 3
+
+
+
 
 
 CODE ENDS

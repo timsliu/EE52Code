@@ -4,7 +4,7 @@ DOS 5.0 (038-N) 8086 LINKER, V2.7
 INPUT FILES: QUEUE.OBJ, DISPLCD.OBJ, CONVERTS.OBJ
 OUTPUT FILE: TIM2.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  05/01/;6  TIME:  13:31:00
+DATE:  05/05/;6  TIME:  02:42:23
 
 
 LINK MAP OF MODULE QUEUE
@@ -12,7 +12,7 @@ LINK MAP OF MODULE QUEUE
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 01EAH ------    G    CODE            CODE                          
+ 02CAH ------    G    CODE            CODE                          
  0025H ------    G    DATA            DATA                          
 
 INPUT MODULES INCLUDED:

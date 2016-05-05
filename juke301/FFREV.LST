@@ -1,4 +1,4 @@
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   1
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE FFREV
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
    49                                              fast forward and reverse operations.
    50                   6/2/02   Glen George       Rewrote start_FastFwd(), start_Reverse(),
    51                                              begin_FastFwd(), begin_Reverse(), and
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   2
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   2
 
 
    52                                              stop_FFRev() to implement the new method for
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   106                Output:           None.
   107             
   108                Error Handling:   None.
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   3
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   3
 
 
   109             
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   163             
   164                Arguments:        cur_status (enum status) - the current system status.
   165                Return Value:     (enum status) - the new system status: STAT_REV if there
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   4
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   4
 
 
   166                                  is something left on the track to reverse thru, the
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   220             
   221                Description:      This function handles the <Fast Forward> key when playing
   222                                  a track.  It turns off the audio output and then starts
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   5
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   5
 
 
   223                                  the fast forward operation.
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   277                Input:            None.
   278                Output:           None.
   279             
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   6
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   6
 
 
   280                Error Handling:   None.
@@ -358,7 +358,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   334                Shared Variables: FFRev_rate - reset to MIN_FFREV_RATE.
   335                                  time_FFRev - reset to 0.
   336             
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   7
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   7
 
 
   337                Author:           Glen George
@@ -418,7 +418,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   391                Last Modified:    June 5, 2008
   392             
   393             */
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   8
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   8
 
 
   394             
@@ -478,7 +478,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   448     1       
   449     1       
   450     1       
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE   9
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE   9
 
 
   451     1           /* just return the idle status */
@@ -538,7 +538,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   505     2               if (etime > MIN_FFREV_TIME)  {
   506     3       
   507     3                   /* can and should move forward - compute how many bytes */
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  10
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  10
 
 
   508     3                   buffer_fwd = (get_track_length() * etime) / (100L * get_track_total_time());
@@ -598,7 +598,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   561                                  if not at the start of the track and STAT_IDLE if rewound
   562                                  to the start of the track.
   563             
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  11
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  11
 
 
   564                Input:            None.
@@ -658,7 +658,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   617     4                   }
   618     3               }
   619     2               else  {
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  12
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  12
 
 
   620     3       
@@ -718,7 +718,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   674             */
   675             
   676             void  dec_FFRev_rate(void)
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  13
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  13
 
 
   677             {
@@ -778,7 +778,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   731     1           /* variables */
   732     1             /* none */
   733     1       
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  14
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  14
 
 
   734     1       
@@ -796,7 +796,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
   746     1           return;
   747     1       
   748     1       }
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  15
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  15
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -856,7 +856,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              0053  3BFA            CMP     DI,DX
              0055  7502            JNZ     $+4H
              0057  3BC8            CMP     CX,AX
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  16
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  16
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -916,7 +916,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              00A0  5E              POP     SI
              00A1  C3              RET
                                                    ; STATEMENT # 307
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  17
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  17
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -976,7 +976,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
                            @9:
                                                    ; STATEMENT # 452
              00E3  31C0            XOR     AX,AX
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  18
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  18
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1036,7 +1036,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              0151  8946F8          MOV     [BP].buffer_fwd,AX
              0154  8956FA          MOV     [BP].buffer_fwd+2H,DX
                                                    ; STATEMENT # 511
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  19
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  19
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1096,7 +1096,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              01DE  52              PUSH    DX      ; 1
              01DF  50              PUSH    AX      ; 2
              01E0  E80000          CALL    update_track_position
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  20
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  20
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1156,7 +1156,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              022E  03060200        ADD     AX,time_FFRev
              0232  99              CWD
              0233  8946FC          MOV     [BP].etime,AX
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  21
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  21
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1216,7 +1216,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
              02BC  5F              POP     DI      ; 1
              02BD  87D7            XCHG    DX,DI
              02BF  9A00000000      CALL    LQ_SLONG_DIV
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  22
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  22
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1276,7 +1276,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
                            @18:
                                                    ; STATEMENT # 629
              032E  E80000          CALL    init_track
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  23
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  23
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1336,7 +1336,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL 
                                                    ; STATEMENT # 740
              037B  81F80A00        CMP     AX,0AH
              037F  7F03            JG      $+5H
-iC-86  COMPILER   FFREV                                                                      04/26/;6 22:42:33  PAGE  24
+iC-86  COMPILER   FFREV                                                                      05/05/;6 02:13:35  PAGE  24
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

@@ -54,3 +54,6 @@ TypeTrack        EQU    0          ;type identifying track name
 TypeAction       EQU    1          ;type identifying action
 TypeArtist       EQU    2          ;type identifying artist
 TypeTime         EQU    3          ;type identifying time remaining
+
+NumStatus        EQU    4          ;number of different statuses
+NumStatChar      EQU    3          ;number of status characters

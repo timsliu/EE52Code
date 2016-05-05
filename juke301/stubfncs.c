@@ -87,9 +87,6 @@ int  getkey()
     return  KEY_ILLEGAL;
 }
 
-#endif
-
-
 
 /* display functions  */
 
@@ -97,6 +94,8 @@ void  display_time(unsigned int t)
 {
     return;
 }
+
+
 
 void  display_status(unsigned int s)
 {
@@ -121,7 +120,7 @@ int  get_blocks(unsigned long int b, int n, unsigned short int far *p)
     return  n;
 }
 
-
+#endif
 
 /* audio functions */
 

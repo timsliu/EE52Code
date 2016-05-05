@@ -27,12 +27,17 @@ ASCII_CR             EQU       13         ;ASCII carriage return
 ASCII_D              EQU       68         ;ASCII code for D
 ASCII_E              EQU       69         ;ASCII E
 ASCII_F              EQU       70         ;F character for fire (laser on)
+ASCII_I              EQU       73         ;I character
 ASCII_L              EQU       76         ;L character
 ASCII_O              EQU       79         ;O character for off (laser off)
+ASCII_P              EQU       80         ;P character
+ASCII_R              EQU       82         ;R character
 ASCII_S              EQU       83         ;S character
+ASCII_T              EQU       84         ;T character
 ASCII_NULL           EQU        0         ;ASCII null character
 ASCII_SPACE          EQU       32         ;ASCII space
 ASCII_COLON          EQU       58         ;ASCII colon
+ASCII_RArrow         EQU       62         ;ASCII > symbol
 
 TRUE                 EQU        1         ;true
 FALSE                EQU        0         ;false
