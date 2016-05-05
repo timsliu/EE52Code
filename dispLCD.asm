@@ -16,6 +16,9 @@
 ;        4/28/16   Tim Liu    Added busy flag read and looping to InitDisplay
 ;        4/29/16   Tim Liu    wrote SecToTime
 ;        4/29/16   Tim Liu    wrote DisplayLCD
+;        5/4/16    Tim Liu    wrote DisplayTime
+;        5/4/16    Tim Liu    wrote DisplayArtist
+;        5/4/16    Tim Liu    wrote DisplayStringCopy helper function
 ;
 ;
 ; Table of Contents
@@ -27,6 +30,7 @@
 ;    Display_Status - displays the passed status to the LCD
 ;    Display_Title - displays track title on the LCD
 ;    Display_Artist - displays track artist on the LCD
+;    DisplayStringCopy - helper function that copies a string to buffer
 
 ; local include files
 $INCLUDE(GENERAL.INC)
@@ -355,18 +359,20 @@ SecToTime    ENDP
 ;                    convert the number of seconds the ASCII mm:ss format.
 ;                    The function then calls DisplayLCD with the starting
 ;                    address of TimeBuffer to be displayed. The function
-;                    also passes Type_Time to Display LCD to indicate
-;                    that the time remaining is being displayed. If SecToTime
-;                    returns with the carry flag set indicating an error,
-;                    the function does not display a time.
+;                    also passes TypeTime to Display LCD to indicate
+;                    that the time remaining is being displayed. 
 ;
 ;Operation:          The function passes the argument of DisplayTime to 
 ;                    SecToTime to convert the time to an ASCII
-;                    string in mm:ss format. If SecToTime returns with
-;                    the carry flag set indicating an error, the function
-;                    does not display a time. Otherwise, the function
-;                    then passes the starting address of TimeBuffer and
-;                    DisplayTime_Type to DisplayLCD.
+;                    string in mm:ss format. The argument is passed through
+;                    AX. SecToTime writes the time to TimeBuffer. Display
+;                    Time then calls the function DisplayLCD to display
+;                    the time. The address of the time buffer is loaded
+;                    into SI and incremented by TimeBufStartInd since the 
+;                    first several elements of TimeBuffer are blanks. DS is copied
+;                    to ES and ES:SI is passed to DisplayLCD. The constant
+;                    TypeTime is copied to AX and passed to DisplayLCD
+;                    to indicate that the time should be displayed
 ;
 ;Arguments:          Deci_Left - tenths of seconds left in track
 ;
@@ -390,19 +396,38 @@ SecToTime    ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
-
-;Outline
-;DisplayTime(Deci_Left)
-;    Carry = SecToTime(Deci_Left)           ;convert time to mm:ss
-;    IF Carry = 0:                          ;indicates no MAX_TIME error
-;        DisplayLCD(TimeBuffer, Type_Time)  ;display the time
-;    ELSE:                                  ;otherwise don’t do anything
-;        PASS
-;    RETURN
+;Last Modified:      5/4/16
 
 
-; ###### Display_Time CODE #######
+
+Display_Time        PROC    NEAR
+                    PUBLIC  Display_Time
+
+DisplayTimeStart:                           ;starting label
+    PUSH    SI                              ;save register
+    PUSH    BX
+
+DisplayTimeWrite:                           ;call function to write time
+    CALL    SecToTime                       ;AX has time - write to TimeBuffer
+
+DisplayTimeLoadArg:                         ;load arguments
+    LEA    SI, TimeBuffer                   ;start address of TimeBuffer
+    ADD    SI, TimeBufStart                 ;increment to where time starts
+    MOV    BX, DS                           ;copy DS to ES
+    MOV    ES, BX                           ;
+    MOV    AX, TypeTime                     ;arg indicating display the time
+
+DisplayTimeDisplay:                         ;call DisplayLCD to display
+    CALL   DisplayLCD                       ;display the time
+
+DisplayTimeDone:                            ;finished - restore registers
+    POP    BX
+    POP    SI
+    RET
+
+
+Display_Time    ENDP
+
 
 ;Name:               Display_Status(Status)
 ;
@@ -464,16 +489,23 @@ SecToTime    ENDP
 ;
 ;Description:        This function is passed the address of the string
 ;                    to be displayed. The function calls the function
-;                    DisplayLCD with the string and TypeTitle to indicate
-;                    to Display LCD to display the title.
+;                    DisplayStringCopy to copy the string to the
+;                    TitleBuffer. The function then calls DisplayLCD
+;                    to display the track name.
 ;
-;Operation:          The function first copies DS to ES.
-;                    The function then calls DisplayLCD with the address of 
-;                    the string to display. The function also passes
-;                    TypeTitle to indicate that it is a title being
-;                    displayed.
+;Operation:          The function first reads from the stack and copies
+;                    the segment  of the string to ES and the offset to SI.
+;                    The function then stores the starting address of 
+;                    TrackBuffer in BX and TrackBufSize in CX. The 
+;                    function calls DisplayStringCopy which writes the 
+;                    string to be displayed to TrackBuffer. Display_Title
+;                    then copies DS to ES and loads the address of
+;                    TrackBuffer to SI. The constant TypeTrack is placed
+;                    in AX and the DisplayLCD is called. The function
+;                    then restores the saved registers and returns.
 ;
 ;Arguments:          Title_String - address of string to display
+;                                   passed through stack
 ;
 ;Return Values:      None
 ;
@@ -495,18 +527,45 @@ SecToTime    ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
-
-;Outline
-;Display_Title(Title_String)
-;    ES = DS                             ;DisplayLCD takes ES as segment
-;    DisplayLCD(Title_String, TypeTitle) ;display title and indicate to
-;                                        ;function that it’s a title
-;    RETURN
+;Last Modified:      5/4/16
 
 
 
-; ###### FUNCTION CODE  ######
+
+Display_Title         PROC    NEAR
+                      PUBLIC  Display_Title
+
+DisplayTitleStart:                         ;starting label
+    PUSH    BP                             ;save register
+    MOV     BP, SP                         ;use BP to index into the stack
+    PUSH    SI                             ;save registers
+    PUSH    AX
+    PUSH    BX
+    PUSH    CX
+
+DisplayTitleArgs:                          ;load args for DisplayStringCopy
+    MOV     ES, SS:[BP+6]                  ;string segment
+    MOV     SI, SS:[BP+4]                  ;string offset
+    LEA     BX, TrackBuffer                ;target buffer
+    MOV     CX, TrackBufSize               ;size of TrackBuffer
+    CALL    DisplayStringCopy              ;copy string to TrackBuffer
+
+DisplayTitleDisplay:                       ;call DisplayLCD
+    MOV    AX, DS                          ;copy DS to ES
+    MOV    ES, AX
+    MOV    AX, TypeTrack                   ;tells DisplayLCD data type
+    LEA    SI, TrackBuffer                 ;address of buffer to display
+    CALL   DisplayLCD                      ;display the string
+
+DisplayTitleDone:                          ;finished - restore registers
+    POP    CX
+    POP    BX
+    POP    AX
+    POP    SI
+    POP    BP
+    RET
+
+Display_Title    ENDP
 
 
 
@@ -514,16 +573,23 @@ SecToTime    ENDP
 ;
 ;Description:        This function is passed the address of the string
 ;                    to be displayed. The function calls the function
-;                    DisplayLCD with the string and TypeArtist to indicate
-;                    to Display LCD to display the artist.
+;                    DisplayStringCopy to copy the string to the
+;                    ArtistBuffer. The function then calls DisplayLCD
+;                    to display the artist.
 ;
-;Operation:          The function first copies DS to ES.
-;                    The function then calls DisplayLCD with the address of 
-;                    the string to display. The function also passes
-;                    TypeArtist to indicate that it is a title being
-;                    displayed.
+;Operation:          The function first reads from the stack and copies
+;                    the segment  of the string to ES and the offset to SI.
+;                    The function then stores the starting address of 
+;                    ArtistBuffer in BX and ArtistBufSize in CX. The 
+;                    function calls DisplayStringCopy which writes the 
+;                    string to be displayed to ArtistBuffer. Display_Artist
+;                    then copies DS to ES and loads the address of
+;                    ArtistBuffer to SI. The constant TypeArtist is placed
+;                    in AX and the DisplayLCD is called. The function
+;                    then restores the saved registers and returns.
 ;
 ;Arguments:          Artist_String - address of string to display
+;                                    segment and offset passed through stack
 ;
 ;Return Values:      None
 ;
@@ -545,18 +611,132 @@ SecToTime    ENDP
 ;
 ;Limitations:        None
 ;
-;Last Modified:      2/4/16
-
-;Outline
-;Display_Artist(Artist_String)
-;    ES = DS                               ;DisplayLCD takes ES as segment
-;    DisplayLCD(Artist_String, TypeArtist) ;display artist and indicate to
-;                                          ;function that it’s a artist
-;    RETURN
+;Last Modified:      5/4/16
 
 
 
-; ###### FUNCTION CODE  ######
+
+Display_Artist        PROC    NEAR
+                      PUBLIC  Display_Artist
+
+DisplayArtistStart:                        ;starting label
+    PUSH    BP                             ;save register
+    MOV     BP, SP                         ;use BP to index into the stack
+    PUSH    SI                             ;save registers
+    PUSH    AX
+    PUSH    BX
+    PUSH    CX
+
+DisplayArtistArgs:                         ;load args for DisplayStringCopy
+    MOV     ES, SS:[BP+6]                  ;string segment
+    MOV     SI, SS:[BP+4]                  ;string offset
+    LEA     BX, ArtistBuffer               ;target buffer
+    MOV     CX, ArtistBufSize              ;size of ArtistBuffer
+    CALL    DisplayStringCopy              ;copy string to ArtistBuffer
+
+DisplayArtistDisplay:                      ;call DisplayLCD
+    MOV    AX, DS                          ;copy DS to ES
+    MOV    ES, AX
+    MOV    AX, TypeArtist                  ;tells DisplayLCD data type
+    LEA    SI, ArtistBuffer                ;address of buffer to display
+    CALL   DisplayLCD                      ;display the string
+
+DisplayArtistDone:                         ;finished - restore registers
+    POP    CX
+    POP    BX
+    POP    AX
+    POP    SI
+    POP    BP
+    RET
+
+Display_Artist    ENDP
+
+;Name:          DisplayStringCopy
+;
+;Description:   This function copies a string into a buffer and writes
+;               spaces to the end of the buffer. The function will
+;               only write to the end of the buffer and ends all strings
+;               with the null character. The function overwrites the
+;               entire buffer each time it is called.
+;
+;Operation:     This function takes three arguments. The address of the
+;               string to be copied is passed through ES:SI and the
+;               offset of the target buffer is passed through BX. The            
+;               length of the target buffer is passed through CX. The function
+;               loops through and copies elements from ES:SI to DS:BX.
+;               If the passed string is shorter than the buffer, then
+;               the function pads the rest of the buffer with ASCII_SPACE.
+;               If the passed string is longer than the buffer, then the
+;               function will stop copying when there is one element left
+;               and write ASCII_NULL to the end. The register DL is used
+;               as an intermediary to transfer data from memory to memory.
+;
+;Arguments:          ES:SI - address of string to copy
+;                    BX - address of buffer to copy
+;                    CX - number of elements in string buffer
+;
+;Return Values:      None
+;
+;Local Variables:    CX - elements left in the string
+;                    BX - target buffer location being written to
+;                    SI - source string location begin read from
+;
+;Shared Variables:   None
+;
+;Input:              None
+;
+;Output:             None
+;
+;Error Handling:     None
+;
+;Algorithms:         None
+;
+;Registers Used:     CX, BX, SI
+;
+;Known Bugs:         None
+;
+;Limitations:        None
+;
+;Last Modified:      5/4/16
+
+DisplayStringCopy        PROC    NEAR
+
+
+DisplayStringStart:                    ;save register
+    PUSH  DX
+
+DisplayStringLoop:
+    CMP    CX, 1                       ;check if one element left
+    JE     DisplayStringNull           ;write a null termination char
+    CMP    BYTE PTR ES:[SI], ASCII_NULL;check if null char reached in source
+    JE     DisplayStringPad            ;if so, write padding to the end
+    JMP    DisplayStringWrite          ;otherwise copy to target buffer
+
+DisplayStringWrite:                    ;copy element of string to buffer
+    MOV    DL, ES:[SI]                 ;copy contents to intermediary
+    MOV    DS:[BX], DL                 ;contents to target buffer
+    INC    BX                          ;increment target buffer
+    INC    SI                          ;increment source buffer
+    DEC    CX                          ;one less element of target to fill
+    JMP    DisplayStringLoop           ;back to top of loop
+
+DisplayStringPad:                      ;pad buffer to end of string
+    CMP    CX, 1                       ;check if one element left
+    JE     DisplayStringNull           ;if so, write null character
+    MOV    BYTE PTR DS:[BX], ASCII_SPACE        ;write a space
+    INC    BX                          ;increment target buffer
+    DEC    CX                          ;one less element less
+    JMP    DisplayStringPad            ;pad next element
+
+DisplayStringNull:                     ;write null termination character
+    MOV    BYTE PTR DS:[BX], ASCII_NULL         ;write character
+
+DisplayStringEnd:                      ;function over - return
+    POP    DX
+    RET
+
+DisplayStringCopy        ENDP
+
 
 
 ;Name:          DisplayInfoTable

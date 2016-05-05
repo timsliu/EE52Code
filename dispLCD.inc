@@ -37,7 +37,7 @@ TIME_NONE       EQU    65535       ;display no time
 ;buffer indexes
 SecPos            EQU    3         ;index of where to start writing sec
 ColonPos          EQU    5         ;index of where to write colon
-TimeBufStartInd   EQU    3         ;index of where the time starts - 
+TimeBufStart      EQU    3         ;index of where the time starts - 
                                    ;extra spaces in the buffer are padding 0
 
 ;Buffer sizes
@@ -47,3 +47,10 @@ TimeBufSize       EQU    9         ;size of time buffer in bytes
 TrackBufSize      EQU    14        ;size of track buffer in bytes
 StatusBufSize     EQU    3         ;size of status buffer in bytes
 ArtistBufSize     EQU    11        ;size of artist buffer in bytes
+
+;Data display types
+
+TypeTrack        EQU    0          ;type identifying track name
+TypeAction       EQU    1          ;type identifying action
+TypeArtist       EQU    2          ;type identifying artist
+TypeTime         EQU    3          ;type identifying time remaining
