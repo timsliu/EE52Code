@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE DISPLCD
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;    11/3/15     Timothy Liu     initial revision
                       =1    49     ;    11/5/15     Timothy Liu     fixed formatting
                       =1    50     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103                                        ;-------1 blinking on
                       =1   104     
   0038                =1   105     LCDFunSetVal    EQU    38h         ;00111000
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     ;                    InitLCDVal to LCDInsReg to turn on the display
                            159     ;                    and turn on the cursor.
                            160     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     
 0014 C3                    214         RET                        
                            215     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;
                            269     ;Limitations:        None
                            270     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     
                            324     ;Name:               SecToTime
                            325     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     
                            379     ;Outline
                            380     ;SecToTime()
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
 006F                       433     SecToTimeBlankLoad:                      ;write blank segment patterns
 006F BB0000                434         MOV    BX, 0                         ;array index
                            435     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -538,7 +538,7 @@ LOC  OBJ                  LINE     SOURCE
                            488     ;
                            489     ;Input:              None
                            490     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   10
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -598,7 +598,7 @@ LOC  OBJ                  LINE     SOURCE
                            543     ;                    as its argument. The function looks up the string
                            544     ;                    associated with the integer in StatusTable, which 
                            545     ;                    is a table of fixed length strings. The function
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   11
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -658,7 +658,7 @@ LOC  OBJ                  LINE     SOURCE
 00B1 53                    598         PUSH    BX
 00B2 51                    599         PUSH    CX
 00B3 56                    600         PUSH    SI
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   12
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -718,7 +718,7 @@ LOC  OBJ                  LINE     SOURCE
                            653     ;                    string to be displayed to TrackBuffer. Display_Title
                            654     ;                    then copies DS to ES and loads the address of
                            655     ;                    TrackBuffer to SI. The constant TypeTrack is placed
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   13
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   13
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -778,7 +778,7 @@ LOC  OBJ                  LINE     SOURCE
 0100 BB0000                708         MOV    BX, TypeTrack                   ;tells DisplayLCD data type
 0103 8D360900       R      709         LEA    SI, TrackBuffer                 ;address of buffer to display
 0107 E80BFF                710         CALL   DisplayLCD                      ;display the string
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   14
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   14
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -838,7 +838,7 @@ LOC  OBJ                  LINE     SOURCE
                            763     ;
                            764     ;Limitations:        None
                            765     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   15
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   15
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -898,7 +898,7 @@ LOC  OBJ                  LINE     SOURCE
                            818     ;               loops through and copies elements from ES:SI to DS:BX.
                            819     ;               If the passed string is shorter than the buffer, then
                            820     ;               the function pads the rest of the buffer with ASCII_SPACE.
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   16
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   16
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -958,7 +958,7 @@ LOC  OBJ                  LINE     SOURCE
 0152 EBE8                  873         JMP    DisplayStringLoop           ;back to top of loop
                            874     
 0154                       875     DisplayStringPad:                      ;pad buffer to end of string
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   17
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   17
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -1018,7 +1018,7 @@ LOC  OBJ                  LINE     SOURCE
 016A 46                    928              DB      ASCII_F             ;fast forward char 1
 016B 52                    929              DB      ASCII_R             ;reverse char 1
 016C 49                    930              DB      ASCII_I             ;idle char 1
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  14:10:19  05/07/;6  PAGE   18
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  15:11:46  05/07/;6  PAGE   18
 
 
 LOC  OBJ                  LINE     SOURCE

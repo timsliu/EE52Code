@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:10:18  05/07/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  15:11:46  05/07/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;                                 initreg.INC                                ;
                       =1    49     ;                       Initialize Registers MP3 Include File                ;
                       =1    50     ;                                   EE/CS 52                                 ;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:10:18  05/07/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  15:11:46  05/07/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     
   3003                =1   104     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
                       =1   105                                             ;00--------------  reserved
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:10:18  05/07/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  15:11:46  05/07/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -166,84 +166,88 @@ LOC  OBJ                  LINE     SOURCE
                            146             EXTRN    InitButtons:NEAR       ;initialize the buttons
                            147             EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
                            148             EXTRN    InitClock:NEAR         ;initialize MP3 clock
-                           149     
-0000                       150     START:
+                           149             EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
+                           150             EXTRN    InitTimer1:NEAR        ;start up timer 1
                            151     
-                           152     
-0000                       153     BEGIN:                                  ;start the program
-0000 FA                    154             CLI                             ;disable interrupts
-0001 B8----         R      155             MOV     AX, DGROUP              ;initialize the stack pointer
-0004 8ED0                  156             MOV     SS, AX
-0006 BC800290       R      157             MOV     SP, OFFSET(DGROUP:TopOfStack)
-                           158     
-000A B8----         R      159             MOV     AX, DGROUP              ;initialize the data segment
-000D 8ED8                  160             MOV     DS, AX
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:10:18  05/07/;6  PAGE    4
+0000                       152     START:
+                           153     
+                           154     
+0000                       155     BEGIN:                                  ;start the program
+0000 FA                    156             CLI                             ;disable interrupts
+0001 B8----         R      157             MOV     AX, DGROUP              ;initialize the stack pointer
+0004 8ED0                  158             MOV     SS, AX
+0006 BC800290       R      159             MOV     SP, OFFSET(DGROUP:TopOfStack)
+                           160     
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  15:11:46  05/07/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           161     
-                           162             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           163             ; user initialization code goes here ;
+000A B8----         R      161             MOV     AX, DGROUP              ;initialize the data segment
+000D 8ED8                  162             MOV     DS, AX
+                           163     
                            164             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           165     
-000F BAA2FF                166             MOV     DX, LMCSreg             ;setup to write to MPCS register
-0012 B8C307                167             MOV     AX, LMCSval
-0015 EE                    168             OUT     DX, AL                  ;write MPCSval to MPCS
-                           169     
-0016 E80000         E      170             CALL    InitCS                  ;initialize chip selects
-0019 E80000         E      171             CALL    ClrIRQVectors           ;clear interrupt vector table
-                           172     
-001C E80000         E      173             CALL    InitButtons             ;initialize the buttons
-001F E80000         E      174             CALL    InitDisplayLCD          ;initialize the LCD display
-0022 E80000         E      175             CALL    InitClock               ;initialize the MP3 clock
-                           176     
-0025 E80000         E      177             CALL    InstallTimer0Handler    ;install handler
-0028 E80000         E      178             CALL    InitTimer0              ;initialize timer0 for button interrupt
-                           179     
-002B FB                    180             STI                             ;enable interrupts
-                           181     
-002C E80000         E      182             CALL    main                    ;run the main function (no arguments)
-002F                       183     Infinite:
-002F EBFE                  184             JMP    Infinite
+                           165             ; user initialization code goes here ;
+                           166             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           167     
+000F BAA2FF                168             MOV     DX, LMCSreg             ;setup to write to MPCS register
+0012 B8C307                169             MOV     AX, LMCSval
+0015 EE                    170             OUT     DX, AL                  ;write MPCSval to MPCS
+                           171     
+0016 E80000         E      172             CALL    InitCS                  ;initialize chip selects
+0019 E80000         E      173             CALL    ClrIRQVectors           ;clear interrupt vector table
+                           174     
+001C E80000         E      175             CALL    InitButtons             ;initialize the buttons
+001F E80000         E      176             CALL    InitDisplayLCD          ;initialize the LCD display
+0022 E80000         E      177             CALL    InitClock               ;initialize the MP3 clock
+                           178     
+0025 E80000         E      179             CALL    InstallTimer0Handler    ;install handler
+0028 E80000         E      180             CALL    InstallTimer1Handler    ;install timer1 handler
+002B E80000         E      181             CALL    InitTimer0              ;initialize timer0 for button interrupt
+002E E80000         E      182             CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+                           183     
+0031 FB                    184             STI                             ;enable interrupts
                            185     
-0031 EBCD                  186             JMP     Start                   ;if return - reinitialize and try again
-                           187     
-                           188     
-----                       189     CODE    ENDS
-                           190     
-                           191     ; the stack segment - used for subroutine linkage, argument passing, and
-                           192     ; local variables
-                           193     
-----                       194     STACK   SEGMENT  WORD  STACK  'STACK'
-                           195     
-                           196     
-0000 (80                   197             DB      80 DUP ('Stack   ')             ;320 words
+0032 E80000         E      186             CALL    main                    ;run the main function (no arguments)
+0035                       187     Infinite:
+0035 EBFE                  188             JMP    Infinite
+                           189     
+0037 EBC7                  190             JMP     Start                   ;if return - reinitialize and try again
+                           191     
+                           192     
+----                       193     CODE    ENDS
+                           194     
+                           195     ; the stack segment - used for subroutine linkage, argument passing, and
+                           196     ; local variables
+                           197     
+----                       198     STACK   SEGMENT  WORD  STACK  'STACK'
+                           199     
+                           200     
+0000 (80                   201             DB      80 DUP ('Stack   ')             ;320 words
      537461636B2020
      20
      )
-                           198     
-0280                       199     TopOfStack      LABEL   WORD
-                           200     
-                           201     
-----                       202     STACK   ENDS
-                           203     
-                           204     ; the data segment - used for static and global variables
+                           202     
+0280                       203     TopOfStack      LABEL   WORD
+                           204     
                            205     
-----                       206     DATA    SEGMENT  WORD  PUBLIC  'DATA'
+----                       206     STACK   ENDS
                            207     
-                           208     
-----                       209     DATA    ENDS
-                           210     
+                           208     ; the data segment - used for static and global variables
+                           209     
+----                       210     DATA    SEGMENT  WORD  PUBLIC  'DATA'
                            211     
                            212     
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:10:18  05/07/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  15:11:46  05/07/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           213     
-                           214             END START
+----                       213     DATA    ENDS
+                           214     
+                           215     
+                           216     
+                           217     
+                           218             END START
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

@@ -37,7 +37,7 @@ CODE SEGMENT PUBLIC 'CODE'
 
 ;external function declarations
 
-        EXTRN    RefresshDRAM:NEAR         ;procedure to run motors
+        EXTRN    RefreshDRAM:NEAR         ;procedure to run motors
 
 
 ;Name:               InitTimer1
@@ -150,7 +150,9 @@ DRAMRefreshEH    PROC    NEAR
 
 DRAMRefreshEHStart:
 						   
-        PUSHA                           ;save the registers
+        PUSH    AX                      ;save the registers
+        PUSH    BX
+        PUSH    DX
         CALL    RefreshDRAM             ;function to refresh DRAM
 
 
@@ -160,7 +162,9 @@ DramRefreshEHDone:                      ;done taking care of the timer
         MOV     AX, TimerEOI
         OUT     DX, AL
 
-        POPA                            ;restore the registers
+        POP      DX                     ;restore the registers
+        POP      BX
+        POP      AX                            
 
 
         IRET                            ;and return - IRET from event handler

@@ -61,7 +61,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Used:     AX, BX, DX
 ;
 ;Known Bugs:         None
 ;
@@ -75,20 +75,18 @@ RefreshDRAM        PROC    NEAR
                    PUBLIC  RefreshDRAM
 
 RefreshDRAMStart:                    ;starting label
-    PUSH    AX                       ;save registers
-    PUSH    BX
+                                     ;registers saved by event handler
     MOV     BX, RefreshRows          ;load number of rows left to refresh
+    MOV     DX, PCS4Address          ;load address to read from
 
 RefreshDRAMLoop:                     ;loop reading PCS4Address
     CMP    BX, 0                     ;check if no rows left to refresh
     JE     RefreshDRAMDone           ;no rows left - done with function
-    IN     AL, PCS4Address           ;read PCS4 to trigger refresh
+    IN     AX, DX                    ;read PCS4 to trigger refresh
     DEC    BX                        ;one fewer road left to refresh
     JMP    RefreshDRAMLoop           ;keep looping
 
-RefreshDRAMDone:                     ;done refreshing - restore registers
-    POP    BX
-    POP    AX
+RefreshDRAMDone:                     ;done refreshing - registers saved by EH
     RET
 
 
@@ -99,4 +97,3 @@ RefreshDRAM        ENDP
 CODE ENDS
 
         END
-

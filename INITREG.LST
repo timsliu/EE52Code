@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  14:10:19  05/07/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  15:11:46  05/07/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE INITREG
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ; Revision History:
                       =1    49     ;    11/4/15     Timothy Liu     initial revision
                       =1    50     ;    11/5/15     Timothy Liu     fixed formatting
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  14:10:19  05/07/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  15:11:46  05/07/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     
                       =1   104     
                       =1   105     
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  14:10:19  05/07/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  15:11:46  05/07/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
 0000 BAA4FF                158             MOV     DX, PACSreg     ;setup to write to PACS register
 0003 B80300                159             MOV     AX, PACSval
 0006 EE                    160             OUT     DX, AL          ;write PACSval to PACS
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  14:10:19  05/07/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  15:11:46  05/07/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;        PUBLIC  InitCS
                            214     ;
                            215     ;
-8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  14:10:19  05/07/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    INITREG                                                  15:11:46  05/07/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE

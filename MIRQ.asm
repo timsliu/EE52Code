@@ -29,6 +29,7 @@
 ;    5/7/16     Tim Liu    wrote InstallTimer1Handler
 
 $INCLUDE(MIRQ.INC)
+$INCLUDE(GENERAL.INC)
 
 CGROUP    GROUP    CODE
 
@@ -41,7 +42,7 @@ CODE SEGMENT PUBLIC 'CODE'
     ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
     ;EXTRN    DemandEH           ;CON_MP3 data demand handler
     EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
-    ;EXTRN    RefreshDRAM:NEAR    ;access PCS4 to refresh DRAM
+    EXTRN    DRAMRefreshEH:NEAR  ;access PCS4 to refresh DRAM
 
 ; ClrIRQVectors
 ;
@@ -325,22 +326,22 @@ InstallTimer0Handler  ENDP
 ; Author:            Timothy Liu
 ; Last Modified:     5/7/16
 
-;InstallTimer1Handler  PROC    NEAR
-;                      PUBLIC  InstallTimer1Handler
+InstallTimer1Handler  PROC    NEAR
+                      PUBLIC  InstallTimer1Handler
 
 
-;        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-;        MOV     ES, AX
+        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+        MOV     ES, AX
                                 ;store the vector - put location of timer event
 								;handler into ES
-;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(RefreshDRAM)
-;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(RefreshDRAM)
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(DRAMRefreshEH)
+        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(DRAMRefreshEH)
 
 
-;        RET                     ;all done, return
+        RET                     ;all done, return
 
 
-;InstallTimer1Handler  ENDP
+InstallTimer1Handler  ENDP
     
 
 

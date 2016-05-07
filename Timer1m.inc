@@ -35,7 +35,7 @@ Timer1CtrlVal     EQU    1110000000000001B  ;Timer 1 Control Register value
 
 ;Timing Definitions
 
-COUNTS_PER_FMS    EQU   500    ;counts for every 0.2 milliseconds (5khz)
+COUNTS_PER_FMS    EQU   1000   ;counts for every 0.4 milliseconds (2.5khz)
                                ;RefreshRows(DRAM.INC) are refreshed each
                                ;timer1 interrupt. 256 rows must be refreshed
                                ;every 4 milliseconds for the MH256 DRAM

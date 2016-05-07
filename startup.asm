@@ -69,6 +69,8 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         EXTRN    InitButtons:NEAR       ;initialize the buttons
         EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
         EXTRN    InitClock:NEAR         ;initialize MP3 clock
+        EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
+        EXTRN    InitTimer1:NEAR        ;start up timer 1
 
 START:
 
@@ -98,7 +100,9 @@ BEGIN:                                  ;start the program
         CALL    InitClock               ;initialize the MP3 clock
 
         CALL    InstallTimer0Handler    ;install handler
+        CALL    InstallTimer1Handler    ;install timer1 handler
         CALL    InitTimer0              ;initialize timer0 for button interrupt
+        CALL    InitTimer1              ;initialize timer1 for DRAM refresh
 
         STI                             ;enable interrupts
 
