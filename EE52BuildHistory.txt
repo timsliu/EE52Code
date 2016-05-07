@@ -103,3 +103,11 @@ Removed pull up resistor for SRDY and instead soldered wire wrap wire
 between SRDY1 and SRDY
 Inserted U17 CPLD into socket
 Serial debugger still connects (phew)
+
+5/7/16
+
+Soldered R32, R33, R34, R38, R39, R17 (for CPLD U12)
+R65 - R70, R71, R72, R73 (MUX enables) - continuity checked. Still good, but
+unexpected rise in resistance
+R64, R63, R15, and R7
+Loaded and tested code again - all good
