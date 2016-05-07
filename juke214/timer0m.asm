@@ -15,23 +15,19 @@
 ; Table of Contents
 ;
 ;   
-;   InitTimer0              -start the timer
-;   ButtonEH                -event handler for buttons
+;   InitTimer              -start the timer
 
 ; Revision History::
-;       10/27/15    Tim Liu     initial revision
-;       10/28/15    Tim Liu     initdisplay initializes DS
-;       10/29/15    Tim Liu     added timer event handler
-;       11/3/15     Tim Liu     TimerEventHandler also handles key presses
-;       11/5/15     Tim Liu     Changed name of TimerEventHandler to
-;                               MuxKeypadEventHandler
-;       12/1/15     Tim Liu     Changed all Timer to Timer0
-;       12/1/15     Tim Liu     Added IRQ.INC file
-;       4/5/16      Tim Liu     Changed name to Timer0M for MP3 player
-;       4/21/16     Tim Liu     Changed MuxKeypandEventHandler to ButtonEH
-;       5/5/16      Tim Liu     Added call to UpdateClock to ButtonEH
-
-
+;       10/27/15    Timothy Liu     initial revision
+;       10/28/15    Timothy Liu     initdisplay initializes DS
+;       10/29/15    Timothy Liu     added timer event handler
+;       11/3/15     Timothy Liu     TimerEventHandler also handles key presses
+;       11/5/15     Timothy Liu     Changed name of TimerEventHandler to
+;                                   MuxKeypadEventHandler
+;       12/1/15     Timothy Liu     Changed all Timer to Timer0
+;       12/1/15     Timothy Liu     Added IRQ.INC file
+;       4/5/16      Timothy Liu     Changed name to Timer0M for MP3 player
+;       4/21/16      Timothy Liu     Changed MuxKeypandEventHandler to ButtonEH
 ; local include files
 
 $INCLUDE(TIMER0M.INC)
@@ -49,10 +45,9 @@ CODE SEGMENT PUBLIC 'CODE'
 ; external function declarations
 
         EXTRN       ButtonDebounce:NEAR      ;scan and check keypad
-        EXTRN       UpdateClock:NEAR         ;update clock tracking milliseconds
 
 
-; InitTimer0
+; InitTimer
 ;
 ; Description:       Initialize the 80188 timer0.  The timer is initialized
 ;                    to generate interrupts every COUNTS_PER_MS clock cycles.
@@ -125,16 +120,13 @@ InitTimer0       ENDP
 ;
 ; Description:       This procedure is the event handler for the timer0
 ;                    interrupt. This function saves the registers and
-;                    calls ButtonDebounce. Every call to ButtonDebounce
+;                    calls ButtonDebounce. Every call to KeyDebounce
 ;                    scans the buttons and checks for a button press.
-;                    The procedure also calls UpdateClock, which updates
-;                    the number of milliseconds that have elapsed.
 ;                    The function then pops the stack
 ;                    and sends an EOI.
 ;
-; Operation:         Save all the registers and call ButtonDebounce to scan 
-;                    the 8 UI buttons for key presses. Call UpdateClock
-;                    to increment the MP3 timer Send an EOI at the end.
+; Operation:         Save all the registers and call KeyDebounce to scan 
+;                    the 8 UI buttons for key presses. Send an EOI at the end.
 ;                    
 ; Arguments:         None.
 ; Return Value:      None.
@@ -153,7 +145,7 @@ InitTimer0       ENDP
 ; Registers Changed: None
 ;
 ; Author:            Timothy Liu
-; Last Modified:     5/5/16
+; Last Modified:     04/5/16
 
 ButtonEH                    PROC    NEAR
                             PUBLIC  ButtonEH
@@ -162,7 +154,6 @@ ButtonEH                    PROC    NEAR
         PUSH    BX                      ;
         PUSH    DX                      ;
         Call    ButtonDebounce          ;check the keypad
-        CALL    UpdateClock             ;increment milliseconds elapsed
 
 
 EndButtonEH:                            ;done taking care of the timer

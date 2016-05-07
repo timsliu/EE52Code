@@ -1,0 +1,386 @@
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE LIB188
+OBJECT MODULE PLACED IN LIB188.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE LIB188.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1             NAME  LIB188
+                             2     
+                             3     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             4     ;                                                                            ;
+                             5     ;                                    LIB188                                  ;
+                             6     ;                          Library Routines for 80188                        ;
+                             7     ;                              MP3 Jukebox Project                           ;
+                             8     ;                                   EE/CS 52                                 ;
+                             9     ;                                                                            ;
+                            10     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            11     
+                            12     ; This file contains a number of functions needed in the 80188 MP3 Jukebox
+                            13     ; project.  The public functions included are:
+                            14     ;    abs_    - find the absolute value of the passed integer
+                            15     ;    strcat_ - concatenate second passed string to first passed string
+                            16     ;    strcpy_ - copy second passed string to first passed string
+                            17     ;    strlen_ - return the length of the passed string
+                            18     ;
+                            19     ; The local functions included are:
+                            20     ;    none
+                            21     ;
+                            22     ; Revision History:
+                            23     ;     6/16/05  Glen George              initial revision
+                            24     ;     6/4/06   Glen George              fixed bug in strlen_, it wasn't
+                            25     ;                                          updating the string position
+                            26     
+                            27     
+                            28     
+                            29     
+                            30     ; local include files
+                            31     ;    none
+                            32     
+                            33     
+                            34     
+                            35     
+----                        36     CODE    SEGMENT  PUBLIC  'CODE'
+                            37     CGROUP  GROUP  CODE
+                            38     
+                            39             ASSUME  CS:CGROUP
+                            40     
+                            41     
+                            42     
+                            43     
+                            44     ; abs_
+                            45     ;
+                            46     ; Description:       This function computes the absolute value of the passed
+                            47     ;                    integer.
+                            48     ;
+                            49     ; Operation:         If the passed integer is negative, it is negated, if it
+                            50     ;                    is positive it is left unchanged.
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                            51     ;
+                            52     ; Arguments:         [SP + 2] (int) - value to find the absolute value of.
+                            53     ; Return Value:      AX - absolute value of the passed integer.
+                            54     ;
+                            55     ; Local Variables:   BP - frame pointer.
+                            56     ; Shared Variables:  None.
+                            57     ; Global Variables:  None.
+                            58     ;
+                            59     ; Input:             None.
+                            60     ; Output:            None.
+                            61     ;
+                            62     ; Error Handling:    None.
+                            63     ;
+                            64     ; Algorithms:        None.
+                            65     ; Data Structures:   None.
+                            66     ;
+                            67     ; Registers Changed: flags.
+                            68     ; Stack Depth:       1 word
+                            69     ;
+                            70     ; Author:            Glen George
+                            71     ; Last Modified:     June 16, 2005
+                            72     
+0000                        73     abs_    PROC    NEAR
+                            74             PUBLIC  abs_
+                            75     
+                            76     
+  0004[]                    77     arg     EQU     WORD PTR [BP + 4]       ;argument for the function
+                            78     
+                            79     
+0000                        80     absStart:
+0000 55                     81             PUSH    BP                      ;setup the stack frame pointer
+0001 8BEC                   82             MOV     BP, SP
+                            83             ;JMP    absCompute              ;now compute the absolute value
+                            84     
+                            85     
+0003                        86     absCompute:
+0003 8B4604                 87             MOV     AX, arg                 ;get the passed argument
+0006 0BC0                   88             OR      AX, AX                  ;set flags
+0008 7902                   89             JNS     absEnd                  ;if positive - have abs - done
+000A F7D8                   90             NEG     AX                      ;otherwise negate to get abs
+                            91             ;JMP    absEnd                  ;and done now
+                            92     
+                            93     
+000C                        94     absEnd:                                 ;done computing absolute value
+000C 5D                     95             POP     BP                      ;restore BP and return
+000D C3                     96             RET
+                            97     
+                            98     
+                            99     abs_    ENDP
+                           100     
+                           101     
+                           102     
+                           103     
+                           104     ; strcat_
+                           105     ;
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           106     ; Description:       This function concatenates the second passed string to
+                           107     ;                    the first passed string.  The strings are passed as far
+                           108     ;                    pointers (segment and offset).
+                           109     ;
+                           110     ; Operation:         The end of the first string is found.  Then the second
+                           111     ;                    string is copied character by character to the end of the
+                           112     ;                    first string.
+                           113     ;
+                           114     ; Arguments:         [SP + 2] (char far *) - pointer to destination string
+                           115     ;                                            (string to concatenate to).
+                           116     ;                    [SP + 6] (char far *) - pointer to source string (string
+                           117     ;                                            to concatenate).
+                           118     ; Return Value:      DX | AX - pointer to the passed destination string.
+                           119     ;
+                           120     ; Local Variables:   BP - frame pointer
+                           121     ;                    ES - source and destination segment.
+                           122     ;                    BX - destination offset.
+                           123     ;                    SI - source offset.
+                           124     ; Shared Variables:  None.
+                           125     ; Global Variables:  None.
+                           126     ;
+                           127     ; Input:             None.
+                           128     ; Output:            None.
+                           129     ;
+                           130     ; Error Handling:    None.
+                           131     ;
+                           132     ; Algorithms:        None.
+                           133     ; Data Structures:   None.
+                           134     ;
+                           135     ; Registers Changed: flags, ES, BX.
+                           136     ; Stack Depth:       2 words
+                           137     ;
+                           138     ; Author:            Glen George
+                           139     ; Last Modified:     June 16, 2005
+                           140     
+000E                       141     strcat_ PROC    NEAR
+                           142             PUBLIC  strcat_
+                           143     
+                           144     
+  0004[]                   145     dest    EQU     DWORD PTR [BP + 4]      ;destination
+  0004[]                   146     destOff EQU     WORD PTR [BP + 4]       ;destination offset
+  0006[]                   147     destSeg EQU     WORD PTR [BP + 6]       ;destination segment
+  0008[]                   148     src     EQU     DWORD PTR [BP + 8]      ;source
+  0008[]                   149     srcOff  EQU     WORD PTR [BP + 8]       ;source offset
+  000A[]                   150     srcSeg  EQU     WORD PTR [BP + 10]      ;source segment
+  0000                     151     NULL    EQU     0                       ;NULL character (end of string)
+                           152     
+                           153     
+000E                       154     strcatStart:
+000E 55                    155             PUSH    BP                      ;setup the stack frame pointer
+000F 8BEC                  156             MOV     BP, SP
+0011 56                    157             PUSH    SI                      ;can't trash SI
+                           158             ;JMP    findEnd                 ;find end of destination
+                           159     
+                           160     
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    4
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0012                       161     findEnd:                                ;find end of destination string
+0012 C45E04                162             LES     BX, dest                ;get destination pointer (ES:BX)
+0015                       163     findEndLoop:                            ;loop finding end of string
+0015 26803F00              164             CMP     BYTE PTR ES:[BX], NULL  ;end of string?
+0019 7403                  165             JE      DoCat                   ;end of destination - do concat
+001B 43                    166             INC     BX                      ;otherwise try next character
+001C EBF7                  167             JMP     findEndLoop
+                           168     
+001E                       169     DoCat:                                  ;do the concatenation
+001E 8B7608                170             MOV     SI, srcOff              ;get source offset
+0021                       171     DoCatLoop:                              ;loop copying characters
+0021 8E460A                172             MOV     ES, srcSeg              ;need source segment
+0024 268A04                173             MOV     AL, ES:[SI]             ;get source character
+0027 8E4606                174             MOV     ES, destSeg             ;get destination segment
+002A 268807                175             MOV     ES:[BX], AL             ;and copy the character
+002D 3C00                  176             CMP     AL, NULL                ;did we just copy the NULL character?
+002F 7404                  177             JE      DoneCat                 ;if so, done with concatenation
+0031 43                    178             INC     BX                      ;otherwise move to next characters
+0032 46                    179             INC     SI
+0033 EBEC                  180             JMP     DoCatLoop               ;and loop
+                           181     
+                           182     
+0035                       183     DoneCat:                                ;done with concatenation
+0035 8B4604                184             MOV     AX, destOff             ;setup return value
+0038 8B5606                185             MOV     DX, destSeg
+                           186             ;JMP    strcatEnd               ;and done now
+                           187     
+                           188     
+003B                       189     strcatEnd:                              ;done concatenating strings
+003B 5E                    190             POP     SI                      ;restore registers and return
+003C 5D                    191             POP     BP
+003D C3                    192             RET
+                           193     
+                           194     
+                           195     strcat_ ENDP
+                           196     
+                           197     
+                           198     
+                           199     
+                           200     ; strcpy_
+                           201     ;
+                           202     ; Description:       This function copies the second passed string to the
+                           203     ;                    first passed string.  The strings are passed as far
+                           204     ;                    pointers (segment and offset).
+                           205     ;
+                           206     ; Operation:         The second string is copied character by character to the
+                           207     ;                    first string.
+                           208     ;
+                           209     ; Arguments:         [SP + 2] (char far *) - pointer to destination string
+                           210     ;                                            (string to copy to).
+                           211     ;                    [SP + 6] (char far *) - pointer to source string (string
+                           212     ;                                            to copy from).
+                           213     ; Return Value:      DX | AX - pointer to the passed destination string.
+                           214     ;
+                           215     ; Local Variables:   BP - frame pointer
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    5
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           216     ;                    ES - source and destination segment.
+                           217     ;                    BX - destination offset.
+                           218     ;                    SI - source offset.
+                           219     ; Shared Variables:  None.
+                           220     ; Global Variables:  None.
+                           221     ;
+                           222     ; Input:             None.
+                           223     ; Output:            None.
+                           224     ;
+                           225     ; Error Handling:    None.
+                           226     ;
+                           227     ; Algorithms:        None.
+                           228     ; Data Structures:   None.
+                           229     ;
+                           230     ; Registers Changed: flags, ES, BX.
+                           231     ; Stack Depth:       2 words
+                           232     ;
+                           233     ; Author:            Glen George
+                           234     ; Last Modified:     June 16, 2005
+                           235     
+003E                       236     strcpy_ PROC    NEAR
+                           237             PUBLIC  strcpy_
+                           238     
+                           239     
+003E                       240     strcpyStart:
+003E 55                    241             PUSH    BP                      ;setup the stack frame pointer
+003F 8BEC                  242             MOV     BP, SP
+0041 56                    243             PUSH    SI                      ;can't trash SI
+                           244     
+0042 8B5E04                245             MOV     BX, destOff             ;setup destination offset
+0045 8B7608                246             MOV     SI, srcOff              ;setup source offset
+                           247             ;JMP    CopyLoop                ;now copy the strings
+                           248     
+                           249     
+0048                       250     CopyLoop:                               ;loop copying characters
+0048 8E460A                251             MOV     ES, srcSeg              ;need source segment
+004B 268A04                252             MOV     AL, ES:[SI]             ;get source character
+004E 8E4606                253             MOV     ES, destSeg             ;get destination segment
+0051 268807                254             MOV     ES:[BX], AL             ;and copy the character
+0054 3C00                  255             CMP     AL, NULL                ;did we just copy the NULL character?
+0056 7404                  256             JE      DoneCopy                ;if so, done with copying
+0058 43                    257             INC     BX                      ;otherwise move to next characters
+0059 46                    258             INC     SI
+005A EBEC                  259             JMP     CopyLoop                ;and loop
+                           260     
+                           261     
+005C                       262     DoneCopy:                               ;done with copying
+005C 8B4604                263             MOV     AX, destOff             ;setup return value
+005F 8B5606                264             MOV     DX, destSeg
+                           265             ;JMP    strcpyEnd               ;and done now
+                           266     
+                           267     
+0062                       268     strcpyEnd:                              ;done copying strings
+0062 5E                    269             POP     SI                      ;restore registers and return
+0063 5D                    270             POP     BP
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    6
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0064 C3                    271             RET
+                           272     
+                           273     
+                           274     strcpy_ ENDP
+                           275     
+                           276     
+                           277     
+                           278     
+                           279     ; strlen_
+                           280     ;
+                           281     ; Description:       This function computes the length of the passed string.
+                           282     ;                    The length is the number of characters, not including the
+                           283     ;                    terminating <null> character.  The string is passed as a
+                           284     ;                    far pointer (segment and offset).
+                           285     ;
+                           286     ; Operation:         The end of the string is found while counting characters.
+                           287     ;
+                           288     ; Arguments:         [SP + 2] (char far *) - pointer to string for which to
+                           289     ;                                            find the length.
+                           290     ; Return Value:      AX - length of the passed string.
+                           291     ;
+                           292     ; Local Variables:   BP - frame pointer
+                           293     ;                    ES - string segment.
+                           294     ;                    BX - string offset.
+                           295     ; Shared Variables:  None.
+                           296     ; Global Variables:  None.
+                           297     ;
+                           298     ; Input:             None.
+                           299     ; Output:            None.
+                           300     ;
+                           301     ; Error Handling:    None.
+                           302     ;
+                           303     ; Algorithms:        None.
+                           304     ; Data Structures:   None.
+                           305     ;
+                           306     ; Registers Changed: flags, ES, BX.
+                           307     ; Stack Depth:       1 word
+                           308     ;
+                           309     ; Author:            Glen George
+                           310     ; Last Modified:     June 4, 2006
+                           311     
+0065                       312     strlen_ PROC    NEAR
+                           313             PUBLIC  strlen_
+                           314     
+                           315     
+0065                       316     strlenStart:
+0065 55                    317             PUSH    BP                      ;setup the stack frame pointer
+0066 8BEC                  318             MOV     BP, SP
+                           319     
+0068 C45E04                320             LES     BX, dest                ;get the string pointer (ES:BX)
+006B B80000                321             MOV     AX, 0                   ;length is 0 so far
+                           322     
+006E                       323     strlenLoop:                             ;loop until find end of the string
+006E 26803F00              324             CMP     BYTE PTR ES:[BX], NULL  ;end of string?
+0072 7404                  325             JE      strlenEnd               ;end of string - all done
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    7
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0074 40                    326             INC     AX                      ;otherwise increment the length
+0075 43                    327             INC     BX                      ;and go to next character
+0076 EBF6                  328             JMP     strlenLoop
+                           329     
+                           330     
+0078                       331     strlenEnd:                              ;done computing length
+0078 5D                    332             POP     BP                      ;restore BP and return
+0079 C3                    333             RET
+                           334     
+                           335     
+                           336     strlen_ ENDP
+                           337     
+                           338     
+                           339     
+----                       340     CODE    ENDS
+                           341     
+                           342     
+                           343     
+                           344             END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

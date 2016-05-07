@@ -1,0 +1,4 @@
+Command      Address    Action
+15            80h        Display on, cursor on, blinking on
+ASCII         81h        Write to cursor position
+80h+position  80h        Set cursor position

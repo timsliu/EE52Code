@@ -1,0 +1,21 @@
+
+DOS 5.0 (038-N) 8086 LINKER, V2.7
+
+INPUT FILES: LCD1.LNK, LCD2.LNK
+OUTPUT FILE: LCD.LNK
+CONTROLS SPECIFIED IN INVOCATION COMMAND:
+DATE:  05/04/;6  TIME:  21:12:53
+
+
+LINK MAP OF MODULE STARTUP
+
+LOGICAL SEGMENTS INCLUDED:
+LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
+ 0000H ------    G    ??SEG                                         
+ 044AH ------    G    CODE            CODE                          
+ 0135H ------    G    DATA            DATA                          
+ 0280H ------    W    STACK           STACK                         
+
+INPUT MODULES INCLUDED:
+LCD1.LNK(STARTUP)
+LCD2.LNK(BUTTON)

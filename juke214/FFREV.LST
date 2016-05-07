@@ -1,0 +1,1364 @@
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE FFREV
+OBJECT MODULE PLACED IN FFREV.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FFREV.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                  FFREV                                   */
+    4             /*                      Fast Forward/Reverse Functions                      */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS  52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains the key processing and update functions for the Fast
+   12                Forward and Reverse operations of the MP3 Jukebox Project.  These functions
+   13                take care of processing an input key (from the keypad) and updates for Fast
+   14                Forward and Reverse operations.  They are called by the main loop of the
+   15                MP3 Jukebox.  The functions included are:
+   16                   begin_FastFwd   - switch to fast forward from reverse (key processing
+   17                                     function)
+   18                   begin_Reverse   - switch to reverse from fast forward (key processing
+   19                                     function)
+   20                   dec_FFRev_rate  - decrease the fast forward/reverse rate
+   21                   inc_FFRev_rate  - increase the fast forward/reverse rate
+   22                   start_FastFwd   - start going fast forward (key processing function)
+   23                   start_Reverse   - start going reverse (key processing function)
+   24                   stop_FFRev      - stop when doing fast forward or reverse (key
+   25                                     processing function)
+   26                   switch_FastFwd  - switch to fast forward from play (key processing
+   27                                     function)
+   28                   switch_Reverse  - switch to reverse from play (key processing function)
+   29                   update_FastFwd  - fast forwarding, update the time (update function)
+   30                   update_Reverse  - reversing, update the time (update function)
+   31             
+   32                The local functions included are:
+   33                   none
+   34             
+   35                The locally global variable definitions included are:
+   36                   FFRev_rate - rate at which to run fast forward/reverse
+   37                   time_FFRev - leftover (after rounding) time for fast forward/reverse
+   38             
+   39             
+   40                Revision History
+   41                   6/4/00   Glen George       Initial revision (from 3/6/99 version of
+   42                                              ffrev.c from the Digital Audio Recorder
+   43                                              Project).
+   44                   6/2/02   Glen George       Changed update_FastFwd() and update_Reverse()
+   45                                              to use the elapsed_time() function to do the
+   46                                              fast forward and reverse operations, rather
+   47                                              than the user update function.
+   48                   6/2/02   Glen George       Added time_FFRev global variable to support
+   49                                              fast forward and reverse operations.
+   50                   6/2/02   Glen George       Rewrote start_FastFwd(), start_Reverse(),
+   51                                              begin_FastFwd(), begin_Reverse(), and
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   2
+
+
+   52                                              stop_FFRev() to implement the new method for
+   53                                              doing fast forward and reverse operations.
+   54                   6/2/02   Glen George       Updated comments.
+   55                   6/5/03   Glen George       Updated start_FastFwd and start_Reverse to
+   56                                              not do anything if the current track is a
+   57                                              directory (supports FAT file systems).
+   58                   6/5/03   Glen George       Added #include of fatutil.h for function
+   59                                              declarations needed by above change.
+   60                   6/5/03   Glen George       Updated function headers.
+   61                   6/5/08   Glen George       Added functions dec_FFRev_rate and
+   62                                              inc_FFRev_rate along with the shared variable
+   63                              FFRev_rate to support variable rate fast
+   64                              forward and reverse.
+   65             */
+   66             
+   67             
+   68             
+   69             /* library include files */
+   70               /* none */
+   71             
+   72             /* local include files */
+   73             #include  "mp3defs.h"
+   74             #include  "keyproc.h"
+   75             #include  "updatfnc.h"
+   76             #include  "trakutil.h"
+   77             #include  "fatutil.h"
+   78             
+   79             
+   80             
+   81             /* locally global variables */
+   82             
+   83             static int  FFRev_rate;         /* rate at which to increment/decrement fast forward/reverse */
+   84             
+   85             static int  time_FFRev;         /* leftover time (after rounding) for fast forward/reverse */
+   86             
+   87             
+   88             
+   89             
+   90             /*
+   91                start_FastFwd
+   92             
+   93                Description:      This function handles the <Fast Forward> key when nothing
+   94                                  is happening in the system.
+   95                              
+   96                Operation:        It starts the fast forward operation if there is time
+   97                                  remaining on the current track to fast forward thru and
+   98                                  the track is not a directory and does nothing otherwise.
+   99             
+  100                Arguments:        cur_status (enum status) - the current system status.
+  101                Return Value:     (enum status) - the new system status: STAT_FF if there
+  102                                  is something on the track to fast forward thru, the
+  103                                  passed current status otherwise.
+  104             
+  105                Input:            None.
+  106                Output:           None.
+  107             
+  108                Error Handling:   None.
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   3
+
+
+  109             
+  110                Algorithms:       None.
+  111                Data Structures:  None.
+  112             
+  113                Shared Variables: FFRev_rate - reset to MIN_FFREV_RATE.
+  114                                  time_FFRev - reset to 0.
+  115             
+  116                Author:           Glen George
+  117                Last Modified:    June 5, 2008
+  118             
+  119             */
+  120             
+  121             enum status  start_FastFwd(enum status cur_status)
+  122             {
+  123     1           /* variables */
+  124     1             /* none */
+  125     1       
+  126     1       
+  127     1       
+  128     1           /* check if something is left on the track and it isn't a directory */
+  129     1           if (!cur_isDir() && (get_track_remaining_length() != 0))  {
+  130     2       
+  131     2               /* not a directory and something is left on the track - fast forward it */
+  132     2       
+  133     2               /* clear out the timer for the fast forward operation */
+  134     2               (void) elapsed_time();
+  135     2               /* also clear leftover time */
+  136     2               time_FFRev = 0;
+  137     2       
+  138     2           /* start at slowest fast forward rate */
+  139     2           FFRev_rate = MIN_FFREV_RATE;
+  140     2       
+  141     2               /* set status to fast forward */
+  142     2               cur_status = STAT_FF;
+  143     2           }
+  144     1       
+  145     1       
+  146     1           /* return with the possibly new system status */
+  147     1           return  cur_status;
+  148     1       
+  149     1       }
+  150             
+  151             
+  152             
+  153             
+  154             /*
+  155                start_Reverse
+  156             
+  157                Description:      This function handles the <Reverse> key when nothing is
+  158                                  happening in the system.
+  159             
+  160                Operation:        The function starts the reverse operation if there is
+  161                                  data to be reversed thru on the current track and the
+  162                                  track is not a directory and does nothing otherwise.
+  163             
+  164                Arguments:        cur_status (enum status) - the current system status.
+  165                Return Value:     (enum status) - the new system status: STAT_REV if there
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   4
+
+
+  166                                  is something left on the track to reverse thru, the
+  167                                  passed current status otherwise.
+  168             
+  169                Input:            None.
+  170                Output:           None.
+  171             
+  172                Error Handling:   None.
+  173             
+  174                Algorithms:       None.
+  175                Data Structures:  None.
+  176             
+  177                Shared Variables: FFRev_rate - reset to MIN_FFREV_RATE.
+  178                                  time_FFRev - reset to 0.
+  179             
+  180                Author:           Glen George
+  181                Last Modified:    June 5, 2008
+  182             
+  183             */
+  184             
+  185             enum status  start_Reverse(enum status cur_status)
+  186             {
+  187     1           /* variables */
+  188     1             /* none */
+  189     1       
+  190     1       
+  191     1       
+  192     1           /* check if entry is not a directory and something is left on the track */
+  193     1           if (!cur_isDir() && (get_track_remaining_length() != get_track_length()))  {
+  194     2       
+  195     2               /* something is on the track & not a directory, can do reverse */
+  196     2       
+  197     2               /* clear out the timer for the reverse operation */
+  198     2               (void) elapsed_time();
+  199     2               /* also clear leftover time */
+  200     2               time_FFRev = 0;
+  201     2       
+  202     2           /* start at slowest reverse rate */
+  203     2           FFRev_rate = MIN_FFREV_RATE;
+  204     2       
+  205     2               /* set status to reverse */
+  206     2               cur_status = STAT_REV;
+  207     2           }
+  208     1       
+  209     1       
+  210     1           /* return the possibly new status */
+  211     1           return  cur_status;
+  212     1       
+  213     1       }
+  214             
+  215             
+  216             
+  217             
+  218             /*
+  219                switch_FastFwd
+  220             
+  221                Description:      This function handles the <Fast Forward> key when playing
+  222                                  a track.  It turns off the audio output and then starts
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   5
+
+
+  223                                  the fast forward operation.
+  224             
+  225                Arguments:        cur_status (enum status) - the current system status (not
+  226                                                             used).
+  227                Return Value:     (enum status) - the new system status is returned (by
+  228                                  start_FastFwd actually).
+  229             
+  230                Input:            None.
+  231                Output:           None.
+  232             
+  233                Error Handling:   None.
+  234             
+  235                Algorithms:       None.
+  236                Data Structures:  None.
+  237             
+  238                Shared Variables: None.
+  239             
+  240                Author:           Glen George
+  241                Last Modified:    Mar. 11, 1995
+  242             
+  243             */
+  244             
+  245             enum status  switch_FastFwd(enum status cur_status)
+  246             {
+  247     1           /* variables */
+  248     1             /* none */
+  249     1       
+  250     1       
+  251     1       
+  252     1           /* first turn off the audio output */
+  253     1           audio_halt();
+  254     1       
+  255     1       
+  256     1           /* now start the fast forward operation (returning it's status) */
+  257     1           /* note: currently doing nothing so in Idle state */
+  258     1           return  start_FastFwd(STAT_IDLE);
+  259     1       
+  260     1       }
+  261             
+  262             
+  263             
+  264             
+  265             /*
+  266                switch_Reverse
+  267             
+  268                Description:      This function handles the <Reverse> key when playing a
+  269                                  track.  It turns off the audio output and then starts the
+  270                                  reverse operation.
+  271             
+  272                Arguments:        cur_status (enum status) - the current system status (not
+  273                                                             used).
+  274                Return Value:     (enum status) - the new system status is returned (by
+  275                                  start_Reverse actually).
+  276             
+  277                Input:            None.
+  278                Output:           None.
+  279             
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   6
+
+
+  280                Error Handling:   None.
+  281             
+  282                Algorithms:       None.
+  283                Data Structures:  None.
+  284             
+  285                Shared Variables: None.
+  286             
+  287                Author:           Glen George
+  288                Last Modified:    Mar. 11, 1995
+  289             
+  290             */
+  291             
+  292             enum status  switch_Reverse(enum status cur_status)
+  293             {
+  294     1           /* variables */
+  295     1             /* none */
+  296     1       
+  297     1       
+  298     1       
+  299     1           /* first turn off the audio output */
+  300     1           audio_halt();
+  301     1       
+  302     1       
+  303     1           /* now start up reverse, returning it's status */
+  304     1           /* note: currently doing nothing so in Idle state */
+  305     1           return  start_Reverse(STAT_IDLE);
+  306     1       
+  307     1       }
+  308             
+  309             
+  310             
+  311             
+  312             /*
+  313                begin_FastFwd
+  314             
+  315                Description:      This function handles the <Fast Forward> key when
+  316                                  currently going in reverse.
+  317             
+  318                Operation:        The function resets the time for timing the fast forward
+  319                                  operation and the fast forward rate and returns a new
+  320                                  status.
+  321             
+  322                Arguments:        cur_status (enum status) - the current system status (not
+  323                                                             used).
+  324                Return Value:     (enum status) - the new status (STAT_FF) is returned.
+  325             
+  326                Input:            None.
+  327                Output:           None.
+  328             
+  329                Error Handling:   None.
+  330             
+  331                Algorithms:       None.
+  332                Data Structures:  None.
+  333             
+  334                Shared Variables: FFRev_rate - reset to MIN_FFREV_RATE.
+  335                                  time_FFRev - reset to 0.
+  336             
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   7
+
+
+  337                Author:           Glen George
+  338                Last Modified:    June 5, 2008
+  339             
+  340             */
+  341             
+  342             enum status  begin_FastFwd(enum status cur_status)
+  343             {
+  344     1           /* variables */
+  345     1             /* none */
+  346     1       
+  347     1       
+  348     1       
+  349     1           /* clear out the timer for the fast forward operation */
+  350     1           (void) elapsed_time();
+  351     1           /* also clear leftover time */
+  352     1           time_FFRev = 0;
+  353     1       
+  354     1           /* start at slowest fast forward rate */
+  355     1           FFRev_rate = MIN_FFREV_RATE;
+  356     1       
+  357     1           /* and return the new status */
+  358     1           return  STAT_FF;
+  359     1       
+  360     1       }
+  361             
+  362             
+  363             
+  364             
+  365             /*
+  366                begin_Reverse
+  367             
+  368                Description:      This function handles the <Reverse> key when currently
+  369                                  operating in fast forward.
+  370             
+  371                Operation:        The function resets the timer used to time the reverse
+  372                                  operation and the reverse rate and then returns STAT_REV
+  373                                  as the status.
+  374             
+  375                Arguments:        cur_status (enum status) - the current system status (not
+  376                                                             used).
+  377                Return Value:     (enum status) - the new status (STAT_REV) is returned.
+  378             
+  379                Input:            None.
+  380                Output:           None.
+  381             
+  382                Error Handling:   None.
+  383             
+  384                Algorithms:       None.
+  385                Data Structures:  None.
+  386             
+  387                Shared Variables: FFRev_rate - reset to MIN_FFREV_RATE.
+  388                                  time_FFRev - reset to 0.
+  389             
+  390                Author:           Glen George
+  391                Last Modified:    June 5, 2008
+  392             
+  393             */
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   8
+
+
+  394             
+  395             enum status  begin_Reverse(enum status cur_status)
+  396             {
+  397     1           /* variables */
+  398     1             /* none */
+  399     1       
+  400     1       
+  401     1       
+  402     1           /* clear out the timer for the reverse operation */
+  403     1           (void) elapsed_time();
+  404     1           /* also clear leftover time */
+  405     1           time_FFRev = 0;
+  406     1       
+  407     1           /* start at slowest reverse rate */
+  408     1           FFRev_rate = MIN_FFREV_RATE;
+  409     1       
+  410     1           /* and return STAT_REV as the new status */
+  411     1           return  STAT_REV;
+  412     1       
+  413     1       }
+  414             
+  415             
+  416             
+  417             
+  418             /*
+  419                stop_FFRev
+  420             
+  421                Description:      This function handles the <Stop> key when fast forwarding
+  422                                  or reversing.  It just changes to the idle status.  Note
+  423                                  that the time is left unaffected.
+  424             
+  425                Arguments:        cur_status (enum status) - the current system status (not
+  426                                                             used).
+  427                Return Value:     (enum status) - the new status (STAT_IDLE) is returned.
+  428             
+  429                Input:            None.
+  430                Output:           None.
+  431             
+  432                Error Handling:   None.
+  433             
+  434                Algorithms:       None.
+  435                Data Structures:  None.
+  436             
+  437                Shared Variables: None.
+  438             
+  439                Author:           Glen George
+  440                Last Modified:    June 1, 2002
+  441             
+  442             */
+  443             
+  444             enum status  stop_FFRev(enum status cur_status)
+  445             {
+  446     1           /* variables */
+  447     1             /* none */
+  448     1       
+  449     1       
+  450     1       
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE   9
+
+
+  451     1           /* just return the idle status */
+  452     1           return  STAT_IDLE;
+  453     1       
+  454     1       }
+  455             
+  456             
+  457             
+  458             
+  459             /*
+  460                update_FastFwd
+  461             
+  462                Description:      This function handles updates when fast forwarding.  The
+  463                                  function gets the elapsed time, scales it appropriately,
+  464                                  and updates the track time and buffer pointer for the new
+  465                                  position.  When the end of the track is reached the
+  466                                  status is returned to idle (the time is left at 0).
+  467             
+  468                Arguments:        cur_status (enum status) - the current system status.
+  469                Return Value:     (enum status) - the new status: passed current status if
+  470                                  not at the end of the track and STAT_IDLE if at the end.
+  471             
+  472                Input:            None.
+  473                Output:           The new track time (if any) is output to the display.
+  474             
+  475                Error Handling:   None.
+  476             
+  477                Algorithms:       None.
+  478                Data Structures:  None.
+  479             
+  480                Shared Variables: time_FFRev - updated.
+  481             
+  482                Author:           Glen George
+  483                Last Modified:    June 1, 2002
+  484             
+  485             */
+  486             
+  487             enum status  update_FastFwd(enum status cur_status)
+  488             {
+  489     1           /* variables */
+  490     1           long int  etime;            /* the elapsed time since the last call */
+  491     1       
+  492     1           long int  buffer_fwd;       /* amount to move forward on track */
+  493     1       
+  494     1       
+  495     1       
+  496     1           /* is there anything left in the track to fast forward through */
+  497     1           if (get_track_remaining_length() != 0)  {
+  498     2       
+  499     2       
+  500     2               /* something on track - get the elapsed time for fast forward operation */
+  501     2               /* it needs to be scaled and have any leftover time added in */
+  502     2               etime = FFRev_rate * elapsed_time() + time_FFRev;
+  503     2       
+  504     2               /* has enough time elapsed for fast forwarding */
+  505     2               if (etime > MIN_FFREV_TIME)  {
+  506     3       
+  507     3                   /* can and should move forward - compute how many bytes */
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  10
+
+
+  508     3                   buffer_fwd = (get_track_length() * etime) / (100L * get_track_total_time());
+  509     3       
+  510     3                   /* truncate it to the nearest number of blocks */
+  511     3                   buffer_fwd = (buffer_fwd / IDE_BLOCK_SIZE);
+  512     3                   /* compute the leftover time and save it for next time */
+  513     3                   time_FFRev = etime - (100L * get_track_total_time() * buffer_fwd * IDE_BLOCK_SIZE) / get_t
+                -rack_length();
+  514     3                   /* make sure there isn't a minor math error */
+  515     3                   if (time_FFRev < 0)
+  516     3                       /* leftover amount shouldn't be negative */
+  517     3                       time_FFRev = 0;
+  518     3       
+  519     3                   /* if there are buffers to move forward, do so */
+  520     3                   if (buffer_fwd > 0)  {
+  521     4                       update_track_position(buffer_fwd * IDE_BLOCK_SIZE);
+  522     4       
+  523     4                       /* also display the new time */
+  524     4                       display_time(get_track_time());
+  525     4                   }
+  526     3               }
+  527     2               else  {
+  528     3       
+  529     3                   /* not enough time yet for fast forwarding - save the accumulated time */
+  530     3                   time_FFRev = etime;
+  531     3               }
+  532     2           }
+  533     1           else  {
+  534     2       
+  535     2       
+  536     2               /* done with this track - switch to the idle state */
+  537     2               cur_status = STAT_IDLE;
+  538     2           }
+  539     1       
+  540     1       
+  541     1           /* done with update, return the new status */
+  542     1           return  cur_status;
+  543     1       
+  544     1       }
+  545             
+  546             
+  547             
+  548             
+  549             /*
+  550                update_Reverse
+  551             
+  552                Description:      This function handles updates when reversing.  The
+  553                                  function gets the elapsed time, scales it appropriately,
+  554                                  and updates the track time and buffer pointer for the new
+  555                                  position.  When the start of the track is reached the
+  556                                  status is returned to idle (the time is left at the
+  557                                  start).
+  558             
+  559                Arguments:        cur_status (enum status) - the current system status.
+  560                Return Value:     (enum status) - the new status: the passed current status
+  561                                  if not at the start of the track and STAT_IDLE if rewound
+  562                                  to the start of the track.
+  563             
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  11
+
+
+  564                Input:            None.
+  565                Output:           New track time (if any) is output to the display.
+  566             
+  567                Error Handling:   None.
+  568             
+  569                Algorithms:       None.
+  570                Data Structures:  None.
+  571             
+  572                Shared Variables: time_FFRev - updated.
+  573             
+  574                Author:           Glen George
+  575                Last Modified:    June 1, 2002
+  576             
+  577             */
+  578             
+  579             enum status  update_Reverse(enum status cur_status)
+  580             {
+  581     1           /* variables */
+  582     1           long int  etime;            /* the elapsed time since the last call */
+  583     1       
+  584     1           long int  buffer_rev;       /* amount to move backward on the track */
+  585     1       
+  586     1       
+  587     1       
+  588     1           /* check if already at the start of the track */
+  589     1           if (get_track_remaining_length() != get_track_length())  {
+  590     2       
+  591     2       
+  592     2               /* something on track - get the elapsed time for reverse operation */
+  593     2               /* it needs to be scaled and have any leftover time added in */
+  594     2               etime = FFRev_rate * elapsed_time() + time_FFRev;
+  595     2       
+  596     2               /* has enough time elapsed for reversing */
+  597     2               if (etime > MIN_FFREV_TIME)  {
+  598     3       
+  599     3                   /* can and should move backward - compute how many bytes */
+  600     3                   buffer_rev = (get_track_length() * etime) / (100L * get_track_total_time());
+  601     3       
+  602     3                   /* truncate it to the nearest number of blocks */
+  603     3                   buffer_rev = (buffer_rev / IDE_BLOCK_SIZE);
+  604     3                   /* compute the leftover time and save it for next time */
+  605     3                   time_FFRev = etime - (100L * get_track_total_time() * buffer_rev * IDE_BLOCK_SIZE) / get_t
+                -rack_length();
+  606     3                   /* make sure there isn't a minor math error */
+  607     3                   if (time_FFRev < 0)
+  608     3                       /* leftover amount shouldn't be negative */
+  609     3                       time_FFRev = 0;
+  610     3       
+  611     3                   /* if there are buffers to move back, do so */
+  612     3                   if (buffer_rev > 0)  {
+  613     4                       update_track_position(-buffer_rev * IDE_BLOCK_SIZE);
+  614     4       
+  615     4                       /* also display the new time */
+  616     4                       display_time(get_track_time());
+  617     4                   }
+  618     3               }
+  619     2               else  {
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  12
+
+
+  620     3       
+  621     3                   /* not enough time yet for reversing - save the accumulated time */
+  622     3                   time_FFRev = etime;
+  623     3               }
+  624     2           }
+  625     1           else  {
+  626     2       
+  627     2       
+  628     2               /* hit the start of the track - need to reload the pointers */
+  629     2               init_track();
+  630     2       
+  631     2               /* display the new time */
+  632     2               display_time(get_track_time());
+  633     2       
+  634     2               /* and switch back to idle state */
+  635     2               cur_status = STAT_IDLE;
+  636     2           }
+  637     1       
+  638     1       
+  639     1           /* all done, return the possibly new status */
+  640     1           return  cur_status;
+  641     1       
+  642     1       }
+  643             
+  644             
+  645             
+  646             
+  647             /*
+  648                dec_FFRev_rate
+  649             
+  650                Description:      This function decrements the fast forward/reverse rate by
+  651                                  DELTA_FFREV_RATE.  It can only be decremented down to
+  652                                  MIN_FFREV_RATE, it cannot be decremented below that.
+  653             
+  654                Operation:        DELTA_FFREV_RATE is subtracted from the shared variable
+  655                                  FFRev_rate and if it is less than MIN_FFREV_RATE it is
+  656                          set to that value.
+  657             
+  658                Arguments:        None.
+  659                Return Value:     None.
+  660             
+  661                Input:            None.
+  662                Output:           None.
+  663             
+  664                Error Handling:   None.
+  665             
+  666                Algorithms:       None.
+  667                Data Structures:  None.
+  668             
+  669                Shared Variables: FFRev_rate - decremented by DELTA_FFREV_RATE.
+  670             
+  671                Author:           Glen George
+  672                Last Modified:    June 5, 2008
+  673             
+  674             */
+  675             
+  676             void  dec_FFRev_rate(void)
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  13
+
+
+  677             {
+  678     1           /* variables */
+  679     1             /* none */
+  680     1       
+  681     1       
+  682     1       
+  683     1           /* decrement the fast forward/reverse rate */
+  684     1           FFRev_rate -= DELTA_FFREV_RATE;
+  685     1       
+  686     1           /* make sure the rate isn't too low */
+  687     1           if (FFRev_rate < MIN_FFREV_RATE)
+  688     1               /* limit FFRev_rate to [MIN_FFREV_RATE, MAX_FFREV_RATE] */
+  689     1           FFRev_rate = MIN_FFREV_RATE;
+  690     1       
+  691     1       
+  692     1           /* done computing the new fast forward/reverse rate */
+  693     1           return;
+  694     1       
+  695     1       }
+  696             
+  697             
+  698             
+  699             
+  700             /*
+  701                inc_FFRev_rate
+  702             
+  703                Description:      This function increments the fast forward/reverse rate by
+  704                                  DELTA_FFREV_RATE.  It can only be incremented to
+  705                                  MAX_FFREV_RATE, it cannot be incremented above that.
+  706             
+  707                Operation:        DELTA_FFREV_RATE is added to the shared variable
+  708                                  FFRev_rate and if it is greater than MAX_FFREV_RATE it
+  709                          is set to that value.
+  710             
+  711                Arguments:        None.
+  712                Return Value:     None.
+  713             
+  714                Input:            None.
+  715                Output:           None.
+  716             
+  717                Error Handling:   None.
+  718             
+  719                Algorithms:       None.
+  720                Data Structures:  None.
+  721             
+  722                Shared Variables: FFRev_rate - incremented by DELTA_FFREV_RATE.
+  723             
+  724                Author:           Glen George
+  725                Last Modified:    June 5, 2008
+  726             
+  727             */
+  728             
+  729             void  inc_FFRev_rate(void)
+  730             {
+  731     1           /* variables */
+  732     1             /* none */
+  733     1       
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  14
+
+
+  734     1       
+  735     1       
+  736     1           /* increment the fast forward/reverse rate */
+  737     1           FFRev_rate += DELTA_FFREV_RATE;
+  738     1       
+  739     1           /* make sure the rate isn't too high */
+  740     1           if (FFRev_rate > MAX_FFREV_RATE)
+  741     1               /* limit FFRev_rate to [MIN_FFREV_RATE, MAX_FFREV_RATE] */
+  742     1           FFRev_rate = MAX_FFREV_RATE;
+  743     1       
+  744     1       
+  745     1           /* done computing the new fast forward/reverse rate */
+  746     1           return;
+  747     1       
+  748     1       }
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  15
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 122
+                           start_FastFwd      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 129
+             0005  E80000          CALL    cur_isDir
+             0008  08C0            OR      AL,AL
+             000A  7403            JZ      $+5H
+             000C  E92400          JMP     @2
+             000F  E80000          CALL    get_track_remaining_length
+             0012  09D2            OR      DX,DX
+             0014  7504            JNZ     $+6H
+             0016  81F80000        CMP     AX,0H
+             001A  7503            JNZ     $+5H
+             001C  E91400          JMP     @2
+                                                   ; STATEMENT # 134
+             001F  E80000          CALL    elapsed_time
+                                                   ; STATEMENT # 136
+             0022  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 139
+             0028  C70600000300    MOV     FFRev_rate,3H
+                                                   ; STATEMENT # 142
+             002E  C746080200      MOV     [BP].cur_status,2H
+                                                   ; STATEMENT # 147
+                           @2:
+             0033  8B4608          MOV     AX,[BP].cur_status
+             0036  5D              POP     BP
+             0037  5F              POP     DI
+             0038  5E              POP     SI
+             0039  C3              RET
+                                                   ; STATEMENT # 149
+                           start_FastFwd      ENDP
+                                                   ; STATEMENT # 186
+                           start_Reverse      PROC NEAR
+             003A  56              PUSH    SI
+             003B  57              PUSH    DI
+             003C  55              PUSH    BP
+             003D  8BEC            MOV     BP,SP
+                           @3:
+                                                   ; STATEMENT # 193
+             003F  E80000          CALL    cur_isDir
+             0042  08C0            OR      AL,AL
+             0044  7403            JZ      $+5H
+             0046  E92900          JMP     @4
+             0049  E80000          CALL    get_track_length
+             004C  52              PUSH    DX      ; 1
+             004D  50              PUSH    AX      ; 2
+             004E  E80000          CALL    get_track_remaining_length
+             0051  59              POP     CX      ; 2
+             0052  5F              POP     DI      ; 1
+             0053  3BFA            CMP     DI,DX
+             0055  7502            JNZ     $+4H
+             0057  3BC8            CMP     CX,AX
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  16
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0059  7503            JNZ     $+5H
+             005B  E91400          JMP     @4
+                                                   ; STATEMENT # 198
+             005E  E80000          CALL    elapsed_time
+                                                   ; STATEMENT # 200
+             0061  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 203
+             0067  C70600000300    MOV     FFRev_rate,3H
+                                                   ; STATEMENT # 206
+             006D  C746080300      MOV     [BP].cur_status,3H
+                                                   ; STATEMENT # 211
+                           @4:
+             0072  8B4608          MOV     AX,[BP].cur_status
+             0075  5D              POP     BP
+             0076  5F              POP     DI
+             0077  5E              POP     SI
+             0078  C3              RET
+                                                   ; STATEMENT # 213
+                           start_Reverse      ENDP
+                                                   ; STATEMENT # 246
+                           switch_FastFwd      PROC NEAR
+             007A  56              PUSH    SI
+             007B  57              PUSH    DI
+             007C  55              PUSH    BP
+             007D  8BEC            MOV     BP,SP
+                           @5:
+                                                   ; STATEMENT # 253
+             007F  E80000          CALL    audio_halt
+                                                   ; STATEMENT # 258
+             0082  680000          PUSH    0H
+             0085  E878FF          CALL    start_FastFwd
+             0088  8BE5            MOV     SP,BP
+             008A  5D              POP     BP
+             008B  5F              POP     DI
+             008C  5E              POP     SI
+             008D  C3              RET
+                                                   ; STATEMENT # 260
+                           switch_FastFwd      ENDP
+                                                   ; STATEMENT # 293
+                           switch_Reverse      PROC NEAR
+             008E  56              PUSH    SI
+             008F  57              PUSH    DI
+             0090  55              PUSH    BP
+             0091  8BEC            MOV     BP,SP
+                           @6:
+                                                   ; STATEMENT # 300
+             0093  E80000          CALL    audio_halt
+                                                   ; STATEMENT # 305
+             0096  680000          PUSH    0H
+             0099  E89EFF          CALL    start_Reverse
+             009C  8BE5            MOV     SP,BP
+             009E  5D              POP     BP
+             009F  5F              POP     DI
+             00A0  5E              POP     SI
+             00A1  C3              RET
+                                                   ; STATEMENT # 307
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  17
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           switch_Reverse      ENDP
+                                                   ; STATEMENT # 343
+                           begin_FastFwd      PROC NEAR
+             00A2  56              PUSH    SI
+             00A3  57              PUSH    DI
+             00A4  55              PUSH    BP
+             00A5  8BEC            MOV     BP,SP
+                           @7:
+                                                   ; STATEMENT # 350
+             00A7  E80000          CALL    elapsed_time
+                                                   ; STATEMENT # 352
+             00AA  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 355
+             00B0  C70600000300    MOV     FFRev_rate,3H
+                                                   ; STATEMENT # 358
+             00B6  50              PUSH    AX      ; 1
+             00B7  B80200          MOV     AX,2H
+             00BA  8BE5            MOV     SP,BP
+             00BC  5D              POP     BP
+             00BD  5F              POP     DI
+             00BE  5E              POP     SI
+             00BF  C3              RET
+                                                   ; STATEMENT # 360
+                           begin_FastFwd      ENDP
+                                                   ; STATEMENT # 396
+                           begin_Reverse      PROC NEAR
+             00C0  56              PUSH    SI
+             00C1  57              PUSH    DI
+             00C2  55              PUSH    BP
+             00C3  8BEC            MOV     BP,SP
+                           @8:
+                                                   ; STATEMENT # 403
+             00C5  E80000          CALL    elapsed_time
+                                                   ; STATEMENT # 405
+             00C8  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 408
+             00CE  C70600000300    MOV     FFRev_rate,3H
+                                                   ; STATEMENT # 411
+             00D4  50              PUSH    AX      ; 1
+             00D5  B80300          MOV     AX,3H
+             00D8  8BE5            MOV     SP,BP
+             00DA  5D              POP     BP
+             00DB  5F              POP     DI
+             00DC  5E              POP     SI
+             00DD  C3              RET
+                                                   ; STATEMENT # 413
+                           begin_Reverse      ENDP
+                                                   ; STATEMENT # 445
+                           stop_FFRev      PROC NEAR
+             00DE  56              PUSH    SI
+             00DF  57              PUSH    DI
+             00E0  55              PUSH    BP
+             00E1  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 452
+             00E3  31C0            XOR     AX,AX
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  18
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             00E5  5D              POP     BP
+             00E6  5F              POP     DI
+             00E7  5E              POP     SI
+             00E8  C3              RET
+                                                   ; STATEMENT # 454
+                           stop_FFRev      ENDP
+                                                   ; STATEMENT # 488
+                           update_FastFwd      PROC NEAR
+             00EA  56              PUSH    SI
+             00EB  57              PUSH    DI
+             00EC  C8080000        ENTER   8H,0H
+                           @10:
+                                                   ; STATEMENT # 497
+             00F0  E80000          CALL    get_track_remaining_length
+             00F3  09D2            OR      DX,DX
+             00F5  7504            JNZ     $+6H
+             00F7  81F80000        CMP     AX,0H
+             00FB  7503            JNZ     $+5H
+             00FD  E9FF00          JMP     @11
+                                                   ; STATEMENT # 502
+             0100  E80000          CALL    elapsed_time
+             0103  F72E0000        IMUL    FFRev_rate
+             0107  03060200        ADD     AX,time_FFRev
+             010B  99              CWD
+             010C  8946FC          MOV     [BP].etime,AX
+             010F  8956FE          MOV     [BP].etime+2H,DX
+                                                   ; STATEMENT # 505
+             0112  09D2            OR      DX,DX
+             0114  7D03            JGE     $+5H
+             0116  E9D900          JMP     @12
+             0119  7E03            JLE     $+5H
+             011B  E90900          JMP     @28
+             011E  81F8F401        CMP     AX,1F4H
+             0122  7703            JA      $+5H
+             0124  E9CB00          JMP     @12
+                           @28:
+                                                   ; STATEMENT # 508
+             0127  E80000          CALL    get_track_length
+             012A  8B7EFE          MOV     DI,[BP].etime+2H
+             012D  8B4EFC          MOV     CX,[BP].etime
+             0130  9A00000000      CALL    LQ_SLONG_MUL
+             0135  52              PUSH    DX      ; 1
+             0136  50              PUSH    AX      ; 2
+             0137  E80000          CALL    get_track_total_time
+             013A  99              CWD
+             013B  B96400          MOV     CX,64H
+             013E  BF0000          MOV     DI,0H
+             0141  9A00000000      CALL    LQ_SLONG_MUL
+             0146  8BC8            MOV     CX,AX
+             0148  58              POP     AX      ; 2
+             0149  5F              POP     DI      ; 1
+             014A  87D7            XCHG    DX,DI
+             014C  9A00000000      CALL    LQ_SLONG_DIV
+             0151  8946F8          MOV     [BP].buffer_fwd,AX
+             0154  8956FA          MOV     [BP].buffer_fwd+2H,DX
+                                                   ; STATEMENT # 511
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  19
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0157  B90001          MOV     CX,100H
+             015A  BF0000          MOV     DI,0H
+             015D  9A00000000      CALL    LQ_SLONG_DIV
+             0162  8946F8          MOV     [BP].buffer_fwd,AX
+             0165  8956FA          MOV     [BP].buffer_fwd+2H,DX
+                                                   ; STATEMENT # 513
+             0168  E80000          CALL    get_track_total_time
+             016B  99              CWD
+             016C  B96400          MOV     CX,64H
+             016F  BF0000          MOV     DI,0H
+             0172  9A00000000      CALL    LQ_SLONG_MUL
+             0177  8B7EFA          MOV     DI,[BP].buffer_fwd+2H
+             017A  8B4EF8          MOV     CX,[BP].buffer_fwd
+             017D  9A00000000      CALL    LQ_SLONG_MUL
+             0182  B90001          MOV     CX,100H
+             0185  BF0000          MOV     DI,0H
+             0188  9A00000000      CALL    LQ_SLONG_MUL
+             018D  52              PUSH    DX      ; 1
+             018E  50              PUSH    AX      ; 2
+             018F  E80000          CALL    get_track_length
+             0192  8BC8            MOV     CX,AX
+             0194  58              POP     AX      ; 2
+             0195  5F              POP     DI      ; 1
+             0196  87D7            XCHG    DX,DI
+             0198  9A00000000      CALL    LQ_SLONG_DIV
+             019D  8B7EFE          MOV     DI,[BP].etime+2H
+             01A0  8B4EFC          MOV     CX,[BP].etime
+             01A3  2BC8            SUB     CX,AX
+             01A5  1BFA            SBB     DI,DX
+             01A7  890E0200        MOV     time_FFRev,CX
+                                                   ; STATEMENT # 515
+             01AB  09C9            OR      CX,CX
+             01AD  7803            JS      $+5H
+             01AF  E90600          JMP     @13
+                                                   ; STATEMENT # 517
+             01B2  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 520
+                           @13:
+             01B8  8B56FA          MOV     DX,[BP].buffer_fwd+2H
+             01BB  8B46F8          MOV     AX,[BP].buffer_fwd
+             01BE  09D2            OR      DX,DX
+             01C0  7D03            JGE     $+5H
+             01C2  E92A00          JMP     @14
+             01C5  7E03            JLE     $+5H
+             01C7  E90900          JMP     @29
+             01CA  81F80000        CMP     AX,0H
+             01CE  7703            JA      $+5H
+             01D0  E91C00          JMP     @14
+                           @29:
+                                                   ; STATEMENT # 521
+             01D3  B90001          MOV     CX,100H
+             01D6  BF0000          MOV     DI,0H
+             01D9  9A00000000      CALL    LQ_SLONG_MUL
+             01DE  52              PUSH    DX      ; 1
+             01DF  50              PUSH    AX      ; 2
+             01E0  E80000          CALL    update_track_position
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  20
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             01E3  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 524
+             01E7  E80000          CALL    get_track_time
+             01EA  50              PUSH    AX      ; 1
+             01EB  E80000          CALL    display_time
+             01EE  59              POP     CX      ; 1
+                                                   ; STATEMENT # 526
+                           @14:
+                                                   ; STATEMENT # 527
+             01EF  E90A00          JMP     @15
+                           @12:
+                                                   ; STATEMENT # 530
+             01F2  8B56FE          MOV     DX,[BP].etime+2H
+             01F5  8B46FC          MOV     AX,[BP].etime
+             01F8  89060200        MOV     time_FFRev,AX
+                                                   ; STATEMENT # 531
+                           @15:
+                                                   ; STATEMENT # 533
+             01FC  E90500          JMP     @16
+                           @11:
+                                                   ; STATEMENT # 537
+             01FF  C746080000      MOV     [BP].cur_status,0H
+                                                   ; STATEMENT # 538
+                           @16:
+                                                   ; STATEMENT # 542
+             0204  8B4608          MOV     AX,[BP].cur_status
+             0207  C9              LEAVE
+             0208  5F              POP     DI
+             0209  5E              POP     SI
+             020A  C3              RET
+                                                   ; STATEMENT # 544
+                           update_FastFwd      ENDP
+                                                   ; STATEMENT # 580
+                           update_Reverse      PROC NEAR
+             020C  56              PUSH    SI
+             020D  57              PUSH    DI
+             020E  C8080000        ENTER   8H,0H
+                           @17:
+                                                   ; STATEMENT # 589
+             0212  E80000          CALL    get_track_length
+             0215  52              PUSH    DX      ; 1
+             0216  50              PUSH    AX      ; 2
+             0217  E80000          CALL    get_track_remaining_length
+             021A  59              POP     CX      ; 2
+             021B  5F              POP     DI      ; 1
+             021C  3BFA            CMP     DI,DX
+             021E  7502            JNZ     $+4H
+             0220  3BC8            CMP     CX,AX
+             0222  7503            JNZ     $+5H
+             0224  E90701          JMP     @18
+                                                   ; STATEMENT # 594
+             0227  E80000          CALL    elapsed_time
+             022A  F72E0000        IMUL    FFRev_rate
+             022E  03060200        ADD     AX,time_FFRev
+             0232  99              CWD
+             0233  8946FC          MOV     [BP].etime,AX
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  21
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0236  8956FE          MOV     [BP].etime+2H,DX
+                                                   ; STATEMENT # 597
+             0239  09D2            OR      DX,DX
+             023B  7D03            JGE     $+5H
+             023D  E9E100          JMP     @19
+             0240  7E03            JLE     $+5H
+             0242  E90900          JMP     @30
+             0245  81F8F401        CMP     AX,1F4H
+             0249  7703            JA      $+5H
+             024B  E9D300          JMP     @19
+                           @30:
+                                                   ; STATEMENT # 600
+             024E  E80000          CALL    get_track_length
+             0251  8B7EFE          MOV     DI,[BP].etime+2H
+             0254  8B4EFC          MOV     CX,[BP].etime
+             0257  9A00000000      CALL    LQ_SLONG_MUL
+             025C  52              PUSH    DX      ; 1
+             025D  50              PUSH    AX      ; 2
+             025E  E80000          CALL    get_track_total_time
+             0261  99              CWD
+             0262  B96400          MOV     CX,64H
+             0265  BF0000          MOV     DI,0H
+             0268  9A00000000      CALL    LQ_SLONG_MUL
+             026D  8BC8            MOV     CX,AX
+             026F  58              POP     AX      ; 2
+             0270  5F              POP     DI      ; 1
+             0271  87D7            XCHG    DX,DI
+             0273  9A00000000      CALL    LQ_SLONG_DIV
+             0278  8946F8          MOV     [BP].buffer_rev,AX
+             027B  8956FA          MOV     [BP].buffer_rev+2H,DX
+                                                   ; STATEMENT # 603
+             027E  B90001          MOV     CX,100H
+             0281  BF0000          MOV     DI,0H
+             0284  9A00000000      CALL    LQ_SLONG_DIV
+             0289  8946F8          MOV     [BP].buffer_rev,AX
+             028C  8956FA          MOV     [BP].buffer_rev+2H,DX
+                                                   ; STATEMENT # 605
+             028F  E80000          CALL    get_track_total_time
+             0292  99              CWD
+             0293  B96400          MOV     CX,64H
+             0296  BF0000          MOV     DI,0H
+             0299  9A00000000      CALL    LQ_SLONG_MUL
+             029E  8B7EFA          MOV     DI,[BP].buffer_rev+2H
+             02A1  8B4EF8          MOV     CX,[BP].buffer_rev
+             02A4  9A00000000      CALL    LQ_SLONG_MUL
+             02A9  B90001          MOV     CX,100H
+             02AC  BF0000          MOV     DI,0H
+             02AF  9A00000000      CALL    LQ_SLONG_MUL
+             02B4  52              PUSH    DX      ; 1
+             02B5  50              PUSH    AX      ; 2
+             02B6  E80000          CALL    get_track_length
+             02B9  8BC8            MOV     CX,AX
+             02BB  58              POP     AX      ; 2
+             02BC  5F              POP     DI      ; 1
+             02BD  87D7            XCHG    DX,DI
+             02BF  9A00000000      CALL    LQ_SLONG_DIV
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  22
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             02C4  8B7EFE          MOV     DI,[BP].etime+2H
+             02C7  8B4EFC          MOV     CX,[BP].etime
+             02CA  2BC8            SUB     CX,AX
+             02CC  1BFA            SBB     DI,DX
+             02CE  890E0200        MOV     time_FFRev,CX
+                                                   ; STATEMENT # 607
+             02D2  09C9            OR      CX,CX
+             02D4  7803            JS      $+5H
+             02D6  E90600          JMP     @20
+                                                   ; STATEMENT # 609
+             02D9  C70602000000    MOV     time_FFRev,0H
+                                                   ; STATEMENT # 612
+                           @20:
+             02DF  8B56FA          MOV     DX,[BP].buffer_rev+2H
+             02E2  8B46F8          MOV     AX,[BP].buffer_rev
+             02E5  09D2            OR      DX,DX
+             02E7  7D03            JGE     $+5H
+             02E9  E93200          JMP     @21
+             02EC  7E03            JLE     $+5H
+             02EE  E90900          JMP     @31
+             02F1  81F80000        CMP     AX,0H
+             02F5  7703            JA      $+5H
+             02F7  E92400          JMP     @21
+                           @31:
+                                                   ; STATEMENT # 613
+             02FA  F7D2            NOT     DX
+             02FC  F7D8            NEG     AX
+             02FE  81DAFFFF        SBB     DX,0FFFFH
+             0302  B90001          MOV     CX,100H
+             0305  BF0000          MOV     DI,0H
+             0308  9A00000000      CALL    LQ_SLONG_MUL
+             030D  52              PUSH    DX      ; 1
+             030E  50              PUSH    AX      ; 2
+             030F  E80000          CALL    update_track_position
+             0312  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 616
+             0316  E80000          CALL    get_track_time
+             0319  50              PUSH    AX      ; 1
+             031A  E80000          CALL    display_time
+             031D  59              POP     CX      ; 1
+                                                   ; STATEMENT # 618
+                           @21:
+                                                   ; STATEMENT # 619
+             031E  E90A00          JMP     @22
+                           @19:
+                                                   ; STATEMENT # 622
+             0321  8B56FE          MOV     DX,[BP].etime+2H
+             0324  8B46FC          MOV     AX,[BP].etime
+             0327  89060200        MOV     time_FFRev,AX
+                                                   ; STATEMENT # 623
+                           @22:
+                                                   ; STATEMENT # 625
+             032B  E91000          JMP     @23
+                           @18:
+                                                   ; STATEMENT # 629
+             032E  E80000          CALL    init_track
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  23
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 632
+             0331  E80000          CALL    get_track_time
+             0334  50              PUSH    AX      ; 1
+             0335  E80000          CALL    display_time
+             0338  59              POP     CX      ; 1
+                                                   ; STATEMENT # 635
+             0339  C746080000      MOV     [BP].cur_status,0H
+                                                   ; STATEMENT # 636
+                           @23:
+                                                   ; STATEMENT # 640
+             033E  8B4608          MOV     AX,[BP].cur_status
+             0341  C9              LEAVE
+             0342  5F              POP     DI
+             0343  5E              POP     SI
+             0344  C3              RET
+                                                   ; STATEMENT # 642
+                           update_Reverse      ENDP
+                                                   ; STATEMENT # 677
+                           dec_FFRev_rate      PROC NEAR
+             0346  56              PUSH    SI
+             0347  57              PUSH    DI
+             0348  55              PUSH    BP
+             0349  8BEC            MOV     BP,SP
+                           @24:
+                                                   ; STATEMENT # 684
+             034B  8B060000        MOV     AX,FFRev_rate
+             034F  81E80200        SUB     AX,2H
+             0353  89060000        MOV     FFRev_rate,AX
+                                                   ; STATEMENT # 687
+             0357  81F80300        CMP     AX,3H
+             035B  7C03            JL      $+5H
+             035D  E90600          JMP     @25
+                                                   ; STATEMENT # 689
+             0360  C70600000300    MOV     FFRev_rate,3H
+                                                   ; STATEMENT # 693
+                           @25:
+             0366  5D              POP     BP
+             0367  5F              POP     DI
+             0368  5E              POP     SI
+             0369  C3              RET
+                                                   ; STATEMENT # 695
+                           dec_FFRev_rate      ENDP
+                                                   ; STATEMENT # 730
+                           inc_FFRev_rate      PROC NEAR
+             036A  56              PUSH    SI
+             036B  57              PUSH    DI
+             036C  55              PUSH    BP
+             036D  8BEC            MOV     BP,SP
+                           @26:
+                                                   ; STATEMENT # 737
+             036F  8B060000        MOV     AX,FFRev_rate
+             0373  81C00200        ADD     AX,2H
+             0377  89060000        MOV     FFRev_rate,AX
+                                                   ; STATEMENT # 740
+             037B  81F80A00        CMP     AX,0AH
+             037F  7F03            JG      $+5H
+iC-86  COMPILER   FFREV                                                                      05/06/;6 18:25:46  PAGE  24
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0381  E90600          JMP     @27
+                                                   ; STATEMENT # 742
+             0384  C70600000A00    MOV     FFRev_rate,0AH
+                                                   ; STATEMENT # 746
+                           @27:
+             038A  5D              POP     BP
+             038B  5F              POP     DI
+             038C  5E              POP     SI
+             038D  C3              RET
+                                                   ; STATEMENT # 748
+                           inc_FFRev_rate      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 038EH    910D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 0004H      4D
+     MAXIMUM STACK SIZE           = 0018H     24D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS
