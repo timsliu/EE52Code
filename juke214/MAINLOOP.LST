@@ -1,4 +1,4 @@
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   1
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE MAINLOOP
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
    49             #include  "updatfnc.h"
    50             #include  "trakutil.h"
    51             #include  "fatutil.h"
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   2
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   2
 
 
    52             
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   106     1                  STATUS_PLAY,      /* playing (or repeat playing) a track */
   107     1                  STATUS_FASTFWD,   /* fast forwarding a track */
   108     1                  STATUS_REVERSE    /* reversing a track */
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   3
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   3
 
 
   109     1               };
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   162     2       
   163     2       
   164     2               /* now check for keypad input */
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   4
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   4
 
 
   165     2               if (key_available())  {
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   219             
   220             static  enum keycode  key_lookup()
   221             {
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   5
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   5
 
 
   222     1           /* variables */
@@ -284,7 +284,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   262     1           return  keycodes[i];
   263     1       
   264     1       }
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   6
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   6
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -344,7 +344,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
              00C9  D1E3            SAL     BX,1
              00CB  2EFFB70000      PUSH    CS:xlat_stat[BX]
              00D0  E80000          CALL    display_status
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   7
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   7
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -404,7 +404,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
                            key_lookup      PROC NEAR
              012A  56              PUSH    SI
              012B  57              PUSH    DI
-iC-86  COMPILER   MAINLOOP                                                                   05/06/;6 18:25:47  PAGE   8
+iC-86  COMPILER   MAINLOOP                                                                   05/07/;6 12:45:19  PAGE   8
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

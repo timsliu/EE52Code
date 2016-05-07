@@ -1,4 +1,4 @@
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   1
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE TRAKUTIL
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
    49                   6/14/00  Glen George       Changed track_info_buffer[] to unsigned char
    50                                              to fix some type conversion warnings.
    51                   6/14/00  Glen George       Added casts to functions get_track_title()
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   2
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   2
 
 
    52                                              and get_track_artist() to fix some type
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
                 -ion */
   106             
   107             
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   3
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   3
 
 
   108             
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   162             
   163                Description:      This function returns the artist for the track.
   164             
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   4
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   4
 
 
   165                Arguments:        None.
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   219                Last Modified:    June 14, 2000
   220             
   221             */
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   5
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   5
 
 
   222             
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   276             /*
   277                get_track_position
   278             
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   6
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   6
 
 
   279                Description:      This function returns the current position of the track
@@ -358,7 +358,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   333                Data Structures:  None.
   334             
   335                Shared Variables: track_info - the curpos and start elements are used.
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   7
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   7
 
 
   336             
@@ -418,7 +418,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   390     1       
   391     1       
   392     1           /* compute the number of bytes left */
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   8
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   8
 
 
   393     1           bytes_left = track_info.length - track_info.curpos;
@@ -478,7 +478,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   447     1           if ((track_info.time != TIME_NONE) && (track_info.time != 0) && (track_info.length > track_info.ti
                 -me))  {
   448     2               /* have time on the track, compute time remaining */
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE   9
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE   9
 
 
   449     2               /* check if at start of the track or in middle */
@@ -538,7 +538,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   503             
   504             
   505             
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  10
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  10
 
 
   506             
@@ -598,7 +598,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   560                Description:      This function loads the information for the current
   561                                  track/file from the hard drive and initializes the track
   562                                  information data structure.  The track is positioned to
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  11
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  11
 
 
   563                                  the start of the track.
@@ -658,7 +658,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   617     2                   /* parent directory, put in "up directory character" */
   618     2                   track_info_buffer[0] = PARENT_DIR_CHAR;
   619     2               else
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  12
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  12
 
 
   620     2                   /* sub-directory, put in approipriate character */
@@ -718,7 +718,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   674                                  track/file with error information.  This is means no
   675                                  time and a title and artist name of "Error".  The track
   676                                  is positioned the start of the track.
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  13
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  13
 
 
   677             
@@ -772,7 +772,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
   725     1           return;
   726     1       
   727     1       }
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  14
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  14
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -832,7 +832,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              0035  57              PUSH    DI
              0036  55              PUSH    BP
              0037  8BEC            MOV     BP,SP
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  15
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  15
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -892,7 +892,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
                                                    ; STATEMENT # 393
              0082  8B161000        MOV     DX,track_info+10H
              0086  8B060E00        MOV     AX,track_info+0EH
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  16
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  16
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -952,7 +952,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              00F4  E95000          JMP     @10
                            @33:
                                                    ; STATEMENT # 450
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  17
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  17
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1012,7 +1012,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              0153  8B060800        MOV     AX,track_info+8H
              0157  5D              POP     BP
              0158  5F              POP     DI
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  18
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  18
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1072,7 +1072,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              01C1  C3              RET
                                                    ; STATEMENT # 552
                            update_track_position      ENDP
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  19
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  19
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1132,7 +1132,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
                                                    ; STATEMENT # 625
              022A  E90500          JMP     @22
                            @19:
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  20
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  20
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1192,7 +1192,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              029E  43              INC     BX
              029F  8D871600        LEA     AX,track_info_buffer[BX]
              02A3  89060400        MOV     track_info+4H,AX
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  21
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  21
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1252,7 +1252,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE TRAKUTIL.C DEBUG MOD186 EXTEND CODE SMA
              0313  8C1E0600        MOV     track_info+6H,DS
                                                    ; STATEMENT # 717
              0317  890E0000        MOV     track_info,CX
-iC-86  COMPILER   TRAKUTIL                                                                   05/06/;6 18:25:47  PAGE  22
+iC-86  COMPILER   TRAKUTIL                                                                   05/07/;6 12:45:19  PAGE  22
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

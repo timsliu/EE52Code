@@ -1,4 +1,4 @@
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   1
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE FATUTIL
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
    49             
    50                Revision History
    51                   6/5/03   Glen George       Initial revision.
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   2
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   2
 
 
    52                   6/10/03  Glen George       Updated get_cur_file_time() to use macros
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   106               /* none */
   107             
   108             
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   3
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   3
 
 
   109             
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   162             
   163                Algorithms:       None.
   164                Data Structures:  None.
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   4
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   4
 
 
   165             
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   219     1           init_dir_stack();
   220     1       
   221     1       
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   5
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   5
 
 
   222     1           /* initialize the directory and file names */
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   276             
   277             
   278             
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   6
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   6
 
 
   279             
@@ -358,7 +358,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   333             
   334                Inputs:           None.
   335                Outputs:          None.
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   7
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   7
 
 
   336             
@@ -418,7 +418,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   390             
   391             char  cur_isDir()
   392             {
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   8
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   8
 
 
   393     1           /* variables */
@@ -478,7 +478,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   447             
   448             /*
   449                get_cur_file_time
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE   9
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   9
 
 
   450             
@@ -538,7 +538,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   504                                  directory entry.  If there is no current directory entry
   505                                  due to an error, zero is returned.
   506             
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  10
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  10
 
 
   507                Inputs:           None.
@@ -598,7 +598,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   561             */
   562             
   563             unsigned long int  get_cur_file_sector()
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  11
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  11
 
 
   564             {
@@ -658,7 +658,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   618                Last Modified:    June 1, 2003
   619             
   620             */
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  12
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  12
 
 
   621             
@@ -718,7 +718,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   675             
   676                Inputs:           Data is read from the disk drive.
   677                Outputs:          None.
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  13
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  13
 
 
   678             
@@ -778,7 +778,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   732     1           old_cur_dir = cur_dir;
   733     1       
   734     1       
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  14
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  14
 
 
   735     1           /* now find the next entry in this directory */
@@ -838,7 +838,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   787     5                           /* also terminate the filename */
   788     5                           longfilename[LFN_CHARS * (lfn_seq + 1)] = '\0';
   789     5                       }
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  15
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  15
 
 
   790     4                       
@@ -898,7 +898,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   844     6                               longfilename[0] = '\0';
   845     6                               /* and move to the next entry */
   846     6                               cur_dir++;
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  16
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  16
 
 
   847     6                           }
@@ -958,7 +958,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                 -t_file_sector;
   901     5       
   902     5                           /* now check if there is a long filename */
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  17
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  17
 
 
   903     5                           /* first compute the checksum for this entry */
@@ -1018,7 +1018,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
   955             
   956             
   957             /*
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  18
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  18
 
 
   958                get_previous_dir_entry
@@ -1078,7 +1078,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1012     1       
  1013     1       
  1014     1           /* find the previous entry in this directory */
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  19
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  19
 
 
  1015     1           /* loop until find the entry or get an error */
@@ -1138,7 +1138,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1069     5                           /* nothing to do, just keep going */
  1070     5                           ;
  1071     5                       }
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  20
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  20
 
 
  1072     4                   }
@@ -1198,7 +1198,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1126                Input:            None.
  1127                Output:           None.
  1128             
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  21
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  21
 
 
  1129                Error Handling:   None.
@@ -1258,7 +1258,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1183                Input:            None.
  1184                Output:           None.
  1185             
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  22
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  22
 
 
  1186                Error Handling:   None.
@@ -1318,7 +1318,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1240     3       
  1241     3                   /* out of room in the stack - this shouldn't happen */
  1242     3                   ;
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  23
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  23
 
 
  1243     3               }
@@ -1378,7 +1378,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1297     1           else  {
  1298     2       
  1299     2               /* nothing on the stack */
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  24
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  24
 
 
  1300     2               /* make sure the directory names list is empty */
@@ -1438,7 +1438,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1354     2               sect = dirsectorstack[dirstack_ptr];
  1355     2           }
  1356     1           else  {
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  25
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  25
 
 
  1357     2       
@@ -1451,7 +1451,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
  1364     1           return  sect;
  1365     1       
  1366     1       }
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  26
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  26
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1511,7 +1511,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0083  7501            JNZ     $+3H
              0085  48              DEC     AX
              0086  0BC0            OR      AX,AX
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  27
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  27
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1571,7 +1571,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0107  C6069E0600      MOV     filename,0H
                                                    ; STATEMENT # 228
              010C  82BEFBFD00      CMP     [BP].error,0H
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  28
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  28
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1631,7 +1631,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                            get_cur_file_attr      PROC NEAR
              014C  56              PUSH    SI
              014D  57              PUSH    DI
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  29
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  29
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1691,7 +1691,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              019D  7503            JNZ     $+5H
              019F  E90600          JMP     @11
              01A2  B80100          MOV     AX,1H
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  30
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  30
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1751,7 +1751,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              01F3  6B1E000220      IMUL    BX,cur_dir,20H
              01F8  8B971E00        MOV     DX,dir_sector[BX+1EH]
              01FC  8B871C00        MOV     AX,dir_sector[BX+1CH]
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  31
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  31
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1811,7 +1811,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 650
              0254  C9              LEAVE
              0255  5F              POP     DI
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  32
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  32
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1871,7 +1871,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              02C9  B80100          MOV     AX,1H
              02CC  7501            JNZ     $+3H
              02CE  48              DEC     AX
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  33
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  33
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1931,7 +1931,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              034F  81FB0500        CMP     BX,5H
              0353  7C03            JL      $+5H
              0355  E91900          JMP     @28
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  34
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  34
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1991,7 +1991,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              03DD  8B76FE          MOV     SI,[BP].lfn_seq
              03E0  46              INC     SI
              03E1  6BF60D          IMUL    SI,SI,0DH
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  35
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  35
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2051,7 +2051,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0462  8886F3FE        MOV     [BP].error,AL
                                                    ; STATEMENT # 821
              0466  8B46FA          MOV     AX,[BP].old_dir_offset
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  36
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  36
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2111,7 +2111,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 854
              04DC  823E9E0500      CMP     dirname,0H
              04E1  7403            JZ      $+5H
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  37
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  37
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2171,7 +2171,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0562  1E              PUSH    DS      ; 1
              0563  50              PUSH    AX      ; 2
              0564  B89E05          MOV     AX,OFFSET(dirname)
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  38
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  38
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2231,7 +2231,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 913
              05E7  8B46F4          MOV     AX,[BP].k
              05EA  FF46F4          INC     [BP].k
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  39
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  39
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2291,7 +2291,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0663  C686F2FE01      MOV     [BP].done,1H
                                                    ; STATEMENT # 933
                            @54:
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  40
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  40
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2351,7 +2351,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              06BB  E95800          JMP     @67
                                                    ; STATEMENT # 1022
              06BE  FF0E1202        DEC     dir_offset
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  41
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  41
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2411,7 +2411,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0732  E96D00          JMP     @72
                                                    ; STATEMENT # 1057
              0735  6B1E000220      IMUL    BX,cur_dir,20H
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  42
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  42
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2471,7 +2471,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              07B6  C646FE01        MOV     [BP].done,1H
                                                    ; STATEMENT # 1067
              07BA  E90000          JMP     @77
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  43
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  43
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2531,7 +2531,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              0808  B80000          MOV     AX,0H
              080B  89061802        MOV     dirsectorstack,AX
              080F  89061A02        MOV     dirsectorstack+2H,AX
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  44
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  44
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2591,7 +2591,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              087D  E80000          CALL    strlen_
              0880  81C40400        ADD     SP,4H
              0884  59              POP     CX      ; 1
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  45
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  45
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2651,7 +2651,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
              08E0  8B1E9C05        MOV     BX,dirstack_ptr
              08E4  09DB            OR      BX,BX
              08E6  7903            JNS     $+5H
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  46
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  46
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -2711,7 +2711,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 1364
              0944  8B56FE          MOV     DX,[BP].sect+2H
              0947  8B46FC          MOV     AX,[BP].sect
-iC-86  COMPILER   FATUTIL                                                                    05/06/;6 18:25:46  PAGE  47
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  47
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

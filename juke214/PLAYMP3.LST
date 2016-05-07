@@ -1,4 +1,4 @@
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   1
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE PLAYMP3
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
    49                   6/7/00   Glen George       Call elapsed_time() in init_Play() to reset
    50                                              the play timing.
    51                   6/14/00  Glen George       "Fix" arithmetic in init_Play() so it
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   2
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   2
 
 
    52                                              actually does long int calculations.
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   106             #ifdef  PCVERSION
                   #endif
   109             
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   3
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   3
 
 
   110             /* local include files */
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   164             
   165                Algorithms:       None.
   166                Data Structures:  None.
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   4
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   4
 
 
   167             
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   221                                  song it starts playing the track at the current position.
   222                                  If there is no time remaining on the track (for example,
   223                                  it was fast forwarded) the track is started from the
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   5
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   5
 
 
   224                                  beginning.  If the track is empty or a directory, nothing
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   278                                  playing a track.  It just changes the locally global
   279                                  variable rpt_play (to TRUE indicating doing repeat play).
   280                                  The update function takes care of restarting the track at
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   6
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   6
 
 
   281                                  the end of the track.
@@ -358,7 +358,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   335                Input:            None.
   336                Output:           None.
   337             
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   7
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   7
 
 
   338                Error Handling:   None.
@@ -418,7 +418,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   392                Last Modified:    June 2, 2002
   393             
   394             */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   8
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   8
 
 
   395             
@@ -478,7 +478,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   450     1           /* first halt the audio output */
   451     1           audio_halt();
   452     1       
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE   9
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE   9
 
 
   453     1           /* if the PC version need to free memory */
@@ -538,7 +538,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   512             {
   513     1           /* variables */
   514     1           int           blocks_to_read;       /* number of blocks to read */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  10
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  10
 
 
   515     1           int           blocks_read;          /* blocks actually read from disk */
@@ -598,7 +598,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   572     3                   /* at end of track - check if repeat playing */
   573     3                   if (rpt_play)  {
   574     4                       /* at end and repeat playing - restart at beginning */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  11
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  11
 
 
   575     4                       init_track();
@@ -658,7 +658,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   628     1       
   629     1       
   630     1           /* got a buffer, start the audio output if there is anything to output */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  12
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  12
 
 
   631     1           if (have_buffer)  {
@@ -718,7 +718,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   685                                                   to play.
   686                                  rpt_play       - accessed to determine normal or repeat
   687                                                   play mode.
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  13
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  13
 
 
   688             
@@ -778,7 +778,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   743     2                   update_track_position(2 * buffers[previous_buffer].size);
   744     2       
   745     2               /* check if at the end of the track (if now outputting done buffer */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  14
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  14
 
 
   746     2               /* this guarantees last buffer with data has been output) */
@@ -838,7 +838,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   805     5                       }
   806     4                   }
   807     3       
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  15
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  15
 
 
   808     3                   /* if still playing, can get the data */
@@ -898,13 +898,13 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
   861     1       
   862     1       
   863     1           /* done with update, return possibly new status */
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  16
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  16
 
 
   864     1           return  cur_status;
   865     1       
   866     1       }
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  17
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  17
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -964,7 +964,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              0057  E88200          CALL    init_Play
              005A  59              POP     CX      ; 1
              005B  894608          MOV     [BP].cur_status,AX
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  18
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  18
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1024,7 +1024,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 316
                            cont_RptPlay      ENDP
                                                    ; STATEMENT # 351
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  19
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  19
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1084,7 +1084,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              00D9  5E              POP     SI
              00DA  C3              RET
                                                    ; STATEMENT # 472
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  20
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  20
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1144,7 +1144,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              0156  E90300          JMP     @18
                            @16:
              0159  FF46EE          INC     [BP].i
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  21
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  21
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1204,7 +1204,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              01D0  7403            JZ      $+5H
              01D2  E9D800          JMP     @25
                                                    ; STATEMENT # 589
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  22
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  22
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1264,7 +1264,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              0244  8946FC          MOV     [BP].blocks_read,AX
                                                    ; STATEMENT # 599
              0247  09C0            OR      AX,AX
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  23
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  23
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1324,7 +1324,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              02BA  C78704000020    MOV     buffers[BX+4H],2000H
                                                    ; STATEMENT # 624
              02C0  C78706000100    MOV     buffers[BX+6H],1H
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  24
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  24
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1384,7 +1384,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 695
                            update_Play      PROC NEAR
              0328  56              PUSH    SI
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  25
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  25
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1444,7 +1444,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
                                                    ; STATEMENT # 743
              03A6  8B840400        MOV     AX,buffers[SI+4H]
              03AA  D1E0            SHL     AX,1
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  26
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  26
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1504,7 +1504,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              0427  E80000          CALL    get_track_remaining_length
              042A  50              PUSH    AX      ; 1
              042B  B80200          MOV     AX,2H
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  27
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  27
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1564,7 +1564,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              04A8  8956F4          MOV     [BP].start_pos+2H,DX
                                                    ; STATEMENT # 800
              04AB  6B5EFA08        IMUL    BX,[BP].next_buffer,8H
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  28
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  28
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1624,7 +1624,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              0526  7D03            JGE     $+5H
              0528  E90800          JMP     @56
              052B  3B46EA          CMP     AX,[BP].bytes_left
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  29
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  29
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1684,7 +1684,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMAL
              05A2  E80000          CALL    elapsed_time
              05A5  99              CWD
              05A6  8B3E2000        MOV     DI,play_time+2H
-iC-86  COMPILER   PLAYMP3                                                                    05/06/;6 18:25:47  PAGE  30
+iC-86  COMPILER   PLAYMP3                                                                    05/07/;6 12:45:19  PAGE  30
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

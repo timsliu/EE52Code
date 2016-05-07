@@ -39,6 +39,7 @@
 ;    4/20/16  Tim Liu       Added write to LMCS before func calls
 ;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
 ;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
+;    5/7/16   Tim Liu       Added call to InitClock
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -67,6 +68,7 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         EXTRN    InitTimer0:NEAR        ;start up timer0
         EXTRN    InitButtons:NEAR       ;initialize the buttons
         EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
+        EXTRN    InitClock:NEAR         ;initialize MP3 clock
 
 START:
 
@@ -93,6 +95,7 @@ BEGIN:                                  ;start the program
 
         CALL    InitButtons             ;initialize the buttons
         CALL    InitDisplayLCD          ;initialize the LCD display
+        CALL    InitClock               ;initialize the MP3 clock
 
         CALL    InstallTimer0Handler    ;install handler
         CALL    InitTimer0              ;initialize timer0 for button interrupt

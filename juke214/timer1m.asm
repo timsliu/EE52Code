@@ -20,13 +20,13 @@
 ;    11/9/15    Timothy Liu    wrote timer1 init and timer1 event handler
 ;    11/11/15   Timothy Liu    changed ASSUME CS:CODE to ASSUME CS:CGROUP
 ;    5/6/16     Tim Liu        changed name to timer1m (mp3)
-;    5/
+;
 ;
 ;
 ; local include files
 $INCLUDE(TIMER1M.INC)
 $INCLUDE(GENERAL.INC)
-$INCLUDE(IRQ.INC)
+$INCLUDE(MIRQ.INC)
 
 CGROUP    GROUP    CODE
 

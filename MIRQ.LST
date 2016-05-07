@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE MIRQ
@@ -30,361 +30,412 @@ LOC  OBJ                  LINE     SOURCE
                             20     ;    InstallDreqHandler     -installs VS1011 data request IRQ handler
                             21     ;    InstallDemandHandler   -installs CON_MP3 data demand IRQ handler
                             22     ;    InstallTimer0Handler   -installs the timer0 handler
-                            23     
+                            23     ;    InstallTimer1Handler   -installs the timer1 handler
                             24     
-                            25     ;Revision History:
-                            26     ;    4/4/16
-                            27     ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
-                            28     
-                            29 +1  $INCLUDE(MIRQ.INC)
-                      =1    30     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    31     ;                                                                            ;
-                      =1    32     ;                                   MIRQ.INC                                 ;
-                      =1    33     ;                          MP3 Interrupt Include File                        ;
-                      =1    34     ;                                   EE/CS 52                                 ;
-                      =1    35     ;                                                                            ;
-                      =1    36     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    37     
-                      =1    38     ; This file contains the definitions for initcs.asm.
-                      =1    39     ;
-                      =1    40     ; Revision History:
-                      =1    41     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
-                      =1    42     
-                      =1    43     
-                      =1    44     ;Interrupt Vector Table
-  0001                =1    45     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
-  0003                =1    46     LAST_RESERVED_VEC            EQU          3
-  0100                =1    47     NUM_IRQ_VECTORS              EQU      256  ;number of interrupt vectors
-  0004                =1    48     INTERRUPT_SIZE               EQU        4  ;each vector is 4 addresses large
-  0002                =1    49     OffSize                      EQU        2  ;size of offset in bytes
-                      =1    50     
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    2
+                            25     
+                            26     ;Revision History:
+                            27     ;    4/4/16     Tim Liu    initial revision
+                            28     ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
+                            29     ;    5/7/16     Tim Liu    wrote InstallTimer1Handler
+                            30     
+                            31 +1  $INCLUDE(MIRQ.INC)
+                      =1    32     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    33     ;                                                                            ;
+                      =1    34     ;                                   MIRQ.INC                                 ;
+                      =1    35     ;                          MP3 Interrupt Include File                        ;
+                      =1    36     ;                                   EE/CS 52                                 ;
+                      =1    37     ;                                                                            ;
+                      =1    38     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    39     
+                      =1    40     ; This file contains the definitions for initcs.asm.
+                      =1    41     ;
+                      =1    42     ; Revision History:
+                      =1    43     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
+                      =1    44     
+                      =1    45     
+                      =1    46     ;Interrupt Vector Table
+  0001                =1    47     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
+  0003                =1    48     LAST_RESERVED_VEC            EQU          3
+  0100                =1    49     NUM_IRQ_VECTORS              EQU      256  ;number of interrupt vectors
+  0004                =1    50     INTERRUPT_SIZE               EQU        4  ;each vector is 4 addresses large
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1    51     ;Addresses
-  FF22                =1    52     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
-  FF32                =1    53     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
-                      =1    54     
-                      =1    55     ;ICON0Address                            ;address of ICON0 register
-                      =1    56     ;ICON1Address                            ;address of ICON1 register
-                      =1    57     
-                      =1    58     ; Register Values
-  0001                =1    59     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
-                      =1    60                                             ;000000000000----  reserved
-                      =1    61                                             ;------------0---  enable timer interrupt
-                      =1    62                                             ;-------------001  timer priority
-                      =1    63     
-                      =1    64     
-                      =1    65     ; End of Interrupt values
-  8000                =1    66     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
-  0008                =1    67     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
-                      =1    68     ;INT0EOI
-                      =1    69     ;INT1EOI
-                      =1    70     
-                      =1    71     ; Interrupt Vector
-  0008                =1    72     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
-                      =1    73     ;INT0Vec
-                      =1    74     ;INT1VEc
-                            75     
-                            76     CGROUP    GROUP    CODE
+  0002                =1    51     OffSize                      EQU        2  ;size of offset in bytes
+                      =1    52     
+                      =1    53     ;Addresses
+  FF22                =1    54     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
+  FF32                =1    55     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
+                      =1    56     
+                      =1    57     ;ICON0Address                            ;address of ICON0 register
+                      =1    58     ;ICON1Address                            ;address of ICON1 register
+                      =1    59     
+                      =1    60     ; Register Values
+  0001                =1    61     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
+                      =1    62                                             ;000000000000----  reserved
+                      =1    63                                             ;------------0---  enable timer interrupt
+                      =1    64                                             ;-------------001  timer priority
+                      =1    65     
+                      =1    66     
+                      =1    67     ; End of Interrupt values
+  8000                =1    68     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
+  0008                =1    69     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
+                      =1    70     ;INT0EOI
+                      =1    71     ;INT1EOI
+                      =1    72     
+                      =1    73     ; Interrupt Vector
+  0008                =1    74     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
+                      =1    75     ;INT0Vec
+                      =1    76     ;INT1VEc
                             77     
-----                        78     CODE SEGMENT PUBLIC 'CODE'
+                            78     CGROUP    GROUP    CODE
                             79     
-                            80             ASSUME    CS:CGROUP
+----                        80     CODE SEGMENT PUBLIC 'CODE'
                             81     
-                            82     ; external function declarations
+                            82             ASSUME    CS:CGROUP
                             83     
-                            84         ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
-                            85         ;EXTRN    DemandEH           ;CON_MP3 data demand handler
-                            86         EXTRN    ButtonEH:NEAR           ;checks if a button is pressed
-                            87     
-                            88     ; ClrIRQVectors
-                            89     ;
-                            90     ; Description:      This functions installs the IllegalEventHandler for all
-                            91     ;                   interrupt vectors in the interrupt vector table.  Note
-                            92     ;                   that all 256 vectors are initialized so the code must be
-                            93     ;                   located above 400H.  The initialization skips  (does not
-                            94     ;                   initialize vectors) from vectors FIRST_RESERVED_VEC to
-                            95     ;                   LAST_RESERVED_VEC.
-                            96     ;
-                            97     ; Arguments:        None.
-                            98     ; Return Value:     None.
+                            84     ; external function declarations
+                            85     
+                            86         ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
+                            87         ;EXTRN    DemandEH           ;CON_MP3 data demand handler
+                            88         EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
+                            89         ;EXTRN    RefreshDRAM:NEAR    ;access PCS4 to refresh DRAM
+                            90     
+                            91     ; ClrIRQVectors
+                            92     ;
+                            93     ; Description:      This functions installs the IllegalEventHandler for all
+                            94     ;                   interrupt vectors in the interrupt vector table.  Note
+                            95     ;                   that all 256 vectors are initialized so the code must be
+                            96     ;                   located above 400H.  The initialization skips  (does not
+                            97     ;                   initialize vectors) from vectors FIRST_RESERVED_VEC to
+                            98     ;                   LAST_RESERVED_VEC.
                             99     ;
-                           100     ; Local Variables:  CX    - vector counter.
-                           101     ;                   ES:SI - pointer to vector table.
-                           102     ; Shared Variables: None.
-                           103     ; Global Variables: None.
-                           104     ;
-                           105     ; Input:            None.
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    3
+                           100     ; Arguments:        None.
+                           101     ; Return Value:     None.
+                           102     ;
+                           103     ; Local Variables:  CX    - vector counter.
+                           104     ;                   ES:SI - pointer to vector table.
+                           105     ; Shared Variables: None.
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           106     ; Output:           None.
+                           106     ; Global Variables: None.
                            107     ;
-                           108     ; Error Handling:   None.
-                           109     ;
-                           110     ; Algorithms:       None.
-                           111     ; Data Structures:  None.
+                           108     ; Input:            None.
+                           109     ; Output:           None.
+                           110     ;
+                           111     ; Error Handling:   None.
                            112     ;
-                           113     ; Registers Used:   flags, AX, CX, SI, ES
-                           114     ; Stack Depth:      0 word
+                           113     ; Algorithms:       None.
+                           114     ; Data Structures:  None.
                            115     ;
-                           116     ; Author:           Timothy Liu
-                           117     ; Last Modified:    10/27/15
-                           118     
-0000                       119     ClrIRQVectors   PROC    NEAR
-                           120                     PUBLIC  ClrIRQVectors
+                           116     ; Registers Used:   flags, AX, CX, SI, ES
+                           117     ; Stack Depth:      0 word
+                           118     ;
+                           119     ; Author:           Timothy Liu
+                           120     ; Last Modified:    10/27/15
                            121     
-                           122     
-0000                       123     InitClrVectorLoop:              ;setup to store the same handler 256 times
+0000                       122     ClrIRQVectors   PROC    NEAR
+                           123                     PUBLIC  ClrIRQVectors
                            124     
-0000 33C0                  125             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-0002 8EC0                  126             MOV     ES, AX
-0004 BE0000                127             MOV     SI, 0           ;initialize SI to the first vector
-                           128     
-0007 B90001                129             MOV     CX, NUM_IRQ_VECTORS      ;maximum number to initialize
-                           130     
+                           125     
+0000                       126     InitClrVectorLoop:              ;setup to store the same handler 256 times
+                           127     
+0000 33C0                  128             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+0002 8EC0                  129             MOV     ES, AX
+0004 BE0000                130             MOV     SI, 0           ;initialize SI to the first vector
                            131     
-000A                       132     ClrVectorLoop:                  ;loop clearing each vector
-                           133                                     ;check if should store the vector
-000A 83FE04                134             CMP     SI, INTERRUPT_SIZE * FIRST_RESERVED_VEC
-000D 7205                  135             JB      DoStore         ;if before start of reserved field - store it
-000F 83FE0C                136             CMP     SI, INTERRUPT_SIZE * LAST_RESERVED_VEC
-0012 760B                  137             JBE     DoneStore       ;if in the reserved vectors - don't store it
-                           138             ;JA     DoStore         ;otherwise past them - so do the store
-                           139     
-0014                       140     DoStore:                        ;store the vector
-0014 26C7042500     R      141             MOV     ES: WORD PTR [SI], OFFSET(IllegalEventHandler)
-0019 26C74402----   R      142             MOV     ES: WORD PTR [SI + OffSize], SEG(IllegalEventHandler)
-                           143     
-001F                       144     DoneStore:                      ;done storing the vector
-001F 83C604                145             ADD     SI, INTERRUPT_SIZE           ;update pointer to next vector
+0007 B90001                132             MOV     CX, NUM_IRQ_VECTORS      ;maximum number to initialize
+                           133     
+                           134     
+000A                       135     ClrVectorLoop:                  ;loop clearing each vector
+                           136                                     ;check if should store the vector
+000A 83FE04                137             CMP     SI, INTERRUPT_SIZE * FIRST_RESERVED_VEC
+000D 7205                  138             JB      DoStore         ;if before start of reserved field - store it
+000F 83FE0C                139             CMP     SI, INTERRUPT_SIZE * LAST_RESERVED_VEC
+0012 760B                  140             JBE     DoneStore       ;if in the reserved vectors - don't store it
+                           141             ;JA     DoStore         ;otherwise past them - so do the store
+                           142     
+0014                       143     DoStore:                        ;store the vector
+0014 26C7042500     R      144             MOV     ES: WORD PTR [SI], OFFSET(IllegalEventHandler)
+0019 26C74402----   R      145             MOV     ES: WORD PTR [SI + OffSize], SEG(IllegalEventHandler)
                            146     
-0022 E2E6                  147             LOOP    ClrVectorLoop   ;loop until have cleared all vectors
-                           148             ;JMP    EndClrIRQVectors;and all done
+001F                       147     DoneStore:                      ;done storing the vector
+001F 83C604                148             ADD     SI, INTERRUPT_SIZE           ;update pointer to next vector
                            149     
-                           150     
-0024                       151     EndClrIRQVectors:               ;all done, return
-0024 C3                    152             RET
+0022 E2E6                  150             LOOP    ClrVectorLoop   ;loop until have cleared all vectors
+                           151             ;JMP    EndClrIRQVectors;and all done
+                           152     
                            153     
-                           154     
-                           155     ClrIRQVectors   ENDP
+0024                       154     EndClrIRQVectors:               ;all done, return
+0024 C3                    155             RET
                            156     
                            157     
-                           158     
-                           159     ; IllegalEventHandler
-                           160     ;
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    4
+                           158     ClrIRQVectors   ENDP
+                           159     
+                           160     
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           161     ; Description:       This procedure is the event handler for illegal
-                           162     ;                    (uninitialized) interrupts.  It does nothing - it just
-                           163     ;                    returns after sending a non-specific EOI.
-                           164     ;
-                           165     ; Operation:         Send a non-specific EOI and return.
-                           166     ;
-                           167     ; Arguments:         None.
-                           168     ; Return Value:      None.
+                           161     
+                           162     ; IllegalEventHandler
+                           163     ;
+                           164     ; Description:       This procedure is the event handler for illegal
+                           165     ;                    (uninitialized) interrupts.  It does nothing - it just
+                           166     ;                    returns after sending a non-specific EOI.
+                           167     ;
+                           168     ; Operation:         Send a non-specific EOI and return.
                            169     ;
-                           170     ; Local Variables:   None.
-                           171     ; Shared Variables:  None.
-                           172     ; Global Variables:  None.
-                           173     ;
-                           174     ; Input:             None.
-                           175     ; Output:            None.
+                           170     ; Arguments:         None.
+                           171     ; Return Value:      None.
+                           172     ;
+                           173     ; Local Variables:   None.
+                           174     ; Shared Variables:  None.
+                           175     ; Global Variables:  None.
                            176     ;
-                           177     ; Error Handling:    None.
-                           178     ;
-                           179     ; Algorithms:        None.
-                           180     ; Data Structures:   None.
+                           177     ; Input:             None.
+                           178     ; Output:            None.
+                           179     ;
+                           180     ; Error Handling:    None.
                            181     ;
-                           182     ; Registers Changed: None
-                           183     ; Stack Depth:       2 words
+                           182     ; Algorithms:        None.
+                           183     ; Data Structures:   None.
                            184     ;
-                           185     ; Author:            Timothy Liu
-                           186     ; Last Modified:     10/27/15
-                           187     
-0025                       188     IllegalEventHandler     PROC    NEAR
-                           189                             PUBLIC  IllegalEventHandler
+                           185     ; Registers Changed: None
+                           186     ; Stack Depth:       2 words
+                           187     ;
+                           188     ; Author:            Timothy Liu
+                           189     ; Last Modified:     10/27/15
                            190     
-0025 90                    191             NOP                             ;do nothing (can set breakpoint here)
-                           192     
-0026 50                    193             PUSH    AX                      ;save the registers
-0027 52                    194             PUSH    DX
+0025                       191     IllegalEventHandler     PROC    NEAR
+                           192                             PUBLIC  IllegalEventHandler
+                           193     
+0025 90                    194             NOP                             ;do nothing (can set breakpoint here)
                            195     
-0028 BA22FF                196             MOV     DX, INTCtrlrEOI         ;send a non-sepecific EOI to the
-002B B80080                197             MOV     AX, NonSpecEOI          ;   interrupt controller to clear out
-002E EE                    198             OUT     DX, AL                  ;   the interrupt that got us here
-                           199     
-002F 5A                    200             POP     DX                      ;restore the registers
-0030 58                    201             POP     AX
+0026 50                    196             PUSH    AX                      ;save the registers
+0027 52                    197             PUSH    DX
+                           198     
+0028 BA22FF                199             MOV     DX, INTCtrlrEOI         ;send a non-sepecific EOI to the
+002B B80080                200             MOV     AX, NonSpecEOI          ;   interrupt controller to clear out
+002E EE                    201             OUT     DX, AL                  ;   the interrupt that got us here
                            202     
-0031 CF                    203             IRET                            ;and return
-                           204     
+002F 5A                    203             POP     DX                      ;restore the registers
+0030 58                    204             POP     AX
                            205     
-                           206     IllegalEventHandler     ENDP
+0031 CF                    206             IRET                            ;and return
                            207     
-                           208     ; InstallDreqHandler
-                           209     ;
-                           210     ; Description:       This function installs the event handler for the data
-                           211     ;                    request interrupt from the VS1011 MP3 decoder. The
-                           212     ;                    function also writes to the ICON0 register to turn
-                           213     ;                    on INT0 interrupts.
-                           214     ;
-                           215     ; Operation:         Writes the address of the data request event handler
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    5
+                           208     
+                           209     IllegalEventHandler     ENDP
+                           210     
+                           211     ; InstallDreqHandler
+                           212     ;
+                           213     ; Description:       This function installs the event handler for the data
+                           214     ;                    request interrupt from the VS1011 MP3 decoder. The
+                           215     ;                    function also writes to the ICON0 register to turn
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     ;                    to the address of the INT0 interrupt vector. Write
-                           217     ;                    ICON0Value to ICON0Address to turn on INT0 interrupts.
-                           218     ;                    The function then sends an INT0EOI to clear out the 
-                           219     ;                    interrupt controller.
-                           220     ;
-                           221     ; Arguments:         None.
-                           222     ;
-                           223     ; Return Value:      None.
-                           224     ;
-                           225     ; Local Variables:   None.
-                           226     ;
-                           227     ; Shared Variables:  None.
-                           228     ;
-                           229     ; Input:             None.
-                           230     ;
-                           231     ; Output:            None.
-                           232     ;
-                           233     ; Error Handling:    None.
-                           234     ;
-                           235     ; Algorithms:        None.
-                           236     ;
+                           216     ;                    on INT0 interrupts.
+                           217     ;
+                           218     ; Operation:         Writes the address of the data request event handler
+                           219     ;                    to the address of the INT0 interrupt vector. Write
+                           220     ;                    ICON0Value to ICON0Address to turn on INT0 interrupts.
+                           221     ;                    The function then sends an INT0EOI to clear out the 
+                           222     ;                    interrupt controller.
+                           223     ;
+                           224     ; Arguments:         None.
+                           225     ;
+                           226     ; Return Value:      None.
+                           227     ;
+                           228     ; Local Variables:   None.
+                           229     ;
+                           230     ; Shared Variables:  None.
+                           231     ;
+                           232     ; Input:             None.
+                           233     ;
+                           234     ; Output:            None.
+                           235     ;
+                           236     ; Error Handling:    None.
                            237     ;
-                           238     ; Author:            Timothy Liu
-                           239     ; Last Modified:     4/4/16
-                           240     
-                           241     ;Outline_Dreq()
-                           242     ;    Clear ES
-                           243     ;    Write to interrupt vector table
-                           244     ;    Write to ICON0 register
-                           245     ;    Send EOI. 
-                           246     
-                           247     ;InstallDreqHandler    PROC    NEAR
-                           248     ;                      PUBLIC  InstallDreqHandler
+                           238     ; Algorithms:        None.
+                           239     ;
+                           240     ;
+                           241     ; Author:            Timothy Liu
+                           242     ; Last Modified:     4/4/16
+                           243     
+                           244     ;Outline_Dreq()
+                           245     ;    Clear ES
+                           246     ;    Write to interrupt vector table
+                           247     ;    Write to ICON0 register
+                           248     ;    Send EOI. 
                            249     
-                           250     ;##### InstallDemandHandler CODE #######
-                           251     
+                           250     ;InstallDreqHandler    PROC    NEAR
+                           251     ;                      PUBLIC  InstallDreqHandler
                            252     
-                           253     ;InstallDemdandHandler    ENDP
+                           253     ;##### InstallDemandHandler CODE #######
                            254     
-                           255     ; InstallDemandHandler
-                           256     ;
-                           257     ; Description:       This function installs the event handler for the data
-                           258     ;                    demand interrupt from the CON_MP3 decoder. The
-                           259     ;                    function also writes to the ICON1 register to turn
-                           260     ;                    on INT1 interrupts.
-                           261     ;
-                           262     ; Operation:         Writes the address of the data request event handler
-                           263     ;                    to the address of the INT1 interrupt vector. Write
-                           264     ;                    ICON1Value to ICON1Address to turn on INT1 interrupts.
-                           265     ;                    The function then sends an INT1 EOI to clear out the 
-                           266     ;                    interrupt controller.
-                           267     ;
-                           268     ; Arguments:         None.
-                           269     ;
-                           270     ; Return Value:      None.
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    6
+                           255     
+                           256     ;InstallDemdandHandler    ENDP
+                           257     
+                           258     ; InstallDemandHandler
+                           259     ;
+                           260     ; Description:       This function installs the event handler for the data
+                           261     ;                    demand interrupt from the CON_MP3 decoder. The
+                           262     ;                    function also writes to the ICON1 register to turn
+                           263     ;                    on INT1 interrupts.
+                           264     ;
+                           265     ; Operation:         Writes the address of the data request event handler
+                           266     ;                    to the address of the INT1 interrupt vector. Write
+                           267     ;                    ICON1Value to ICON1Address to turn on INT1 interrupts.
+                           268     ;                    The function then sends an INT1 EOI to clear out the 
+                           269     ;                    interrupt controller.
+                           270     ;
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ;
-                           272     ; Local Variables:   None.
-                           273     ;
-                           274     ; Shared Variables:  None.
-                           275     ;
-                           276     ; Input:             None.
-                           277     ;
-                           278     ; Output:            None.
-                           279     ;
-                           280     ; Error Handling:    None.
-                           281     ;
-                           282     ; Algorithms:        None.
-                           283     ;
+                           271     ; Arguments:         None.
+                           272     ;
+                           273     ; Return Value:      None.
+                           274     ;
+                           275     ; Local Variables:   None.
+                           276     ;
+                           277     ; Shared Variables:  None.
+                           278     ;
+                           279     ; Input:             None.
+                           280     ;
+                           281     ; Output:            None.
+                           282     ;
+                           283     ; Error Handling:    None.
                            284     ;
-                           285     ; Author:            Timothy Liu
-                           286     ; Last Modified:     4/4/16
-                           287     
-                           288     ;Outline_Dreq()
-                           289     ;    Clear ES
-                           290     ;    Write to interrupt vector table
-                           291     ;    Write to ICON1 register
-                           292     ;    Send EOI. 
-                           293     
-                           294     ;InstallDemandHandler    PROC    NEAR
-                           295     ;                        PUBLIC  InstallDemandHandler
+                           285     ; Algorithms:        None.
+                           286     ;
+                           287     ;
+                           288     ; Author:            Timothy Liu
+                           289     ; Last Modified:     4/4/16
+                           290     
+                           291     ;Outline_Dreq()
+                           292     ;    Clear ES
+                           293     ;    Write to interrupt vector table
+                           294     ;    Write to ICON1 register
+                           295     ;    Send EOI. 
                            296     
-                           297     ;##### InstallDemandHandler CODE #######
-                           298     
+                           297     ;InstallDemandHandler    PROC    NEAR
+                           298     ;                        PUBLIC  InstallDemandHandler
                            299     
-                           300     ;InstallDemandHandler    ENDP
+                           300     ;##### InstallDemandHandler CODE #######
                            301     
-                           302     ; InstallTimer0Handler
-                           303     ;
-                           304     ; Description:       Install the event handler for the timer0 interrupt.
-                           305     ;
-                           306     ; Operation:         Writes the address of the timer event handler to the
-                           307     ;                    appropriate interrupt vector.
+                           302     
+                           303     ;InstallDemandHandler    ENDP
+                           304     
+                           305     ; InstallTimer0Handler
+                           306     ;
+                           307     ; Description:       Install the event handler for the timer0 interrupt.
                            308     ;
-                           309     ; Arguments:         None.
-                           310     ; Return Value:      None.
+                           309     ; Operation:         Writes the address of the timer event handler to the
+                           310     ;                    appropriate interrupt vector.
                            311     ;
-                           312     ; Local Variables:   None.
-                           313     ; Shared Variables:  None.
+                           312     ; Arguments:         None.
+                           313     ; Return Value:      None.
                            314     ;
-                           315     ; Input:             None.
-                           316     ; Output:            None.
+                           315     ; Local Variables:   None.
+                           316     ; Shared Variables:  None.
                            317     ;
-                           318     ; Error Handling:    None.
-                           319     ;
-                           320     ; Algorithms:        None.
-                           321     ; Data Structures:   None.
+                           318     ; Input:             None.
+                           319     ; Output:            None.
+                           320     ;
+                           321     ; Error Handling:    None.
                            322     ;
-                           323     ;
-                           324     ; Author:            Timothy Liu
-                           325     ; Last Modified:     4/4/16
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     02:42:23  05/05/;6  PAGE    7
+                           323     ; Algorithms:        None.
+                           324     ; Data Structures:   None.
+                           325     ;
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           326     
-0032                       327     InstallTimer0Handler  PROC    NEAR
-                           328                           PUBLIC  InstallTimer0Handler
+                           326     ;
+                           327     ; Author:            Timothy Liu
+                           328     ; Last Modified:     4/4/16
                            329     
-                           330     
-0032 33C0                  331             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-0034 8EC0                  332             MOV     ES, AX
-                           333                                     ;store the vector - put location of timer event
-                           334                                                                     ;handler into ES
-0036 26C70620000000 E      335             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
-003D 26C7062200---- R      336             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
-                           337     
-                           338     
-0044 C3                    339             RET                     ;all done, return
+0032                       330     InstallTimer0Handler  PROC    NEAR
+                           331                           PUBLIC  InstallTimer0Handler
+                           332     
+                           333     
+0032 33C0                  334             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+0034 8EC0                  335             MOV     ES, AX
+                           336                                     ;store the vector - put location of timer event
+                           337                                                                     ;handler into ES
+0036 26C70620000000 E      338             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
+003D 26C7062200---- R      339             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
                            340     
                            341     
-                           342     InstallTimer0Handler  ENDP
-                           343         
+0044 C3                    342             RET                     ;all done, return
+                           343     
                            344     
-                           345     
-----                       346     CODE ENDS
+                           345     InstallTimer0Handler  ENDP
+                           346     
                            347     
-                           348     END
+                           348     ; InstallTimer1Handler
+                           349     ;
+                           350     ; Description:       Install the event handler for the timer1 interrupt.
+                           351     ;
+                           352     ; Operation:         Writes the address of the timer event handler to the
+                           353     ;                    appropriate interrupt vector.
+                           354     ;
+                           355     ; Arguments:         None.
+                           356     ; Return Value:      None.
+                           357     ;
+                           358     ; Local Variables:   None.
+                           359     ; Shared Variables:  None.
+                           360     ;
+                           361     ; Input:             None.
+                           362     ; Output:            None.
+                           363     ;
+                           364     ; Error Handling:    None.
+                           365     ;
+                           366     ; Algorithms:        None.
+                           367     ; Data Structures:   None.
+                           368     ;
+                           369     ;
+                           370     ; Author:            Timothy Liu
+                           371     ; Last Modified:     5/7/16
+                           372     
+                           373     ;InstallTimer1Handler  PROC    NEAR
+                           374     ;                      PUBLIC  InstallTimer1Handler
+                           375     
+                           376     
+                           377     ;        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+                           378     ;        MOV     ES, AX
+                           379                                     ;store the vector - put location of timer event
+                           380                                                                     ;handler into ES
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:10:19  05/07/;6  PAGE    8
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           381     ;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(RefreshDRAM)
+                           382     ;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(RefreshDRAM)
+                           383     
+                           384     
+                           385     ;        RET                     ;all done, return
+                           386     
+                           387     
+                           388     ;InstallTimer1Handler  ENDP
+                           389         
+                           390     
+                           391     
+----                       392     CODE ENDS
+                           393     
+                           394     END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

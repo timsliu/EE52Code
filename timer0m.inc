@@ -12,6 +12,7 @@
 ;    11/4/15     Timothy Liu     initial revision
 ;    04/4/16     Timothy Liu     changed name to Timer0M.INC for MP3 player
 ;    04/4/16     Timothy Liu     changed COUNTS_PER_MS to 20 mHZ clock value
+;    05/6/16     Timothy Liu     corrected COUNTS_PER_MS value for 24 mHz
 
 
 
@@ -30,8 +31,8 @@ Tmr0CtrlVal     EQU     1110000000000001B ;Timer 0 Control Register value
                        ;---------------1  continuous mode
 ; Timing Definitions
 
-COUNTS_PER_MS   EQU     2000            ;number of timer counts per 1 ms
-                                        ;(assumes 20 MHz clock)
+COUNTS_PER_MS   EQU     3000            ;number of timer counts per 1 ms
+                                        ;(assumes 24 MHz external clock)
 
 
 

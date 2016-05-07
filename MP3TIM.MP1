@@ -1,11 +1,10 @@
 
 DOS 5.0 (038-N) 8086 LINKER, V2.7
 
-INPUT FILES: TIM1.LNK, TIM2.LNK, GLEN1.LNK, GLEN2.LNK, GLEN3.LNK, 
-  IC86.LIB
+INPUT FILES: TIM.LNK, GLEN.LNK
 OUTPUT FILE: MP3TIM.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  05/05/;6  TIME:  02:42:24
+DATE:  05/07/;6  TIME:  14:10:20
 
 
 LINK MAP OF MODULE STARTUP
@@ -13,17 +12,10 @@ LINK MAP OF MODULE STARTUP
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 35FBH ------    G    CODE            CODE                          
- 0BACH ------    G    DATA            DATA                          
- 054CH ------    W    STACK           STACK                         
+ 223BH ------    G    CODE            CODE                          
+ 0B4CH ------    G    DATA            DATA                          
+ 0530H ------    W    STACK           STACK                         
 
 INPUT MODULES INCLUDED:
-TIM1.LNK(STARTUP)
-TIM2.LNK(QUEUE)
-GLEN1.LNK(FATUTIL)
-GLEN2.LNK(PLAYMP3)
-GLEN3.LNK(LIB188)
-IC86.LIB(LQ_ULONG_MULTIPLY)
-IC86.LIB(LQ_ULONG_DIVIDE)
-IC86.LIB(LQ_SLONG_MULTIPLY)
-IC86.LIB(LQ_SLONG_DIVIDE)
+TIM.LNK(STARTUP)
+GLEN.LNK(FATUTIL)

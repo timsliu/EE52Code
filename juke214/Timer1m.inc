@@ -35,4 +35,4 @@ Timer1CtrlVal     EQU    1110000000000001B  ;Timer 1 Control Register value
 
 ;Timing Definitions
 
-COUNTS_PER_QMS    EQU   576    ;counts for every quarter millisecond (4khz)
+COUNTS_PER_QMS    EQU   600    ;counts for every fifth millisecond (5khz)

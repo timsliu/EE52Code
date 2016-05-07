@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE LIB188
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                             48     ;
                             49     ; Operation:         If the passed integer is negative, it is negated, if it
                             50     ;                    is positive it is left unchanged.
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103     
                            104     ; strcat_
                            105     ;
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158             ;JMP    findEnd                 ;find end of destination
                            159     
                            160     
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ; Return Value:      DX | AX - pointer to the passed destination string.
                            214     ;
                            215     ; Local Variables:   BP - frame pointer
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
 0062                       268     strcpyEnd:                              ;done copying strings
 0062 5E                    269             POP     SI                      ;restore registers and return
 0063 5D                    270             POP     BP
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
 006E                       323     strlenLoop:                             ;loop until find end of the string
 006E 26803F00              324             CMP     BYTE PTR ES:[BX], NULL  ;end of string?
 0072 7404                  325             JE      strlenEnd               ;end of string - all done
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   18:25:47  05/06/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   12:45:20  05/07/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE

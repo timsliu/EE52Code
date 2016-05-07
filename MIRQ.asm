@@ -20,11 +20,13 @@
 ;    InstallDreqHandler     -installs VS1011 data request IRQ handler
 ;    InstallDemandHandler   -installs CON_MP3 data demand IRQ handler
 ;    InstallTimer0Handler   -installs the timer0 handler
+;    InstallTimer1Handler   -installs the timer1 handler
 
 
 ;Revision History:
-;    4/4/16
+;    4/4/16     Tim Liu    initial revision
 ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
+;    5/7/16     Tim Liu    wrote InstallTimer1Handler
 
 $INCLUDE(MIRQ.INC)
 
@@ -38,7 +40,8 @@ CODE SEGMENT PUBLIC 'CODE'
 
     ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
     ;EXTRN    DemandEH           ;CON_MP3 data demand handler
-    EXTRN    ButtonEH:NEAR           ;checks if a button is pressed
+    EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
+    ;EXTRN    RefreshDRAM:NEAR    ;access PCS4 to refresh DRAM
 
 ; ClrIRQVectors
 ;
@@ -295,6 +298,49 @@ InstallTimer0Handler  PROC    NEAR
 
 
 InstallTimer0Handler  ENDP
+
+
+; InstallTimer1Handler
+;
+; Description:       Install the event handler for the timer1 interrupt.
+;
+; Operation:         Writes the address of the timer event handler to the
+;                    appropriate interrupt vector.
+;
+; Arguments:         None.
+; Return Value:      None.
+;
+; Local Variables:   None.
+; Shared Variables:  None.
+;
+; Input:             None.
+; Output:            None.
+;
+; Error Handling:    None.
+;
+; Algorithms:        None.
+; Data Structures:   None.
+;
+;
+; Author:            Timothy Liu
+; Last Modified:     5/7/16
+
+;InstallTimer1Handler  PROC    NEAR
+;                      PUBLIC  InstallTimer1Handler
+
+
+;        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+;        MOV     ES, AX
+                                ;store the vector - put location of timer event
+								;handler into ES
+;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(RefreshDRAM)
+;        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(RefreshDRAM)
+
+
+;        RET                     ;all done, return
+
+
+;InstallTimer1Handler  ENDP
     
 
 
