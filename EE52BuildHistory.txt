@@ -111,3 +111,5 @@ R65 - R70, R71, R72, R73 (MUX enables) - continuity checked. Still good, but
 unexpected rise in resistance
 R64, R63, R15, and R7
 Loaded and tested code again - all good
+Socket U12 for CPLD and inserted CPLD
+Loaded and tested display/button code - still works, notably slower
