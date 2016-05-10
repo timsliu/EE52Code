@@ -18,6 +18,7 @@
 ;                                but no values
 ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
 ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
+;    5/9/16      Timothy Liu     changed MMCSval start address
 
 
 ; Chip Select Unit Definitions
@@ -35,16 +36,16 @@ PACSval         EQU     00003H          ;PCS base at 0, 3 wait states
                                         ;----------000---  reserved
                                         ;-------------0--  wait for RDY inputs
                                         ;--------------11  3 wait states
-MPCSval         EQU     00883H          ;PCS in I/O space, use PCS5/6, 3 wait states
+MPCSval         EQU     04083H          ;PCS in I/O space, use PCS5/6, 3 wait states
                                         ;0---------000---  reserved
-                                        ;-0001000--------  MCS is 64KB
+                                        ;-1000000--------  MCS is 512KB
                                         ;--------1-------  output PCS5/PCS6
                                         ;---------0------  PCS in I/O space
                                         ;-------------0--  wait for RDY inputs
                                         ;--------------11  3 wait states
 
-MMCSval        EQU     07003H           ;MMCS base 70000H, 3 wait states
-                                        ;0111000---------  start address
+MMCSval        EQU     08003H           ;MMCS base 80000H, 3 wait states
+                                        ;1000000---------  start address
                                         ;-------000000---  reserved
                                         ;-------------0--  enable bus ready
                                         ;--------------11  3 wait states

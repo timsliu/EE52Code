@@ -69,7 +69,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/6/6
+;Last Modified       5/6/16
 
 RefreshDRAM        PROC    NEAR
                    PUBLIC  RefreshDRAM

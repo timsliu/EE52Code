@@ -2,14 +2,15 @@
 ;                                                                            ;
 ;                                   Timer1.inc                               ;
 ;                              Tiimer1 Include File                          ;
-;                                   EE/CS 51                                 ;
+;                                   EE/CS 52                                 ;
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; This file contains the definitions for timer1.asm.
 ;
 ; Revision History:
-;    11/8/15    Timothy Liu    initial revision
+;    11/8/15    Tim Liu    initial revision
+;    5/9/16     Tim Liu    Changed COUNTS_PER_FMS to 1500
 
 
 
@@ -35,7 +36,7 @@ Timer1CtrlVal     EQU    1110000000000001B  ;Timer 1 Control Register value
 
 ;Timing Definitions
 
-COUNTS_PER_FMS    EQU   1000   ;counts for every 0.4 milliseconds (2.5khz)
+COUNTS_PER_FMS    EQU   1500   ;counts for every 0.5 milliseconds (2khz)
                                ;RefreshRows(DRAM.INC) are refreshed each
                                ;timer1 interrupt. 256 rows must be refreshed
                                ;every 4 milliseconds for the MH256 DRAM

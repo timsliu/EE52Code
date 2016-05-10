@@ -113,3 +113,14 @@ R64, R63, R15, and R7
 Loaded and tested code again - all good
 Socket U12 for CPLD and inserted CPLD
 Loaded and tested display/button code - still works, notably slower
+
+5/8/16
+Soldered U12 DRAM socket - didn’t think about orientation but very luckily
+I think I got it right.
+
+5/9/16
+Inserted U19, U20, U21 and DRAM into sockets
+
+5/10/16
+Soldered some pins on the mux sockets that weren’t soldered, which was
+leading to some issues. DRAM appears to be working.

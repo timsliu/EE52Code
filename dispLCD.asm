@@ -166,18 +166,6 @@ InitDisplayLCD    ENDP
 ;
 ;Last Modified:      4/28/16
 
-;Outline
-;DisplayLCD(String, Type)
-;    Type *= SizeOf(DataInfoStruct)        ;multiply by size of table entry    
-;    Type += Offset(DataInfoTable)         ;add to table start location
-;    Cursor = DataInfoTable[Type].Start    ;set cursor to start position
-;    CharLeft = DataInfoTable[Type].MaxSize;set max chars allowed for type
-;    WHILE (CharLeft != 0 AND              ;check haven’t written too far
-;          ES:[SI] != ASCII_NULL)          ;check for end of string
-;        OUT(ES:[SI], LCDDataAddress)      ;output to the display
-;        Cursor ++                         ;write at the next position
-;        CharLeft —-                       ;one fewer space left to write
-
 
 DisplayLCD        PROC    NEAR
                   PUBLIC  DisplayLCD
