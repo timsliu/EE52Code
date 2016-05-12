@@ -21,13 +21,15 @@ asm86 converts.asm m1 ep db
 asm86 clock.asm   m1 ep db
 asm86 timer1m.asm m1 ep db
 asm86 dram.asm    m1 ep db
+asm86 dramtst.asm m1 ep db
 
 link86 startup.obj, initreg.obj, mirq.obj, timer0m.obj, button.obj to tim1.lnk
-link86 queue.obj, displcd.obj, converts.obj, clock.obj, timer1m.obj, dram.obj to tim2.lnk
+link86 queue.obj, displcd.obj, converts.obj, clock.obj, timer1m.obj to tim2.lnk
+link86 dram.obj, dramtst.obj to tim3.lnk
 link86 fatutil.obj, ffrev.obj, keyupdat.obj, mainloop.obj to glen1.lnk
 link86 playmp3.obj, stubfncs.obj, trakutil.obj, simide.obj to glen2.lnk
 
-link86 tim1.lnk, tim2.lnk to tim.lnk
+link86 tim1.lnk, tim2.lnk, tim3.lnk to tim.lnk
 link86 glen1.lnk, glen2.lnk, lib188.obj, ic86.lib to glen.lnk
 
 link86 tim.lnk, glen.lnk to mp3tim.lnk

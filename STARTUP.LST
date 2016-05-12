@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:29:40  05/09/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:26:38  05/11/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;                                 initreg.INC                                ;
                       =1    49     ;                       Initialize Registers MP3 Include File                ;
                       =1    50     ;                                   EE/CS 52                                 ;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:29:40  05/09/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:26:38  05/11/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103                                             ;--------------11  3 wait states
                       =1   104     
   3003                =1   105     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:29:40  05/09/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:26:38  05/11/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
 0001 B8----         R      158             MOV     AX, DGROUP              ;initialize the stack pointer
 0004 8ED0                  159             MOV     SS, AX
 0006 BC800290       R      160             MOV     SP, OFFSET(DGROUP:TopOfStack)
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:29:40  05/09/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:26:38  05/11/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            210     
 ----                       211     DATA    SEGMENT  WORD  PUBLIC  'DATA'
                            212     
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:29:40  05/09/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  18:26:38  05/11/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE

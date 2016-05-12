@@ -1,0 +1,100 @@
+8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  18:26:38  05/11/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE DRAMTST
+OBJECT MODULE PLACED IN DRAMTST.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE DRAMTST.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1             NAME    DRAMTST
+                             2     
+                             3     CGROUP  GROUP   CODE
+----                         4     CODE    SEGMENT PUBLIC 'CODE'
+                             5             ASSUME  CS:CGROUP
+                             6     
+                             7     ; Passed DRAM starting segment in ES.
+                             8     ;
+                             9     ; Checks ES:0000 to ES:FFFF (64KB). Performs a byte write followed by a byte
+                            10     ; read.
+                            11     ;
+                            12     ; Set a breakpoint at ByteReadError to check for errors.
+0000                        13     DRAMByteTest  PROC    NEAR
+                            14                   PUBLIC  DRAMByteTest
+0000                        15     DRAMByteTestStart:
+0000 BB0000                 16         MOV     BX, 0
+0003 B000                   17         MOV     AL, 0
+                            18     
+0005                        19     ByteWrite:
+0005 0403                   20         ADD     AL, 3
+0007 268807                 21         MOV     ES:[BX], AL
+000A 43                     22         INC     BX
+                            23     
+000B                        24     CheckByte:
+000B 263A47FF               25         CMP     AL, ES:[BX - 1]
+000F 74F4                   26         JE      ByteWrite
+                            27     
+0011                        28     ByteReadError:
+0011 90                     29         NOP
+0012 EBFD                   30         JMP     ByteReadError
+                            31     DRAMByteTest  ENDP
+                            32         
+                            33     ; Passed DRAM starting segment in ES. 
+                            34     ;
+                            35     ; Checks ES:0000 to ES:FFFF (64KB). Performs word writes to the DRAM using an
+                            36     ; LFSR, and then repeatedly reads to verify the DRAM contents.
+                            37     ;
+                            38     ; Set a breakpoint at ReadError to check for errors. The offset at which the
+                            39     ; error occurred will be in BX, and the number of successful read loop
+                            40     ; iterations before failure will be in DX.
+0014                        41     DRAMWordTest  PROC    NEAR
+                            42                   PUBLIC  DRAMWordTest
+0014                        43     DRAMTestStart:
+0014 BB0000                 44         MOV     BX, 0
+0017 B80100                 45         MOV     AX, 1
+001A B90080                 46         MOV     CX, 8000h   ; 8000h words in a segment
+001D BA0000                 47         MOV     DX, 0       ; Number of successful read loop iterations.
+                            48     
+0020                        49     WriteLoop:
+0020 268907                 50         MOV     ES:[BX], AX
+8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  18:26:38  05/11/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+0023 83C302                 51         ADD     BX, 2
+0026 D1E0                   52         SHL     AX, 1
+0028 7303                   53         JNC     Skip1
+002A 3500B4                 54         XOR     AX, 0B400H ; maximal length LFSR value
+                            55     
+002D                        56     Skip1:
+002D E2F1                   57         LOOP    WriteLoop
+                            58     
+002F                        59     StartRead:
+002F B80100                 60         MOV     AX, 1
+0032 B90080                 61         MOV     CX, 8000h
+0035 BB0000                 62         MOV     BX, 0
+                            63     
+0038                        64     ReadLoop:
+0038 263907                 65         CMP     ES:[BX], AX
+003B 750F                   66         JNE     WordReadError
+003D 83C302                 67         ADD     BX, 2
+0040 D1E0                   68         SHL     AX, 1
+0042 7303                   69         JNC     Skip2
+0044 3500B4                 70         XOR     AX, 0B400H
+                            71     
+0047                        72     Skip2:
+0047 E2EF                   73         LOOP    ReadLoop
+0049 42                     74         INC     DX
+004A EBE3                   75         JMP     StartRead
+                            76     
+004C                        77     WordReadError:
+004C 90                     78         NOP
+004D EBFD                   79         JMP     WordReadError
+                            80     DRAMWordTest  ENDP
+                            81             
+----                        82     CODE    ENDS
+                            83             END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

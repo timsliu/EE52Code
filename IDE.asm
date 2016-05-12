@@ -54,16 +54,18 @@ CODE SEGMENT PUBLIC 'CODE'
 ;                    in IDEAddressTable. The function then loops checking 
 ;                    the ready to transfer data flag of IDEStatusReg.
 ;                    Once the flag is clear, the function writes to the
-;                    command register IDEDRAMWrite to initiate DMA. The
+;                    command register IDEDMA to initiate DMA. The
 ;                    function writes the destination pointer address passed
 ;                    as the third argument to DxDSTH and DxDSTL. The function
 ;                    writes IDEStartAddress to DxSRCL. To initiate the
-;                    DMA, the procedure writes DxConVal to DxConAdd. The
+;                    DMA, the procedure writes DxConVal to DxCon. The
 ;                    function (???) somehow returns the number of blocks 
 ;                    read in AX and restores the registers
 ;                    
 ;
-;Arguments:          
+;Arguments:          StartBlock(unsigned long int) - starting logical block
+;                    to read from
+;                      
 ;
 ;Return Values:      None
 ;
