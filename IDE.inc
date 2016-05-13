@@ -22,4 +22,6 @@ DxCon           EQU              ;address of DMA control register
 
 ; DMA values
 DxConVal        EQU              ;value to write to DxCON to initiate DMA
+DxSRCHVal       EQU              ;high byte of DMA source
+DxSRCLVal       EQU              ;low byte of DMA source
 

@@ -12,11 +12,16 @@
 
 ; Table of Contents:
 ;
-;    Get_Blocks - retrieves number of blocks from IDE
+;    Get_Blocks        - retrieves number of blocks from IDE
+;    CheckIDEBusy      - checks if the IDE is busy
+;    Add32Bit          - adds value to 32 bit value
+;    CalculatePhysical - calculates physical address from segment/offset
 
 ; Revision History:
 ;    5/8/16    Tim Liu    Created file
 ;    5/9/16    Tim Liu    Created skeleton of Get_blocks
+;    5/12/16   Tim Liu    Outlined Get_blocks
+;    5/12/16   Tim Liu
 
 
 ; local include files
@@ -65,9 +70,14 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Arguments:          StartBlock(unsigned long int) - starting logical block
 ;                    to read from
+;
+;                    NumBlocks(int) - number of blocks to retrieve
+;
+;                    DestinationPointer(unsigned short in far *) -
+;                    address of destination
 ;                      
 ;
-;Return Values:      None
+;Return Values:      AX - number of blocks actually read
 ;
 ;Local Variables:    None
 ;
@@ -87,7 +97,44 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/9/16
+;Last Modified       5/12/16
+;
+;Outline
+Get_Blocks(StartBlock, NumBlocks, Destination)
+    Save BP                           ;set up indexing into stack to pull arg
+    BP = SP
+    Save other registers
+    While NumBlocks > 0                   ;loop writing each block
+       Add32Bit(BP+4, BP+6)               ;function to recalculate the LBA
+                                          ;after incrementing the sector
+                                          ;add 256 to low and add carry bit
+       Add32Bit(BP+10, BP+12)             ;recalculate destination pointer
+
+       CheckBusyFlag()                      ;write to LBA addresses
+       LBA7:0 = BP + 4
+       CheckBusyFlag()
+       LBA15:8 = BP + 5
+       CheckBusyFlag()
+       LBA23:16 = BP + 6
+
+       AL = BP + 7                           ;access LBA 24:31
+       AL = BitMask(AL)                      ;apply bit mask
+       CheckBusyFlag()
+       DeviceLBA = AL                        ;write to DeviceLBA register
+
+       CheckBusyFlag()                       ;
+       Write READ SECTOR Command             ;execute DMA
+
+       CalculatePhysical()                   ;calculate the physical address
+                                             ;from the segment and offset
+       DxDSTH = CP1                          ;write the destination addresses
+       DxDSTL = CP2
+       DxSRCH = DxSRCHVal                    ;always the same value
+       DxSRCL = DxSRCLVal                    ;start address of MCS2
+       DxCON = DxCONVal                      ;write to DxCON and start DMA
+           
+    
+    
 
 Get_Blocks        PROC    NEAR
                   PUBLIC  Get_Blocks
