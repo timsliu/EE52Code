@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE MIRQ
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
   0003                =1    48     LAST_RESERVED_VEC            EQU          3
   0100                =1    49     NUM_IRQ_VECTORS              EQU      256  ;number of interrupt vectors
   0004                =1    50     INTERRUPT_SIZE               EQU        4  ;each vector is 4 addresses large
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
   000D                =1   103     ASCII_CR             EQU       13         ;ASCII carriage return
   0044                =1   104     ASCII_D              EQU       68         ;ASCII code for D
   0045                =1   105     ASCII_E              EQU       69         ;ASCII E
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     ;
                            159     ; Algorithms:       None.
                            160     ; Data Structures:  None.
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;
                            214     ; Operation:         Send a non-specific EOI and return.
                            215     ;
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;                    interrupt controller.
                            269     ;
                            270     ; Arguments:         None.
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     ; Shared Variables:  None.
                            324     ;
                            325     ; Input:             None.
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     
                            379     
 0032 33C0                  380             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
                            433     
                            434     InstallTimer1Handler  ENDP
                            435         
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:05:58  05/14/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     14:26:52  05/14/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE

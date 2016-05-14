@@ -23,6 +23,8 @@
 ;    5/12/16   Tim Liu    Outlined Get_blocks
 ;    5/13/16   Tim Liu    Wrote Add32Bit
 ;    5/13/16   Tim Liu    Wrote outline for CalculatePhysical
+;    5/13/16   Tim Liu    Wrote CalculatePhysical
+;    5/14/16   Tim Liu    Fixed bugs in Add32Bit and Calculate Physical
 
 
 ; local include files
@@ -80,8 +82,7 @@ Add32Bit        PROC    NEAR
 
 Add32BitStart:                           ;starting label
     ADD    ES:[SI], AX                   ;add value to low word
-    INC    SI                            ;point to high word
-    ADC    BYTE PTR ES:[SI], 0           ;add the carry flag
+    ADC    WORD PTR ES:[SI+2], 0         ;add the carry flag
 
 Add32BitEnd:
     RET                                  ;function done
@@ -143,8 +144,8 @@ CalculatePhysicalStart:                  ;starting label
 
 CalculatePhysicalCopy:                   ;copy seg/offset to register
     MOV     BX, ES:[SI]                  ;copy offset to register
-    MOV     CX, ES:[SI+1]                ;copy segment to register
-    MOV     DX, ES:[SI+1]                ;second copy of segment
+    MOV     CX, ES:[SI+2]                ;copy segment to register
+    MOV     DX, ES:[SI+2]                ;second copy of segment
 
 CalculatePhysicalShift:                  ;shift registers to prepare for add
     SHR     CX, 3*BitsPerNibble          ;high order of seg in lowest nibble
