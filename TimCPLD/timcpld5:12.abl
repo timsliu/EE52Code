@@ -1,0 +1,341 @@
+MODULE      TimCPLD
+TITLE      'LCD Interface - State Machine Version'
+
+
+" LCDInterface  DEVICE  'ISPLS2032A'
+
+
+" Description:  Interfaces the Hitachi LCD controller with the 80C188
+"               microprocessor running at any speed using either the WR\ line,
+"               an address line, or the DT/R line as the R/W line for the
+"               controller.  SRDY is also generated appropriately.
+"
+"               If the 80C188 oscillator input frequency is under 17 MHz, the
+"               WR\ line may be used as the R/W line.  At higher speeds, an
+"               address line or the DT/R line (inverted) must be used.
+"
+"               At 80C188 oscillator input frequencies of 18.8 MHz or less,
+"               one wait state may be removed from the PAL logic.
+"
+"               The 80C188 should also have 1-2 wait states set on the PCS
+"               line for the LCD PAL.
+
+
+" Revision History:
+" 03/3/16   Tim Liu    Wrote DRAM state diagram
+" 03/3/16   Tim Liu    Split into two state machines (DRAM and IDE)
+" 03/4/16   Tim Liu    Changed IDE to equations
+" 03/4/16   Tim Liu    Removed ISRDY
+" 03/23/16  Tim Liu    Changed DSRDY to previously unused pin 22
+" 03/23/16  Tim Liu    Cleaned up comments and ordered pins
+
+
+" Pins
+
+"GND   pin   1;                         supply  power ground
+"      pin   2                          input   unused
+"      pin   3                          input   unused
+DTR    pin   4;                        "input   DT/R from CPU
+!MCS1  pin   5;                        "input   MCS1  (active low, from 80C188)
+!WR    pin   6;                        "input   write (active low, from 80C188)
+RESET  pin   7;                        "input   reset (active high, from 80C188)
+!MCS2  pin   8;                        "input   MCS2  (active low, from 80C188)
+St1    pin   9   ISTYPE 'reg,buffer';  "output  state bit 1
+"      pin   10;                        input   unused
+Clock  pin   11;                       "input   Clock (CLKOUT from 80C188)
+"VCC   pin   12                         supply  power VCC
+"      pin   13                         input   unused
+"      pin   14                         input   unused
+SRDY   pin   15  ISTYPE 'com';         "SRDY    output to CPU
+LSRDY  pin   16;                       "input   SRDY from LCD CPLD
+AB0    pin   17;                       "input   address bus lowest bit
+!DIOR  pin   18  ISTYPE 'com';         "output    output IDE control
+ALE    pin   19;                       "input   ALE  (active high, from 80C188)
+!PCS4  pin   20;                       "input   DRAM refresh chip select
+!MCS0  pin   21;                       "input   MCS0 
+DSRDY  pin   22  ISTYPE 'com';         "output  DRAM SRDY                        
+"      pin   23                         input   unused
+"      pin   24                         input   unused
+!DRAMWE pin  25  ISTYPE 'reg,buffer';  "output  DRAM write enable
+!OE2   pin   26  ISTYPE 'com';         "output  enable setB
+MUXAB  pin   27  ISTYPE 'reg,buffer';  "input   AB mux select
+!RAS   pin   28  ISTYPE 'reg,buffer';  "output  RAS to DRAM
+!RD    pin   29;                       "input   read (active low, from 80C188)
+CLKBA2 pin   30  ISTYPE 'com';         "output  2CLKBA signal
+!OE1   pin   31  ISTYPE 'com';         "output  enable setA
+DIR1   pin   32  ISTYPE 'com';         "output  direction of setA bits
+"      pin   33                         input   unused
+"VCC   pin   34                         supply  power VCC
+"MRESETpin   35                         manual  reset
+"      pin   36                         mode
+"      pin   37                         input unused 
+"      pin   38                         input unused 
+!CAS   pin   39  ISTYPE 'reg,buffer';  "output  unused              
+St0    pin   40  ISTYPE 'reg,buffer';  "output  state bit 0
+"      pin   41                         input unused 
+"      pin   42                         input unused 
+St2    pin   43  ISTYPE 'reg,buffer';  "output  state bit 2
+"      pin   44                         input unused 
+
+
+
+"DRAM State bits
+
+DRAMStates =  [ MUXAB, RAS, CAS ,DRAMWE,  St2, St1, St0 ];      " state bits
+
+IdleDRAM   =  [  0 ,  0 ,    0  ,   0  ,    0 ,   0,   0 ];     " state assignments
+DRAMR1     =  [  0 ,  1 ,    0  ,   0  ,    1 ,   0,   0 ];
+DRAMR2     =  [  1 ,  1 ,    0  ,   0  ,    1 ,   1,   0 ];
+DRAMR3     =  [  1 ,  1 ,    1  ,   0  ,    0 ,   1,   0 ];
+DRAMR4     =  [  0 ,  1 ,    1  ,   0  ,    0 ,   1,   1 ];
+DRAMW1     =  [  0 ,  1 ,    0  ,   0  ,    0 ,   0,   1 ]; "make all zero
+DRAMW2     =  [  1 ,  1 ,    0  ,   1  ,    0 ,   1,   0 ]; "make all zero
+DRAMW3     =  [  1 ,  1 ,    1  ,   1  ,    1 ,   0,   0 ]; "make all zero
+REFRESH1   =  [  0 ,  0 ,    1  ,   0  ,    1 ,   0,   0 ];
+REFRESH2   =  [  0 ,  1 ,    1  ,   0  ,    1 ,   1,   0 ];
+REFRESH3   =  [  0 ,  1 ,    1  ,   0  ,    0 ,   1,   0 ];
+REFRESH4   =  [  0 ,  0 ,    0  ,   0  ,    0 ,   1,   1 ];
+REFRESH5   =  [  0 ,  0 ,    1  ,   0  ,    1 ,   1,   1 ];
+REFRESH6   =  [  0 ,  1 ,    1  ,   0  ,    1 ,   0,   1 ];
+REFRESH7   =  [  0 ,  1 ,    1  ,   0  ,    1 ,   0,   0 ];
+
+
+
+EQUATIONS
+
+
+" Output enables - enable the used outputs (registered outputs enabled by OE\ pin)
+DIR1.OE   =  1;
+OE1.OE    =  1;
+OE2.OE    =  1;
+DIOR.OE   =  1;
+CLKBA2.OE =  1;
+DSRDY.OE  =  1;
+SRDY.OE   =  1;
+
+
+
+DIR1 = WR;
+OE1 = ((MCS2 & (RD & !(AB0))) # (WR));
+OE2 = (MCS2 & RD & AB0);
+CLKBA2 = (DIOR.PIN);
+DIOR = (MCS2 & RD & !(AB0));
+
+
+"CLKBA2 is active high while DIOR is active low. The logic levels of
+"CLKBA2 will be inverted relative to DIOR. The IDE sends data across on
+"the falling edge of DIOR and the transceiver latches on the rising edge
+"of CLKBA2
+
+
+"Not sure about some of these equations. I think that
+"DIOR should become active first to send the data from the
+"IDE to the buffer and
+"then 2CLKBA rises to latch the data.
+
+
+SRDY = (LSRDY & DSRDY.PIN); "SRDY signal back to the CPLD
+
+
+" clocks for the registered outputs (state bits)  
+DRAMStates.CLK =  Clock;
+DRAMStates.CLR =  RESET;                             
+                                                        
+                                                        
+                                                       
+STATE_DIAGRAM    DRAMStates
+
+STATE    IdleDRAM:
+
+   DSRDY = 1;
+   
+   IF ((MCS0 # MCS1)& DTR & (!ALE))         THEN  DRAMW1   "write DRAM
+   ELSE IF ((MCS0 # MCS1)& (!DTR) & (!ALE)) THEN  DRAMR1   "read DRAM
+   ELSE IF PCS4                             THEN  REFRESH1 "refresh DRAM
+   ELSE                                           IdleDRAM; "otherwise stay in idle
+
+STATE    DRAMR1:                              "DRAM read RAS goes active
+                                             
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+
+   IF ((MCS0 # MCS1) & !DTR)   THEN DRAMR2    "continue read cycle
+   ELSE                             IdleDRAM; "otherwise go back to idle
+
+STATE    DRAMR2:                              "Change mux from row to column
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+
+   IF ((MCS0 # MCS1) & !DTR)   THEN DRAMR3    "continue read cycle
+   ELSE                             IdleDRAM; "otherwise go back to idle
+
+STATE    DRAMR3:                              "CAS goes active
+
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+   
+   IF ALE                      THEN IdleDRAM  
+   ELSE IF ((MCS0 # MCS1) & !DTR)   THEN DRAMR4    "continue read cycle
+   ELSE                             IdleDRAM; "otherwise go back to idle
+
+STATE    DRAMR4:                              "hold RAS and CAS
+
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+  
+   IF  ALE                       THEN IdleDRAM     "next read starting
+   ELSE IF  ((MCS0 # MCS1) & (!DTR))   THEN DRAMR4  "stay here read cycle
+   ELSE                             IdleDRAM;  "otherwise go to idle
+   
+STATE    DRAMW1:                              "start write RAS active
+
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+   
+   IF ((MCS0 # MCS1) & DTR)   THEN DRAMW2     "continue read cycle
+   ELSE                             IdleDRAM; "otherwise go back to idle
+
+STATE    DRAMW2:
+
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+   
+   IF ((MCS0 # MCS1) & (DTR))   THEN DRAMW3     "continue read cycle
+   ELSE                             IdleDRAM; "otherwise go back to idle
+
+STATE    DRAMW3:
+
+   DSRDY = 1;                                  " SRDY always 'ready' in this state
+   
+   IF  ALE                       THEN IdleDRAM     "next write starting
+   ELSE IF  ((MCS0 # MCS1) & (DTR))   THEN DRAMW3  "stay here write cycle
+   ELSE                             IdleDRAM;  "otherwise go to idle
+   
+
+STATE    REFRESH1:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+
+    IF PCS4                THEN REFRESH2  "continue refresh cycle
+    ELSE                        IdleDRAM; "otherwise go back to idle
+
+STATE    REFRESH2:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+   
+   IF PCS4                THEN REFRESH3  "continue refresh cycle
+   ELSE                        IdleDRAM; "otherwise go back to idle
+
+STATE    REFRESH3:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+   
+   IF PCS4               THEN REFRESH4  "continue refresh cycle
+   ELSE                        IdleDRAM; "otherwise go back to idle
+	
+STATE    REFRESH4:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+   
+   IF PCS4               THEN REFRESH5  "continue refresh cycle
+   ELSE                        IdleDRAM; "otherwise go back to idle
+	
+STATE    REFRESH5:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+   
+   IF PCS4               THEN  REFRESH6  "continue refresh cycle
+   ELSE                        IdleDRAM; "otherwise go back to idle
+	
+STATE    REFRESH6:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+
+   IF PCS4               THEN  REFRESH7  "continue refresh cycle
+   ELSE                        IdleDRAM; "otherwise go back to idle
+	
+STATE    REFRESH7:
+
+   DSRDY = 0;                             " SRDY always 'ready' in this state
+   
+   GOTO                        IdleDRAM; "refresh cycle over
+	
+TEST_VECTORS
+" ([Clock, RESET, DTR, !MCS0, !MCS1, !PCS4, ALE] -> [MUXAB, !RAS, !CAS, !DRAMWE ,  St2  ,  St1  ,  St0  ])
+" 
+" [   0   ,  0  ,  0  ,  0  ,  0  ,  1,   0  ] -> [.X.  ,  .X.  ,  .X. ,  .X.  , .X.  ,  .X.  ,  .X. ];
+"                                    
+" [  .C.  ,  1  ,  0  ,  1  ,  1  ,  1,   0  ] -> [  0  ,  1  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ]; Reset
+" [  .C.  ,  1  ,  0  ,  1  ,  1  ,  1,   0  ] -> [  0  ,  1  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ]; Reset
+" [  .C.  ,  1  ,  0  ,  1  ,  1  ,  1,   0  ] -> [  0  ,  1  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ]; Reset
+"                                                                
+" [  .C.  ,  0  ,  1  ,  1  ,  1  ,  1,   1  ] -> [  0  ,  1  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ]; DRAM Read
+" [  .C.  ,  0  ,  0  ,  0  ,  1  ,  1,   0  ] -> [  0  ,  0  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  0  ,  0  ,  1  ,  1,   0  ] -> [  0  ,  0  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  0  ,  0  ,  1  ,  1,   0  ] -> [  1  ,  0  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  0  ,  0  ,  1  ,  1,   0  ] -> [  1  ,  0  ,  0  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  0  ,  0  ,  1  ,  1,   0  ] -> [  0  ,  0  ,  0  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  1  ,  1  ,  1  ,  1,   0  ] -> [  0  ,  1  ,  1  ,   1   ,  .X.  ,  .X.  ,  .X.  ];
+" 
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  1  ,   0  ] -> [  1   ,  1  ,   1  ,  1   ,  .X.  ,  .X.   ,  .X.  ]; DRAM Refresh
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  1  ,   1  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  1  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  0  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  0  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  1  ,   1  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  1  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  0  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  0  ,   0  ] -> [  1   ,  0  ,   0  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" [  .C.  ,  0   ,  1   ,  1   ,   1   ,  1  ,   0  ] -> [  1   ,  1  ,   1  ,  1   ,  .X.  ,  .X.   ,  .X.  ];
+" 
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  1  ] -> [  0  ,  1  ,  1  ,  1  ,  .X.  ,  .X.  ,  .X.  ]; DRAM Write
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  0  ] -> [  0  ,  1  ,  1  ,  1  ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  0  ] -> [  0  ,  0  ,  1  ,  1  ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  0  ] -> [  1  ,  0  ,  1  ,  0  ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  0  ] -> [  1  ,  0  ,  0  ,  0  ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  1  ,  0  ,  1  ,  1  ,  0  ] -> [  0  ,  1  ,  1  ,  1  ,  .X.  ,  .X.  ,  .X.  ];
+" [  .C.  ,  0  ,  0  ,  1  ,  1  ,  1  ,  0  ] -> [  0  ,  1  ,  1  ,  1  ,  .X.  ,  .X.  ,  .X.  ];
+
+
+"([Clock, RESET,  !MCS2, !RD, AB0 ] -> [ !OE2]) IDE test vectors
+"
+"[   0   ,  0   ,  0,   0 , 0  ] ->  [.X. ]; Odd read
+"
+"[   .C. ,  1   ,  1,   1  , 0 ] ->  [ 1 ]; Reset
+"[   .C. ,  1   ,  1,   1  , 0 ] ->  [ 1 ];
+"[   .C. ,  1   ,  1,   1  , 0 ] ->  [ 1 ];
+"
+"
+"[   .C. ,  0   ,  0,   1  , 1  ] ->  [ 1 ];
+"[   .C. ,  0   ,  0,   0  , 1  ] ->  [ 1 ];
+"[   .C. ,  0   ,  0,   0  , 1  ] ->  [ 0 ];
+"[   .C. ,  0   ,  0,   1  , 1  ] ->  [ 0 ];
+"[   .C. ,  0   ,  1,   1  , 1  ] ->  [ 1 ];
+"[   .C. ,  0   ,  1,   1  , 1  ] ->  [ 1 ];
+
+"([Clock, RESET, !MCS2, !RD, AB0, !WR] ->  [ !OE1, CLKBA2 ]) Even read
+"
+"[   0  ,   0  ,   0  ,  0 ,  0 ,  1 ] ->  [ .X. ,  .X.   ];
+"                                                      
+"[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ]; Reset
+"[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+"[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+"                                                   ;
+"[  .C. ,   0  ,   0  ,  1 ,  0 ,  1 ] ->  [   1 ,   1    ];
+"[  .C. ,   0  ,   0  ,  0 ,  0 ,  1 ] ->  [   0 ,   0    ];
+"[  .C. ,   0  ,   0  ,  0 ,  0 ,  1 ] ->  [   0 ,   0    ];
+"[  .C. ,   0  ,   0  ,  1 ,  0 ,  1 ] ->  [   1 ,   1    ];
+"[  .C. ,   0  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   1    ];
+
+
+([Clock, RESET, !MCS2, !RD, AB0, !WR] ->  [ !OE1, DIR1 ]) "write
+
+[   0  ,   0  ,   0  ,  0 ,  0 ,  1 ] ->  [ .X. ,  .X.   ];
+                                                      
+[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ]; "Reset
+[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+[  .C. ,   1  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+                                                   ;
+[  .C. ,   0  ,   0  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+[  .C. ,   0  ,   0  ,  1 ,  0 ,  0 ] ->  [   0 ,   1    ];
+[  .C. ,   0  ,   0  ,  1 ,  0 ,  0 ] ->  [   0 ,   1    ];
+[  .C. ,   0  ,   0  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+[  .C. ,   0  ,   1  ,  1 ,  0 ,  1 ] ->  [   1 ,   0    ];
+
+
+
+END  TimCPLD

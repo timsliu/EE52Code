@@ -1,4 +1,4 @@
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   1
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE KEYUPDAT
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
    49             #include  "mp3defs.h"
    50             #include  "keyproc.h"
    51             #include  "updatfnc.h"
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   2
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   2
 
 
    52             #include  "trakutil.h"
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
   106                Return Value:     (enum status) - the new status (same as current status).
   107             
   108                Input:            None.
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   3
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   3
 
 
   109                Output:           The new track information is output.
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
   163             
   164                Input:            None.
   165                Output:           The new track information is output.
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   4
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   4
 
 
   166             
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
   220                Output:           The new track time (the track length) is output.
   221             
   222                Error Handling:   None.
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   5
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   5
 
 
   223             
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
   277             
   278             */
   279             
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   6
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   6
 
 
   280             enum status  no_update(enum status cur_status)
@@ -312,7 +312,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
   288     1           return  cur_status;
   289     1       
   290     1       }
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   7
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   7
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -372,7 +372,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
              0044  8B4608          MOV     AX,[BP].cur_status
              0047  5D              POP     BP
              0048  5F              POP     DI
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   8
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   8
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -432,7 +432,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMA
              008E  55              PUSH    BP
              008F  8BEC            MOV     BP,SP
                            @8:
-iC-86  COMPILER   KEYUPDAT                                                                   05/05/;6 02:13:36  PAGE   9
+iC-86  COMPILER   KEYUPDAT                                                                   05/14/;6 14:05:01  PAGE   9
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

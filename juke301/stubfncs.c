@@ -62,7 +62,7 @@ unsigned char  update(unsigned short int far *p, int n)
     return  FALSE;
 }
 
-
+#if 0
 
 /* timing function */
 
@@ -75,7 +75,6 @@ int  elapsed_time()
 
 /* keypad functions */
 
-#if 0
 
 unsigned char  key_available()
 {

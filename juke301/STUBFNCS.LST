@@ -1,4 +1,4 @@
-iC-86  COMPILER   STUBFNCS                                                                   05/05/;6 02:13:36  PAGE   1
+iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE STUBFNCS
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMA
    49             /* library include files */
    50               /* none */
    51             
-iC-86  COMPILER   STUBFNCS                                                                   05/05/;6 02:13:36  PAGE   2
+iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   2
 
 
    52             /* local include files */
@@ -74,35 +74,22 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMA
    62     1           return  FALSE;
    63     1       }
    64             
-   65             
-   66             
-   67             /* timing function */
-   68             
-   69             int  elapsed_time()
-   70             {
-   71     1           return  0;
-   72     1       }
-   73             
-   74             
-   75             
-   76             /* keypad functions */
-   77             
-   78             #if 0
+   65             #if 0
                   #endif
-  124             
-  125             /* audio functions */
-  126             
-  127             void  audio_play(unsigned short int far *p, int n)
-  128             {
-  129     1           return;
-  130     1       }
-  131             
-  132             void  audio_halt()
-  133             {
-  134     1           return;
-  135     1       }
-  136             
-iC-86  COMPILER   STUBFNCS                                                                   05/05/;6 02:13:36  PAGE   3
+  123             
+  124             /* audio functions */
+  125             
+  126             void  audio_play(unsigned short int far *p, int n)
+  127             {
+  128     1           return;
+  129     1       }
+  130             
+  131             void  audio_halt()
+  132             {
+  133     1           return;
+  134     1       }
+  135             
+iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   3
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -121,59 +108,40 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMA
              000A  C3              RET
                                                    ; STATEMENT # 63
                            update      ENDP
-                                                   ; STATEMENT # 70
-                           elapsed_time      PROC NEAR
+                                                   ; STATEMENT # 127
+                           audio_play      PROC NEAR
              000C  56              PUSH    SI
              000D  57              PUSH    DI
              000E  55              PUSH    BP
              000F  8BEC            MOV     BP,SP
                            @2:
-                                                   ; STATEMENT # 71
-             0011  31C0            XOR     AX,AX
-             0013  5D              POP     BP
-             0014  5F              POP     DI
-             0015  5E              POP     SI
-             0016  C3              RET
-                                                   ; STATEMENT # 72
-                           elapsed_time      ENDP
                                                    ; STATEMENT # 128
-                           audio_play      PROC NEAR
-             0018  56              PUSH    SI
-             0019  57              PUSH    DI
-             001A  55              PUSH    BP
-             001B  8BEC            MOV     BP,SP
-                           @3:
+             0011  5D              POP     BP
+             0012  5F              POP     DI
+             0013  5E              POP     SI
+             0014  C3              RET
                                                    ; STATEMENT # 129
-             001D  5D              POP     BP
-             001E  5F              POP     DI
-             001F  5E              POP     SI
-             0020  C3              RET
-                                                   ; STATEMENT # 130
                            audio_play      ENDP
-                                                   ; STATEMENT # 133
+                                                   ; STATEMENT # 132
                            audio_halt      PROC NEAR
-             0022  56              PUSH    SI
-             0023  57              PUSH    DI
-             0024  55              PUSH    BP
-             0025  8BEC            MOV     BP,SP
-                           @4:
+             0016  56              PUSH    SI
+             0017  57              PUSH    DI
+             0018  55              PUSH    BP
+             0019  8BEC            MOV     BP,SP
+                           @3:
+                                                   ; STATEMENT # 133
+             001B  5D              POP     BP
+             001C  5F              POP     DI
+             001D  5E              POP     SI
+             001E  C3              RET
                                                    ; STATEMENT # 134
-             0027  5D              POP     BP
-             0028  5F              POP     DI
-             0029  5E              POP     SI
-             002A  C3              RET
-iC-86  COMPILER   STUBFNCS                                                                   05/05/;6 02:13:36  PAGE   4
-                  ASSEMBLY LISTING OF OBJECT CODE
-
-
-                                                   ; STATEMENT # 135
                            audio_halt      ENDP
 
 
 
 MODULE INFORMATION:
 
-     CODE AREA SIZE               = 002BH     43D
+     CODE AREA SIZE               = 001FH     31D
      CONSTANT AREA SIZE           = 0000H      0D
      DATA AREA SIZE               = 0000H      0D
      MAXIMUM STACK SIZE           = 0008H      8D

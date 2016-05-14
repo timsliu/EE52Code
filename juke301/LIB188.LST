@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE LIB188
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                             48     ; Description:       This function computes the absolute value of the passed
                             49     ;                    integer.
                             50     ;
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103     
                            104     
                            105     
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
 000F 8BEC                  158             MOV     BP, SP
 0011 56                    159             PUSH    SI                      ;can't trash SI
                            160             ;JMP    findEnd                 ;find end of destination
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;                    [SP + 6] (char far *) - pointer to source string (string
                            214     ;                                            to copy from).
                            215     ; Return Value:      DX | AX - pointer to the passed destination string.
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     
                            269     
 0062                       270     strcpyEnd:                              ;done copying strings
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
 006B B80000                323             MOV     AX, 0                   ;length is 0 so far
                            324     
 006E                       325     strlenLoop:                             ;loop until find end of the string
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     ; Stack Depth:       2 words
                            379     ;
                            380     ; Author:            Glen George
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
                            433     
                            434     
 ----                       435     CODE    ENDS
-8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   02:13:37  05/05/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    LIB188                                                   14:05:03  05/14/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE

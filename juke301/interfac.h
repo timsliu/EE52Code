@@ -39,7 +39,7 @@
 
 
 
-#define  DRAM_STARTSEG   0x4000
+#define  DRAM_STARTSEG   0x8000
 
 #define  KEY_TRACKUP     0
 #define  KEY_TRACKDOWN   1

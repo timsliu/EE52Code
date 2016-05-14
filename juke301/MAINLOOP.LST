@@ -1,4 +1,4 @@
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   1
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE MAINLOOP
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
    49             #include  "mp3defs.h"
    50             #include  "keyproc.h"
    51             #include  "updatfnc.h"
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   2
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   2
 
 
    52             #include  "trakutil.h"
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   106     1           static const unsigned int  xlat_stat[] =
   107     1               {  STATUS_IDLE,      /* system idle */
   108     1                  STATUS_PLAY,      /* playing (or repeat playing) a track */
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   3
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   3
 
 
   109     1                  STATUS_FASTFWD,   /* fast forwarding a track */
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   162     2               /* handle updates */
   163     2               cur_status = update_fnc[cur_status](cur_status);
   164     2       
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   4
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   4
 
 
   165     2       
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   219             
   220             */
   221             
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   5
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   5
 
 
   222             static  enum keycode  key_lookup()
@@ -286,7 +286,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
   264     1           return  keycodes[i];
   265     1       
   266     1       }
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   6
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   6
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -346,7 +346,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
                                                    ; STATEMENT # 163
              00C5  8B5EFC          MOV     BX,[BP].cur_status
              00C8  53              PUSH    BX      ; 1
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   7
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   7
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -406,7 +406,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE MAINLOOP.C DEBUG MOD186 EXTEND CODE SMA
              0122  E80000          CALL    getkey
              0125  8946FE          MOV     [BP].key,AX
                                                    ; STATEMENT # 260
-iC-86  COMPILER   MAINLOOP                                                                   05/05/;6 02:13:36  PAGE   8
+iC-86  COMPILER   MAINLOOP                                                                   05/14/;6 14:05:02  PAGE   8
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

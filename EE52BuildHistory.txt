@@ -124,3 +124,9 @@ Inserted U19, U20, U21 and DRAM into sockets
 5/10/16
 Soldered some pins on the mux sockets that weren’t soldered, which was
 leading to some issues. DRAM appears to be working.
+
+5/13/16
+U6 transceiver - everything still working
+R13, R18, R42, R47
+R19, R43, R44, R53
+R1, R40, R52, R54
