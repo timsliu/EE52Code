@@ -30,6 +30,7 @@
 ;    5/17/16   Tim Liu    CheckIDEPhysical uses DH DL instead of AH/AL
 ;    5/17/16   Tim Liu    Rewrote Get_blocks to use a loop
 ;    5/17/16   Tim Liu    Wrote SetupDMA function
+;    5/17/16   Tim Liu    Updated comments
 ;    
 
 
@@ -205,7 +206,7 @@ CalculatePhysical    ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     ES
+;Registers Used:     None
 ;
 ;Known Bugs:         None
 ;
@@ -229,7 +230,7 @@ CheckIDEBusyAddress:                    ;set up address of status register
 
 CheckIDEBusyLoop:                       ;loop reading the status register
     MOV  BL, ES:[SI]                    ;read the status register
-    AND  BL, DH                         ;bit mask passed in AH
+    AND  BL, DH                         ;bit mask passed in DH
     CMP  BL, DL                         ;check if the register is ready
     JE   CheckIDEBusyDone               ;IDE ready - done
     JMP  CheckIDEBusyLoop               ;otherwise keep looping until ready
@@ -291,8 +292,8 @@ SetupDMAStart:                                ;save registers
 SetupDMAWrite:                                ;write to DMA control registers
     MOV   AX, SS                              ;copy stack segment to ES
     MOV   ES, AX
-    MOV   SI, BP                              ;pointer to destination address
-    ADD   SI, DestPointer
+    MOV   SI, BP                              ;copy base pointer
+    ADD   SI, DestPointer                     ;calculate address of destination ptr
     CALL  CalculatePhysical                   ;physical address returned in CX, BX
 
     MOV   DX, D0DSTH                          ;address of high destination pointer
@@ -339,25 +340,25 @@ SetupDMA        ENDP
 ;                    location. The function returns the number of blocks
 ;                    actually read.
 ; 
-;Operation:          The function first uses BP to index into the stacks
-;                    and retrieve the arguments. The function loops through
-;                    the top of the stack and copies the arguments to the
-;                    array GetBlockArgs. The function then writes to the 
-;                    command block registers. The function writes the 
-;                    number of sectors to transfer, the LBA address, and 
-;                    specifies to use LBA addressing. The function looks
-;                    up the addresses to write the commands to
-;                    in IDEAddressTable. The function then loops checking 
-;                    the ready to transfer data flag of IDEStatusReg.
-;                    Once the flag is clear, the function writes to the
-;                    command register IDEDMA to initiate DMA. The
-;                    function writes the destination pointer address passed
-;                    as the third argument to DxDSTH and DxDSTL. The function
-;                    writes IDEStartAddress to DxSRCL. To initiate the
-;                    DMA, the procedure writes DxConVal to DxCon. The
-;                    function (???) somehow returns the number of blocks 
-;                    read in AX and restores the registers
-;                    
+;Operation:          The function first saves the registers to the stack.
+;                    The function then uses BP to index into the stack and
+;                    copy the number of sectors to read to SectorsRemaining
+;                    and sets SectorsRead to 0. The function then loops through
+;                    IDERegTable and writes to the IDE registers. The function
+;                    calls CheckIDEBusy to check that the appropriate 
+;                    status flags are set before writing to the IDE register.
+;                    The function indexes into the stack and copies the 
+;                    IDE register values to write into the stack or it
+;                    writes a constant value to the IDE register, depending on
+;                    register. After writing to the IDE registers, the function
+;                    calls SetupDMA to set up the DMA control registers, except
+;                    for D0Con. The function checks that the IDE is ready to
+;                    transfer data and then writes to D0Con to initiate the
+;                    DMA transfer. After the transfer is complete, the function 
+;                    increments SectorsRead and recalculates the DMA
+;                    destination pointer and the LBA. The function loops
+;                    repeatedly until all sectors have been read. The function
+;                    returns with the number of sectors read in AX.                 
 ;
 ;Arguments:          StartBlock(unsigned long int) - starting logical block
 ;                    to read from
@@ -370,9 +371,10 @@ SetupDMA        ENDP
 ;
 ;Return Values:      AX - number of blocks actually read
 ;
-;Local Variables:    CX - number of sectors left to read
+;Local Variables:    None
 ;
-;Shared Variables:   None
+;Shared Variables:   SectorsRemaining (R/W) - number of sectors left to read
+;                    SectorsRead(R/W) - sectors the function has read
 ;
 ;Output:             None
 ;
@@ -388,45 +390,7 @@ SetupDMA        ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/12/16
-;
-;Outline
-;Get_Blocks(StartBlock, NumBlocks, Destination)
-;    Save BP                           ;set up indexing into stack to pull arg
-;    BP = SP
-;    Save other registers
-;    While NumBlocks > 0                   ;loop writing each block
-;       Add32Bit(BP+4, BP+6)               ;function to recalculate the LBA
-;                                          ;after incrementing the sector
-;                                          ;add 256 to low and add carry bit
-;       Add32Bit(BP+10, BP+12)             ;recalculate destination pointer
-;
-;       CheckBusyFlag(LBA)                 ;write to LBA addresses
-;       LBA7:0 = BP + 4
-;       CheckBusyFlag(LBA)
-;       LBA15:8 = BP + 5
-;       CheckBusyFlag(LBA)
-;       LBA23:16 = BP + 6
-;
-;       AL = BP + 7                           ;access LBA 24:31
-;       AL = BitMask(AL)                      ;apply bit mask
-;       CheckBusyFlag(DeviceLBA)
-;       DeviceLBA = AL                        ;write to DeviceLBA register
-;
-;       CheckBusyFlag(Command)                ;
-;       Write READ SECTOR Command             ;execute DMA
-;
-;       CalculatePhysical()                   ;calculate the physical address
-;                                             ;from the segment and offset
-;       DxDSTH = CP1                          ;write the destination addresses
-;       DxDSTL = CP2
-;       DxSRCH = DxSRCHVal                    ;always the same value
-;       DxSRCL = DxSRCLVal                    ;start address of MCS2
-;       CheckBusyFlag(Ready to Transfer)      ;check ready for data transfer
-;       DxCON = DxCONVal                      ;write to DxCON and start DMA
-           
-    
-    
+;Last Modified       5/17/16   
 
 Get_Blocks        PROC    NEAR
                   PUBLIC  Get_Blocks

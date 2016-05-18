@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     21:23:14  05/17/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     00:15:10  05/18/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE SKEL
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ; Addresses
   FFA4                =1    49     PACSreg         EQU     0FFA4H          ;address of PACS register
   FFA8                =1    50     MPCSreg         EQU     0FFA8H          ;address of MPCS register
-8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     21:23:14  05/17/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     00:15:10  05/18/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103     ; setup code and data groups
                            104     CGROUP  GROUP   CODE
                            105     DGROUP  GROUP   DATA, STACK
-8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     21:23:14  05/17/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     00:15:10  05/18/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     
                            159     
 0000 (80                   160             DB      80 DUP ('Stack   ')             ;320 words
-8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     21:23:14  05/17/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    SKEL                                                     00:15:10  05/18/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
