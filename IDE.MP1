@@ -4,7 +4,7 @@ DOS 5.0 (038-N) 8086 LINKER, V2.7
 INPUT FILES: SKEL.OBJ, INITREG.OBJ, IDE.OBJ
 OUTPUT FILE: IDE.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  05/14/;6  TIME:  15:18:10
+DATE:  05/17/;6  TIME:  00:52:30
 
 
 LINK MAP OF MODULE SKEL
@@ -12,8 +12,8 @@ LINK MAP OF MODULE SKEL
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 007DH ------    G    CODE            CODE                          
- 0000H ------    W    DATA            DATA                          
+ 0171H ------    G    CODE            CODE                          
+ 0002H ------    G    DATA            DATA                          
  0280H ------    W    STACK           STACK                         
 
 INPUT MODULES INCLUDED:

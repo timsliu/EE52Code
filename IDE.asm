@@ -25,6 +25,9 @@
 ;    5/13/16   Tim Liu    Wrote outline for CalculatePhysical
 ;    5/13/16   Tim Liu    Wrote CalculatePhysical
 ;    5/14/16   Tim Liu    Fixed bugs in Add32Bit and Calculate Physical
+;    5/16/16   Tim Liu    Wrote Get_blocks without error checking
+;    5/17/16   Tim Liu    CheckIDEPhysical uses DH DL instead of AH/AL
+;    
 
 
 ; local include files
@@ -32,11 +35,12 @@ $INCLUDE(IDE.INC)
 $INCLUDE(GENERAL.INC)
 
 CGROUP    GROUP    CODE
+DGROUP    GROUP    DATA
 
 
 CODE SEGMENT PUBLIC 'CODE'
 
-        ASSUME  CS:CGROUP 
+        ASSUME  CS:CGROUP, DS:DGROUP 
 
 ;external function declarations
 
@@ -175,13 +179,16 @@ CalculatePhysical    ENDP
 ; 
 ;Operation:          The function loads the segment of the IDE status register
 ;                    into ES and the offset into SI. The function then
-;                    reads the IDE status register and compares the value
-;                    to IDEReady. If the value is the same, then the
+;                    reads the IDE status register and masks the bits with
+;                    IDEBitMask which is passed through DH. The function
+;                    then compares the result to ReadyMask passed in DL.
+;                    If the value is the same, then the
 ;                    function returns and restores the registers. If the
 ;                    IDE status register is not ready, then the function
 ;                    loops repeatedly until the IDE is ready.
 ;
-;Arguments:          None
+;Arguments:          ReadyMask (DL)  - bit pattern indicating ready
+;                    IDEBitMask (DH) - bit mask ANDed with the status register
 ;
 ;Return Values:      None
 ;
@@ -203,29 +210,31 @@ CalculatePhysical    ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/13/16
+;Last Modified       5/17/16
 
 CheckIDEBusy    PROC    NEAR
 
 CheckIDEBusyStart:                      ;starting label
+    PUSH ES
     PUSH SI                             ;save registers
-    PUSH AX
+    PUSH BX
 
 CheckIDEBusyAddress:                    ;set up address of status register
-    MOV  AX, IDEStatusSeg
-    MOV  ES, AX                         ;segment of the IDE Status register
+    MOV  BX, IDESegment
+    MOV  ES, BX                         ;segment of the IDE Status register
     MOV  SI, IDEStatusOffset            ;offset of the IDE status register
 
 CheckIDEBusyLoop:                       ;loop reading the status register
-    MOV  AL, ES:[SI]                    ;read the status register
-    AND  AL, IDEStatusMask              ;only interested in some bits
-    CMP  AL, IDEReady                   ;check if the register is ready
+    MOV  BL, ES:[SI]                    ;read the status register
+    AND  BL, DH                         ;bit mask passed in AH
+    CMP  BL, DL                         ;check if the register is ready
     JE   CheckIDEBusyDone               ;IDE ready - done
     JMP  CheckIDEBusyLoop               ;otherwise keep looping until ready
 
 CheckIDEBusyDone:
-    POP   AX
+    POP   BX
     POP   SI
+    POP   ES
     RET
 
 
@@ -275,7 +284,7 @@ CheckIDEBusy    ENDP
 ;
 ;Return Values:      AX - number of blocks actually read
 ;
-;Local Variables:    None
+;Local Variables:    CX - number of sectors left to read
 ;
 ;Shared Variables:   None
 ;
@@ -306,19 +315,19 @@ CheckIDEBusy    ENDP
 ;                                          ;add 256 to low and add carry bit
 ;       Add32Bit(BP+10, BP+12)             ;recalculate destination pointer
 ;
-;       CheckBusyFlag()                      ;write to LBA addresses
+;       CheckBusyFlag(LBA)                 ;write to LBA addresses
 ;       LBA7:0 = BP + 4
-;       CheckBusyFlag()
+;       CheckBusyFlag(LBA)
 ;       LBA15:8 = BP + 5
-;       CheckBusyFlag()
+;       CheckBusyFlag(LBA)
 ;       LBA23:16 = BP + 6
 ;
 ;       AL = BP + 7                           ;access LBA 24:31
 ;       AL = BitMask(AL)                      ;apply bit mask
-;       CheckBusyFlag()
+;       CheckBusyFlag(DeviceLBA)
 ;       DeviceLBA = AL                        ;write to DeviceLBA register
 ;
-;       CheckBusyFlag()                       ;
+;       CheckBusyFlag(Command)                ;
 ;       Write READ SECTOR Command             ;execute DMA
 ;
 ;       CalculatePhysical()                   ;calculate the physical address
@@ -327,6 +336,7 @@ CheckIDEBusy    ENDP
 ;       DxDSTL = CP2
 ;       DxSRCH = DxSRCHVal                    ;always the same value
 ;       DxSRCL = DxSRCLVal                    ;start address of MCS2
+;       CheckBusyFlag(Ready to Transfer)      ;check ready for data transfer
 ;       DxCON = DxCONVal                      ;write to DxCON and start DMA
            
     
@@ -335,13 +345,177 @@ CheckIDEBusy    ENDP
 Get_Blocks        PROC    NEAR
                   PUBLIC  Get_Blocks
 
-Get_BlocksStart:                               ;starting label
-    RET
+GetBlocksStart:                               ;starting label
+    PUSH    BP                                ;save base pointer
+    MOV     SP, BP                            ;use BP to index into stack
+    PUSH    AX                                ;save registers
+    PUSH    BX
+    PUSH    CX
+    PUSH    DX
 
+GetBlocksLoadRemaining:                       ;load number of sectors remaining
+    MOV    CX, SS:[BP+8]                      ;total sectors to read
+    MOV    SectorsLeft, CX                    ;write sectors to read in data seg
+
+GetBlocksCheckLeft:
+    CMP    SectorsLeft, 0                     ;check if no sectors left
+    JE     GetBlocksWriteRegs                 ;finished - go to end
+
+GetBlocksWriteRegs:                           ;set up LBA address
+    MOV    AX, IDESegment
+    MOV    ES, AX                             ;segment of IDE register
+    MOV    AX, 0                              ;number of registers written to
+
+GetBlocksIDELoop:                             ;loop writing instructions to IDE
+    CMP    AX, NumIDERegisters                ;number of IDE registers to write to
+    JE     GetBlocksReadSector                ;done writing - send read sector com.
+    IMUL   BX, AX, SIZE IDERegEntry           ;calculate table offset
+
+GetBlocksPrepReg:                             ;prepare to a register
+    MOV    DH, CS:IDERegTable[BX].FlagMask    ;look up bit mask
+    MOV    DL, CS:IDERegTable[BX].IDEReady    ;value indicating IDE is ready
+    CALL   CheckIDEBusy
+    MOV    SI, CS:IDERegTable[BX].RegOffset   ;offset of IDE register
+    CMP    CS:IDERegTable[BX].BPIndex, NoStackArg    ;check if reg value is stack arg
+    JE     GetBlocksConstant                  ;go to label to prepare constant command
+    ;JMP    GetBlocksStackArg                  ;otherwise it’s a stack argument
+
+GetBlocksStackArg:                            ;argument is on the stack
+    MOV    AX, BP                             ;save base pointer
+    ADD    BP, CS:IDERegTable[BX].BPIndex     ;change base pointer to point to address
+    MOV    DL, SS:[BP]                        ;load the argument
+    OR     DL, CS:IDERegTable[BX].ArgMask     ;apply mask
+    MOV    BP, AX                             ;restore base pointer
+    JMP    GetBlocksOutput                    ;go write to the register
+
+GetBlocksConstant
+    MOV    DL, CS:IDERegTable[BX].ConstComm   ;write the constant command
+
+GetBlocksOutput:
+    MOV    ES:[SI], DL                        ;output to the IDE register - value in DL
+    INC    AX                                 ;one more command written
+    JMP    GetBlocksIDELoop                   ;back to top of loop for writing to regs
+
+    
+
+    MOV    AH, IDESCRdyMask                   ;load arguments to check sector
+    MOV    AL, IDESCRdy                       ;count ready
+    CALL   CheckIDEBusy                       ;proc returns when IDE is ready
+    MOV    SI, IDESCOffset                    ;sector count register offset
+    MOV    ES:[SI], SecPerTran                ;sectors to write per transfer
+
+    MOV    AH, IDELBARdyMask                  ;load arguments to check if IDE
+    MOV    AL, IDELBARdy                      ;is ready to be read
+    CALL   CheckIDEBusy                       ;don’t return until IDE is ready
+    MOV    SI, IDELBA70Offset                 ;LBA(0:7) register offset
+    MOV    DL, SS:[BP+4]                      ;copy LBA(0:7) value to register
+    MOV    ES:[SI], DL                        ;write LBA(0:7) to IDE register
+
+    MOV    AH, IDELBARdyMask                  ;load arguments to check if IDE
+    MOV    AL, IDELBARdy                      ;is ready to be read
+    CALL   CheckIDEBusy                       ;don’t return until IDE is ready
+    MOV    SI, IDELBA158Offset                ;LBA(8:15) register offset
+    MOV    DL, SS:[BP+5]                      ;copy LBA(8:15) value to register
+    MOV    ES:[SI], DL                        ;write LBA(8:15) to IDE register
+
+    MOV    AH, IDELBARdyMask                  ;load arguments to check if IDE
+    MOV    AL, IDELBARdy                      ;is ready to be read
+    CALL   CheckIDEBusy                       ;don’t return until IDE is ready
+    MOV    SI, IDELBA2316Offset               ;LBA(16:23) register offset
+    MOV    DL, SS:[BP+6]                      ;copy LBA(16:23) value to register
+    MOV    ES:[SI], DL                        ;write LBA(16:23) to IDE register
+
+    MOV    AH, IDEDeviceLBARdyMask            ;load arguments to check if IDE
+    MOV    AL, IDEDeviceLBARdy                ;is ready to be read
+    CALL   CheckIDEBusy                       ;don’t return until IDE is ready
+    MOV    SI, IDELBADOffset                  ;Device/LBA register offset
+    MOV    DL, SS:[BP+7]                      ;copy LBA(24:31) value to register
+    OR     DL, IDEDLBAMask                    ;apply mask to indicate LBA addressing
+    MOV    ES:[SI], DL                        ;write LBA(16:23) to IDE register
+
+GetBlocksReadSector:                          ;write IDE “read sector” command
+    MOV   AH, IDEComRdyMask                   ;load arguments to check that
+    MOV   AL, IDECommandRdy                   ;IDE can accept commands
+    CALL  CheckIDEBusy                        ;check if IDE is busy
+    MOV   ES, IDESegment                      ;load segment of IDE Command
+    MOV   SI, IDECommandOffset                ;IDE Command register offset
+    MOV   ES:[SI], IDEReadSector              ;send “read sector” command
+
+GetBlocksPrepareDMA:                          ;set up DMA control registers
+    MOV   AX, SS                              ;copy stack segment to ES
+    MOV   ES, AX
+    MOV   SI, BP+10                           ;pointer to destination address
+    CALL  CalculatePhysical                   ;physical address returned in CX, BX
+
+    MOV   DX, D0DSTH                          ;address of high destination pointer
+    MOV   AX, CX                              ;copy high 4 bits of physical address
+    OUT   AX, DX                              ;write to peripheral control block
+
+    MOV   DX, D0DSTL                          ;address of low destination pointer
+    MOV   AX, BX                              ;copy low 16 bits of physical address
+    OUT   AX, DX                              ;write to peripheral control block
+
+    MOV   DX, D0SRCH                          ;address of high source pointer
+    MOV   AX, DxSRCHVal                       ;high 16 bits of source phy address
+    OUT   AX, DX                              ;write the high source pointer
+    
+    MOV   DX, D0SRCL                          ;address of low source pointer
+    MOV   AX, DxSRCLVal                       ;low 16 bits of source phy address
+    OUT   AX, DX                              ;write the low source pointer
+
+    MOV   DX, D0TC                            ;address of DMA transfer count
+    MOV   AX, NumTransfers                    ;value to write to transfer count
+    OUT   AX, DX                              ;write to transfer count register
+
+GetBlocksCheckTransfer:                       ;check if IDE is ready to transfer data
+    MOV   AH, IDETransferMask                 ;mask out unimportant status bits
+    MOV   AL, IDETransfer                     ;value to compare to
+    CALL  CheckIDEBusy                        ;check if IDE ready
+
+GetBlocksDMA:
+    MOV   DX, DxCon                           ;address of DxCon register
+    MOV   AX, DxConVal                        ;value to write to DxCon
+    OUT   AX, DX                              ;write to DMA to initiate transfer
+
+GetBlocksRecalculate:
+    MOV   AX, SS                              ;copy stack segment to extra segment
+    MOV   ES, AX
+    MOV   SI, BP+4                            ;pointer to LBA start block
+    MOV   AX, NumTransfers                    ;amount to increment address by
+    CALL  Add32Bit                            ;recalculate the LBA start block
+    
+    MOV   SI, BP+10                           ;pointer to destination pointer
+    CALL  Add32Bit                            ;recalculate destination pointer
+    DEC   SectorsLeft                         ;one fewer sector to read
+    JMP   GetBlocksCheckLeft                  ;jump to top of loop
+  
+GetBlocksDone:
+    POP    DX
+    POP    CX
+    POP    BX
+    POP    AX
+    POP    BP
+    RET
 
 Get_Blocks      ENDP
 
+IDERegTable        LABEL    IDERegEntry
+
+    IDERegEntry<SCRdyMask   , SCRdy   , SCOffset     , NoStackArg, SecPerTran   , BlankMask> ;sector count register
+    IDERegEntry<LBARdyMask  , LBARdy  , LBA70Offset  , LBA07     , NoConstant   , BlankMask> ;LBA (0:7) register
+    IDERegEntry<LBARdyMask  , LBARdy  , LBA1580Offset, LBA815    , NoConstant   , BlankMask> ;LBA (8:15) register
+    IDERegEntry<LBARdyMask  , LBARdy  , LBA2316Offset, LBA2316   , NoConstant   , BlankMask> ;LBA (16:23) register
+    IDERegEntry<DeLBARdyMask, DeLBARdy, DeLBAOffset  , DeLBA     , NoConstant   , DeLBAMask> ;Device LBA register
+    IDERegEntry<ComRdyMask  , ComRdy  , ComOffset    , NoStackArg, ReadSector   , BlankMask> ;IDE Command register
+
 
 CODE ENDS
+
+DATA    SEGMENT PUBLIC  'DATA'
+
+SectorsLeft        DW    ?     ;how many more sectors left to read
+
+
+DATA ENDS
 
         END
