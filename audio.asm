@@ -27,6 +27,8 @@
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
+$INCLUDE(MIRQ.INC)
+$INCLUDE(GENERAL.INC)
 
 CGROUP    GROUP    CODE
 DGROUP    GROUP    DATA
@@ -127,8 +129,15 @@ AudioEH        ENDP
 
 
 
-;####### AudioOutput CODE ###########
+AudioOutput        PROC    NEAR
+                   PUBLIC  AudioOutput
 
+AudioOutputStart:
+
+AudioOutputDone:                             ;stub function for now 
+     RET
+
+AudioOutput    ENDP
 
 
 ;Name:               Audio_Play(unsigned short int far *, int)
@@ -182,9 +191,12 @@ AudioEH        ENDP
 
 ;Name:               Audio_Halt
 ;
-;Description:        None
+;Description:        This function terminates the output of audio data. The 
+;                    function does not return any value.
 ; 
-;Operation:          None
+;Operation:          The function writes the value ICON0OFF to ICON0ADDRESS.
+;                    This disables interrupts from INT0 and disables MP3
+;                    audio data request interrupts. The function the returns.
 ;
 ;Arguments:          None
 ;
@@ -208,24 +220,60 @@ AudioEH        ENDP
 ;
 ;Author:             Timothy Liu
 
+Audio_Halt        PROC    NEAR
+                  PUBLIC  Audio_Halt
+
+AudioHaltStart:                        ;starting label - save registers
+    PUSH    AX
+    PUSH    DX
+
+AudioHaltWrite:                        ;turn off data request interrupts
+    MOV    DX, ICON0Address            ;address of INT0 control register
+    MOV    AX, ICON0OFF                ;value to turn off data request IRQ
+    OUT    DX, AX                      ;shut off interrupts
+
+AudioHaltDone:                         ;done - restore labels and return
+    POP    DX
+    POP    AX
+    RET
 
 
-;####### AUDIO_HALT ##########
-
+Audio_Halt    ENDP
 
 ;Name:               Update
 ;
-;Description:        None
+;Description:        This function stores the address of a fresh audio buffer
+;                    if the secondary audio buffer is empty. The function
+;                    returns TRUE if the passed buffer was stored and a new
+;                    buffer with more audio data is needed. The function
+;                    returns FALSE if more audio data is not needed. The
+;                    function is passed the address of the new buffer, and the
+;                    length of the new buffer. If the new audio buffer is
+;                    stored, then the length of the new audio buffer is 
+;                    stored in NextBufferLeft.
 ; 
-;Operation:          None
+;Operation:          The function copies SP to BP and uses the base pointer
+;                    to index into the stack. The checks the flag NeedData
+;                    to see if more data is needed. If more data is needed, 
+;                    then the function copies the first argument (the address
+;                    of the new buffer) into NextBuffer and the second argument
+;                    (the length of the new buffer in bytes) into 
+;                    NextBufferLeft. The function resets the NeedData flag
+;                    to FALSE, indicating that there is data in both buffers.
+;                    If the passed pointer is used, then the function returns
+;                    FALSE. If more data is not needed, then the function
+;                    does nothing but return FALSE.
 ;
-;Arguments:          None
+;Arguments:          unsigned short int far* - address of new audio buffer
+;                    int - length of the new buffer in words
 ;
-;Return Values:      None
+;Return Values:      TRUE if more data was needed; FALSE otherwise
 ;
 ;Local Variables:    None
 ;
-;Shared Variables:   None
+;Shared Variables:   NextBuffer(W) - pointer to second data buffer
+;                    NextBufferLen(W) - length of the passed data buffer
+;                    NeedData(R/W) - indicates if more data is needed
 ;
 ;Output:             None
 ;
@@ -251,8 +299,12 @@ CODE ENDS
 
 DATA    SEGMENT    PUBLIC  'DATA'
 
-CurrentBuffer    DW FAR_SIZE DUP (?)     ;buffer holds current buffer address
-CurBuffLeft      DW      ?               ;words left in current buffer
+CurrentBuffer    DW FAR_SIZE DUP (?)     ;32 bit address of current audio buffer
+NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
+CurBuffLeft      DW               ?      ;words left in current buffer
+NextBufferLeft   DW               ?      ;words left in next buffer
+NeedData         DB               ?      ;flag set when CurrentBuffer is empty
+                                         ;and more data is needed
 
 DATA ENDS
 

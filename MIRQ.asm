@@ -215,6 +215,8 @@ InstallDreqHandler    PROC    NEAR
 
     RET
 
+InstallDreqHandler    ENDP
+
 
 ; InstallTimer0Handler
 ;
