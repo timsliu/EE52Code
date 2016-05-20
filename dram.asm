@@ -19,8 +19,6 @@
 ;    5/6/16    Tim Liu    initial revision
 ;
 ;
-
-
 ; local include files
 $INCLUDE(DRAM.INC)
 

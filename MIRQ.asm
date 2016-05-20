@@ -18,7 +18,6 @@
 ;    ClrIRQVectors          -clear the interrupt vector table
 ;    IllegalEventHandler    -takes care of illegal events
 ;    InstallDreqHandler     -installs VS1011 data request IRQ handler
-;    InstallDemandHandler   -installs CON_MP3 data demand IRQ handler
 ;    InstallTimer0Handler   -installs the timer0 handler
 ;    InstallTimer1Handler   -installs the timer1 handler
 
@@ -27,6 +26,7 @@
 ;    4/4/16     Tim Liu    initial revision
 ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
 ;    5/7/16     Tim Liu    wrote InstallTimer1Handler
+;    5/19/16    Tim Liu    wrote InstallDreqHandler
 
 $INCLUDE(MIRQ.INC)
 $INCLUDE(GENERAL.INC)
@@ -39,7 +39,7 @@ CODE SEGMENT PUBLIC 'CODE'
 
 ; external function declarations
 
-    ;EXTRN    DreqEH             ;VS1011 data request IRQ handler
+    EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
     ;EXTRN    DemandEH           ;CON_MP3 data demand handler
     EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
     EXTRN    DRAMRefreshEH:NEAR  ;access PCS4 to refresh DRAM
@@ -168,14 +168,12 @@ IllegalEventHandler     ENDP
 ;
 ; Description:       This function installs the event handler for the data
 ;                    request interrupt from the VS1011 MP3 decoder. The
-;                    function also writes to the ICON0 register to turn
-;                    on INT0 interrupts.
+;                    function does not write to the interrupt controller.
+;                    The interrupt controller is turned on and off by
+;                    the function audio_play
 ;
 ; Operation:         Writes the address of the data request event handler
-;                    to the address of the INT0 interrupt vector. Write
-;                    ICON0Value to ICON0Address to turn on INT0 interrupts.
-;                    The function then sends an INT0EOI to clear out the 
-;                    interrupt controller.
+;                    (AudioEH) to the address of the INT0 interrupt vector. 
 ;
 ; Arguments:         None.
 ;
@@ -195,68 +193,28 @@ IllegalEventHandler     ENDP
 ;
 ;
 ; Author:            Timothy Liu
-; Last Modified:     4/4/16
-
-;Outline_Dreq()
-;    Clear ES
-;    Write to interrupt vector table
-;    Write to ICON0 register
-;    Send EOI. 
-
-;InstallDreqHandler    PROC    NEAR
-;                      PUBLIC  InstallDreqHandler
-
-;##### InstallDemandHandler CODE #######
+; Last Modified:     5/19/16
 
 
-;InstallDemdandHandler    ENDP
+InstallDreqHandler    PROC    NEAR
+                      PUBLIC  InstallDreqHandler
 
-; InstallDemandHandler
-;
-; Description:       This function installs the event handler for the data
-;                    demand interrupt from the CON_MP3 decoder. The
-;                    function also writes to the ICON1 register to turn
-;                    on INT1 interrupts.
-;
-; Operation:         Writes the address of the data request event handler
-;                    to the address of the INT1 interrupt vector. Write
-;                    ICON1Value to ICON1Address to turn on INT1 interrupts.
-;                    The function then sends an INT1 EOI to clear out the 
-;                    interrupt controller.
-;
-; Arguments:         None.
-;
-; Return Value:      None.
-;
-; Local Variables:   None.
-;
-; Shared Variables:  None.
-;
-; Input:             None.
-;
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-;
-;
-; Author:            Timothy Liu
-; Last Modified:     4/4/16
-
-;Outline_Dreq()
-;    Clear ES
-;    Write to interrupt vector table
-;    Write to ICON1 register
-;    Send EOI. 
-
-;InstallDemandHandler    PROC    NEAR
-;                        PUBLIC  InstallDemandHandler
-
-;##### InstallDemandHandler CODE #######
+    XOR    AX, AX        ;clear ES (irq vector in segment 0)
+    MOV    ES, AX
 
 
-;InstallDemandHandler    ENDP
+                                ;store the vector - put location of INT2 event
+                                ;handler into ES
+                                ;serial interrupts go to INT2
+
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
+
+    ;check that no EOI is sent and no write to the interrupt controller
+    ;needs to be made by the function
+
+    RET
+
 
 ; InstallTimer0Handler
 ;

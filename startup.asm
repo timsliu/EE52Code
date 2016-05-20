@@ -19,19 +19,6 @@
 ; compiler).
 ;
 ;
-; Revision History:
-;    3/7/94   Glen George       Initial revision.
-;    2/28/95  Glen George       Fixed segment alignments.
-;                               Fixed SP initialization.
-;                               Removed CS:IP initialization (END Start -> END).
-;                               Updated comments.
-;    2/29/96  Glen George       Updated comments.
-;    2/24/98  Glen George       Updated comments.
-;   11/18/98  Glen George       Updated comments.
-;   12/26/99  Glen George       Changed formatting.
-;    1/30/02  Glen George       Added proper assume for ES.
-;    1/27/03  Glen George       Changed to looping if main() returns instead
-;                                  of halting
 ;    4/19/16  Tim Liu       Added initcs and created infinite loop
 ;    4/19/16  Tim Liu       Changed name to STARTUP
 ;    4/19/16  Tim Liu       Reordered assumes and group declarations
@@ -40,6 +27,7 @@
 ;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
 ;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
 ;    5/7/16   Tim Liu       Added call to InitClock
+;    5/19/16  Tim Liu     Added commented out call to InstallDreqHandler
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -71,6 +59,7 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         EXTRN    InitClock:NEAR         ;initialize MP3 clock
         EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
         EXTRN    InitTimer1:NEAR        ;start up timer 1
+        ;EXTRN    InstallDreqHandler     ;install audio data request handler
 
 START:
 
@@ -103,6 +92,7 @@ BEGIN:                                  ;start the program
         CALL    InstallTimer1Handler    ;install timer1 handler
         CALL    InitTimer0              ;initialize timer0 for button interrupt
         CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+        ;CALL    InstallDreqHandler      ;install handler for audio data request
 
         STI                             ;enable interrupts
 
