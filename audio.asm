@@ -101,7 +101,16 @@ AudioEH        ENDP
 
 ;Name:               AudioOutput
 ;
-;Description:        None
+;Description:        This function sends data serially to the MP3 decoder.
+;                    The function copies bytes from CurrentBuffer and performs
+;                    bit banging to output the bytes. After each byte is
+;                    transferred, the function decrements CurBuffLeft. If
+;                    CurBuffLeft is equal to zero, then the function swaps
+;                    the NextBuffer into CurrentBuffer and continues playing
+;                    from CurrentBuffer. The function also sets the NeedData
+;                    flag to indicate that more data is need so that
+;                    NextBuffer is filled. The function is called whenever
+;                    the MP3 decoder sends a data request interrupt.
 ; 
 ;Operation:          None
 ;
@@ -127,6 +136,27 @@ AudioEH        ENDP
 ;
 ;Author:             Timothy Liu
 
+;Outline
+;AudioOutput()
+    IF    CurBuffLeft = 0:          ;Current buffer going to run out
+        IF NeedData == True:        ;both buffers are empty - panic!
+            ICON0 = ICON0Off        ;shut off the interrupt handler
+            CALL AudioHalt          ;these two are the same things
+        CurrentBuffer = NextBuffer  ;make the next buffer the current buffer
+        CurBufferLeft = NextBuffLeft
+        NeedData = TRUE             ;indicate more data is needed
+    ELSE:                           ;there is enough data
+        For i in BytesPerTransfer   ;loop outputting 32 bytes
+            AL = CurrentBuffer[CurBuffIndex]   ;load byte to output
+            SHL                         ;put most significant byte in DB0
+            OUT AL, PCS3                ;first bit goes to PCS3
+            For j in LowBits            ;loop outputting other 7 bits
+                                        ;loop will be unrolled for speed
+                SHL                     ;shift to next bit
+                OUT AL, PCS2            ;output the next bit
+            CurBuffIndex += 1           ;increment to next byte
+        CurBufferLeft -= BytesPerTransfer ;32 fewer bytes in buffer
+        
 
 
 AudioOutput        PROC    NEAR
@@ -145,8 +175,9 @@ AudioOutput    ENDP
 ;Description:        This function is called when the audio output is 
 ;                    started. This function is passed the address of the
 ;                    data buffer. The address is stored in CurrentBuffer.
-;                    The function copies the second argument, the length
-;                    of the buffer in words, to the shared variable
+;                    The function multiplies the second argument, the length
+;                    of the buffer in words, by WORD_SIZE and moves the 
+;                    product to the shared variable
 ;                    CurBuffLeft. The function then activates ICON0 to enable
 ;                    data request interrupts. 
 ; 
@@ -255,10 +286,11 @@ Audio_Halt    ENDP
 ;Operation:          The function copies SP to BP and uses the base pointer
 ;                    to index into the stack. The checks the flag NeedData
 ;                    to see if more data is needed. If more data is needed, 
-;                    then the function copies the first argument (the address
-;                    of the new buffer) into NextBuffer and the second argument
-;                    (the length of the new buffer in bytes) into 
-;                    NextBufferLeft. The function resets the NeedData flag
+;                    then the function multiplies the first argument (the 
+;                    address of the new buffer) by WORD_SIZE and moves the
+;                    product into NextBufferLeft, which is the number of 
+;                    bytes remaining in NextBuffer.
+;                    The function resets the NeedData flag
 ;                    to FALSE, indicating that there is data in both buffers.
 ;                    If the passed pointer is used, then the function returns
 ;                    FALSE. If more data is not needed, then the function
@@ -301,8 +333,9 @@ DATA    SEGMENT    PUBLIC  'DATA'
 
 CurrentBuffer    DW FAR_SIZE DUP (?)     ;32 bit address of current audio buffer
 NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
-CurBuffLeft      DW               ?      ;words left in current buffer
-NextBufferLeft   DW               ?      ;words left in next buffer
+CurBuffLeft      DW               ?      ;bytes left in current buffer
+CurBuffIndex     DW               ?      ;next position in current buffer to be played
+NextBufferLeft   DW               ?      ;bytes left in next buffer
 NeedData         DB               ?      ;flag set when CurrentBuffer is empty
                                          ;and more data is needed
 
