@@ -22,6 +22,9 @@
 ; Revision History:
 ;
 ;    5/18/16    Tim Liu    created file
+;    5/20/16    Tim Liu    wrote outlines for all functions
+;    5/20/16    Tim Liu    wrote Audio_Halt and AudioEH
+;    5/21/16    Tim Liu    wrote AudioOutput
 ;    
 ;
 ;
@@ -85,13 +88,11 @@ AudioEH        PROC    NEAR
 
 AudioEHStart:                            ;save the registers
     PUSH    AX
-    PUSH    BX
-    PUSH    DX
+    PUSH    CX
     CALL    AudioOutput                  ;call function to output audio data
 
 AudioEHDone:                             ;restore registers and return
-    POP     DX
-    POP     BX
+    POP     CX
     POP     AX
     
     IRET                                 ;IRET from interrupt handlers
@@ -112,60 +113,172 @@ AudioEH        ENDP
 ;                    NextBuffer is filled. The function is called whenever
 ;                    the MP3 decoder sends a data request interrupt.
 ; 
-;Operation:          None
+;Operation:          The function first checks if CurBuffLeft is equal to
+;                    to zero, indicating the current buffer is empty.
+;                    If the current data buffer is empty, the function
+;                    makes the next buffer the current buffer and sets
+;                    NeedData to indicate that a new buffer is needed. If
+;                    the next buffer is also empty, then the function 
+;                    turns off ICON0 interrupts and returns. If there is
+;                    data in the current buffer, then the function outputs
+;                    BytesPerTransfer bytes starting at CurrentBuffer.
+;                    AudioOutput copies the byte CurrentBuffer points to
+;                    and outputs the bits serially. The first bit (MSB) 
+;                    is output to PCS3. After the first bit is output, the
+;                    other bits are shifted to DB0 and output to PCS2
+;                    until the byte is fully output. The function increments
+;                    the pointer CurrentBuffer and outputs BytesPerTransfer
+;                    bytes. After the bytes are output, the function
+;                    decrements CurBuffLeft by BytesPerTransfer. The
+;                    size of the passed buffers MUST be a multiple of
+;                    BytesPerTransfer.
+;                    
+;                    
 ;
 ;Arguments:          None
 ;
 ;Return Values:      None
 ;
-;Local Variables:    None
+;Local Variables:    CX - Bytes left to transfer
 ;
-;Shared Variables:   None
+;Shared Variables:   CurrentBuffer(R/W) - 32 bit address of current data buffer
+;                                         being played from
+;                    CurBuffLeft(R/W)   - bytes left in the data buffer
+;                    NextBuffer(R)      - 32 bit address of next data buffer
+;                    NextBuffLeft(R)    - bytes left in next data buffer
+;                    NeedData(R/W)      - indicates more data is needed 
 ;
-;Output:             None
+;Output:             MP3 audio output data output to MP3 decoder through
+;                    DB0
 ;
 ;Error Handling:     None
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Used:     AX, CX - these registers preserved by event handler
 ;
 ;Known Bugs:         None
 ;
-;Limitations:        None
+;Limitations:        Size of audio data buffers is assumed to be a multiple
+;                    of BYTES_PER_TRANSFER
+;                    Data buffers are assumed to be entirely in a single segment
 ;
 ;Author:             Timothy Liu
 
 ;Outline
 ;AudioOutput()
-    IF    CurBuffLeft = 0:          ;Current buffer going to run out
-        IF NeedData == True:        ;both buffers are empty - panic!
-            ICON0 = ICON0Off        ;shut off the interrupt handler
-            CALL AudioHalt          ;these two are the same things
-        CurrentBuffer = NextBuffer  ;make the next buffer the current buffer
-        CurBufferLeft = NextBuffLeft
-        NeedData = TRUE             ;indicate more data is needed
-    ELSE:                           ;there is enough data
-        For i in BytesPerTransfer   ;loop outputting 32 bytes
-            AL = CurrentBuffer[CurBuffIndex]   ;load byte to output
-            SHL                         ;put most significant byte in DB0
-            OUT AL, PCS3                ;first bit goes to PCS3
-            For j in LowBits            ;loop outputting other 7 bits
-                                        ;loop will be unrolled for speed
-                SHL                     ;shift to next bit
-                OUT AL, PCS2            ;output the next bit
-            CurBuffIndex += 1           ;increment to next byte
-        CurBufferLeft -= BytesPerTransfer ;32 fewer bytes in buffer
+;    IF    CurBuffLeft = 0:          ;Current buffer going to run out
+;        IF NeedData == True:        ;both buffers are empty - panic!
+;            ICON0 = ICON0Off        ;shut off the interrupt handler
+;            CALL AudioHalt          ;these two are the same things
+;        CurrentBuffer = NextBuffer  ;make the next buffer the current buffer
+;        CurBufferLeft = NextBuffLeft
+;        NeedData = TRUE             ;indicate more data is needed
+;    ELSE:                           ;there is enough data
+;        For i in BytesPerTransfer   ;loop outputting 32 bytes
+;            AL = [CurrentBuffer]    ;load byte to output
+;            SHL                         ;put most significant byte in DB0
+;            OUT AL, PCS3                ;first bit goes to PCS3
+;            For j in LowBits            ;loop outputting other 7 bits
+;                                        ;loop will be unrolled for speed
+;                SHL                     ;shift to next bit
+;                OUT AL, PCS2            ;output the next bit
+;            [CurrentBuffer] += 1           ;increment to next byte
+;        CurBufferLeft -= BytesPerTransfer ;32 fewer bytes in buffer
         
 
 
 AudioOutput        PROC    NEAR
                    PUBLIC  AudioOutput
 
-AudioOutputStart:
+AudioOutputStart:                            ;starting label - save registers
+    PUSH    SI
+    PUSH    ES
+
+AudioOutputCheckCur:                         ;check if current buffer is empty
+    CMP    CurBuffLeft, 0                    ;no bytes left in buffer
+    JE     AudioOutputCheckNext              ;check if next buffer is empty
+    JMP    AudioOutputByteLoopPrep           ;buffers not empty - output data
+
+AudioOutputCheckNext:
+    CMP    NeedData, TRUE                    ;see if next buffer is empty
+    JE     AudioOutputEmpty                  ;both buffers are empty
+    ;JMP    AudioOutputSwap                  ;make NextBuffer -> CurrentBuffer
+
+AudioOutputSwap:                             ;read from NextBuffer
+   MOV    AX, NextBuffer[0]                  ;copy segment of NextBuffer
+   MOV    CurrentBuffer[0], AX               ;make NextBuffer CurrentBuffer
+
+   MOV    AX, NextBuffer[1]                  ;copy offset of NextBuffer
+   MOV    CurrentBuffer[1], AX
+
+   MOV    AX, NextBuffLeft                   ;copy bytes left of NextBuffer
+   MOV    CurBuffLeft, AX                    ;to CurBuffLeft
+
+   MOV    NeedData, TRUE                     ;indicate more data is needed
+   JMP    AudioOutputByteLoopPrep            ;prepare to output data
+
+AudioOutputEmpty:                            ;both audio buffers are empty
+   CALL   Audio_Halt                         ;switch off audio interrupts
+   JMP    AudioOutputDone                    ;can’t output any data
+
+AudioOutputByteLoopPrep:                     ;prepare to output buffer data
+    MOV   CX, Bytes_Per_Transfer             ;number bytes left to transfer
+                                             ;for this interrupt
+    MOV   AX, CurrentBuffer[1]               ;copy buffer segment to ES
+    MOV   ES, AX
+
+    MOV   SI, CurrentBuffer[0]               ;copy buffer offset to SI
+    ;JMP  AudioOutputLoop                    ;go to loop
+
+AudioOutputLoop:
+    CMP   CX, 0                              ;check if no bytes left
+    JE    AudioOutputDone                    ;no bytes left - function done
+    MOV   AL, ES:[SI]                        ;copy byte to be transferred
+
+AudioOutputSerial:                           ;serially send data to MP3 - MSB
+                                             ;first
+    XOR   AH, AH                             ;only low byte has valid data
+    MOV   DX, PCS3Address                    ;address to output DB7 to
+    ROL   AL, 1                              ;output MSB on DB0
+    OUT   DX, AX                             ;first bit goes to PCS3 to trigger
+                                             ;BSYNC
+
+    MOV   DX, PCS2Address                    ;address to output bits 0-6
+    ROL   AL, 1                              ;shift so DB6 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB5 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB4 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB3 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB2 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB1 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+    
+    ROL   AL, 1                              ;shift so DB0 is LSB
+    OUT   DX, AX                             ;output other bits to PCS2
+
+AudioOutputUpdateByte:
+    INC   SI                                 ;update pointer to next byte
+    JMP   AudioOutputLoop                    ;prepare to output next byte
+
 
 AudioOutputDone:                             ;stub function for now 
-     RET
+    MOV    CurrentBuffer[0], SI              ;store the buffer location to 
+                                             ;start reading from
+    SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
+                                             ;the buffer
+    POP    ES
+    POP    SI
+    RET
 
 AudioOutput    ENDP
 
@@ -334,8 +447,8 @@ DATA    SEGMENT    PUBLIC  'DATA'
 CurrentBuffer    DW FAR_SIZE DUP (?)     ;32 bit address of current audio buffer
 NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
 CurBuffLeft      DW               ?      ;bytes left in current buffer
-CurBuffIndex     DW               ?      ;next position in current buffer to be played
-NextBufferLeft   DW               ?      ;bytes left in next buffer
+NextBuffLeft     DW               ?      ;bytes left in next buffer
+
 NeedData         DB               ?      ;flag set when CurrentBuffer is empty
                                          ;and more data is needed
 

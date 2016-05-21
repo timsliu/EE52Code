@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE AUDIO
@@ -32,447 +32,617 @@ LOC  OBJ                  LINE     SOURCE
                             22     ; Revision History:
                             23     ;
                             24     ;    5/18/16    Tim Liu    created file
-                            25     ;    
-                            26     ;
-                            27     ;
-                            28     ; local include files
-                            29 +1  $INCLUDE(AUDIO.INC)
-                      =1    30     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    31     ;                                                                            ;
-                      =1    32     ;                                  AUDIO.INC                                 ;
-                      =1    33     ;                             Audio Include File                             ;
-                      =1    34     ;                                   EE/CS 52                                 ;
-                      =1    35     ;                                                                            ;
-                      =1    36     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    37     ;
-                      =1    38     ; Description: This file contains the definitions for audio.asm
-                            39 +1  $INCLUDE(MIRQ.INC)
-                      =1    40     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    41     ;                                                                            ;
-                      =1    42     ;                                   MIRQ.INC                                 ;
-                      =1    43     ;                          MP3 Interrupt Include File                        ;
-                      =1    44     ;                                   EE/CS 52                                 ;
-                      =1    45     ;                                                                            ;
-                      =1    46     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    47     
-                      =1    48     ; This file contains the definitions for initcs.asm.
-                      =1    49     ;
-                      =1    50     ; Revision History:
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    2
+                            25     ;    5/20/16    Tim Liu    wrote outlines for all functions
+                            26     ;    5/20/16    Tim Liu    wrote Audio_Halt and AudioEH
+                            27     ;    5/21/16    Tim Liu    wrote AudioOutput
+                            28     ;    
+                            29     ;
+                            30     ;
+                            31     ; local include files
+                            32 +1  $INCLUDE(AUDIO.INC)
+                      =1    33     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    34     ;                                                                            ;
+                      =1    35     ;                                  AUDIO.INC                                 ;
+                      =1    36     ;                             Audio Include File                             ;
+                      =1    37     ;                                   EE/CS 52                                 ;
+                      =1    38     ;                                                                            ;
+                      =1    39     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    40     ;
+                      =1    41     ; Description: This file contains the definitions for audio.asm
+                      =1    42     
+  0020                =1    43     Bytes_Per_Transfer        EQU    32      ;can send 32 bytes each DREQ interrupt
+                      =1    44                                              ;the number of bytes per data buffer
+                      =1    45                                              ;MUST be a multiple of this constant
+                      =1    46     
+  0100                =1    47     PCS2Address               EQU    100H    ;address to output DB0-6 of MP3 data
+  0180                =1    48     PCS3Address               EQU    180H    ;address to output DB7 of MP3 data
+                      =1    49                                              ;DB7 is output first, and PCS3
+                      =1    50                                              ;triggers the BSYNC signal
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1    51     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
-                      =1    52     ;    5/19/16    Timothy Liu     added INT0 interrupt definition
-                      =1    53     
-                      =1    54     
-                      =1    55     ;Interrupt Vector Table
-  0001                =1    56     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
-  0003                =1    57     LAST_RESERVED_VEC            EQU          3
-  0100                =1    58     NUM_IRQ_VECTORS              EQU      256    ;number of interrupt vectors
-  0004                =1    59     INTERRUPT_SIZE               EQU        4    ;each vector is 4 addresses large
-                      =1    60     
-                      =1    61     ;Addresses
-  FF22                =1    62     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
-  FF32                =1    63     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
-                      =1    64     
-  FF38                =1    65     ICON0Address    EQU     0FF38H           ;address of ICON0 register
-                      =1    66     ;ICON1Address                            ;address of ICON1 register
-                      =1    67     
-                      =1    68     ; Register Values
-  0001                =1    69     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
-                      =1    70                                             ;000000000000----  reserved
-                      =1    71                                             ;------------0---  enable timer interrupt
-                      =1    72                                             ;-------------001  timer priority
-                      =1    73     
-  0013                =1    74     ICON0ON        EQU      0013H           ;0000000000010011b
-                      =1    75                                             ;000000000-------b  ;reserved
-                      =1    76                                             ;---------0------b  ;no nesting
-                      =1    77                                             ;----------0-----b  ;no cascade mode
-                      =1    78                                             ;-----------1----b  ;level triggered
-                      =1    79                                             ;------------0---b  ;enable interrupts
-                      =1    80                                             ;--------------11b  ;set priority to 3
-                      =1    81     
-  001B                =1    82     ICON0OFF        EQU      001BH          ;0000000000011011b
-                      =1    83                                             ;000000000-------b  ;reserved
-                      =1    84                                             ;---------0------b  ;no nesting
-                      =1    85                                             ;----------0-----b  ;no cascade mode
-                      =1    86                                             ;-----------1----b  ;level triggered
-                      =1    87                                             ;------------1---b  ;disable interrupts
-                      =1    88                                             ;--------------11b  ;set priority to 3
-                      =1    89     
-                      =1    90     ; End of Interrupt values
-  8000                =1    91     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
-  0008                =1    92     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
-  000C                =1    93     INT0EOI         EQU     0000CH          ;INT0 EOI
-                      =1    94     ;INT1EOI
-                      =1    95     
-                      =1    96     ; Interrupt Vector
-  0008                =1    97     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
-  0012                =1    98     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
-  000C                =1    99     INT0Vec         EQU     12              ;interrupt vector for INT0
-                      =1   100     ;INT1VEc
-                           101 +1  $INCLUDE(GENERAL.INC)
-                      =1   102     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   103     ;                                                                            ;
-                      =1   104     ;                                  General.INC                               ;
-                      =1   105     ;                               General include file                         ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    3
+                            51 +1  $INCLUDE(MIRQ.INC)
+                      =1    52     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    53     ;                                                                            ;
+                      =1    54     ;                                   MIRQ.INC                                 ;
+                      =1    55     ;                          MP3 Interrupt Include File                        ;
+                      =1    56     ;                                   EE/CS 52                                 ;
+                      =1    57     ;                                                                            ;
+                      =1    58     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    59     
+                      =1    60     ; This file contains the definitions for initcs.asm.
+                      =1    61     ;
+                      =1    62     ; Revision History:
+                      =1    63     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
+                      =1    64     ;    5/19/16    Timothy Liu     added INT0 interrupt definition
+                      =1    65     
+                      =1    66     
+                      =1    67     ;Interrupt Vector Table
+  0001                =1    68     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
+  0003                =1    69     LAST_RESERVED_VEC            EQU          3
+  0100                =1    70     NUM_IRQ_VECTORS              EQU      256    ;number of interrupt vectors
+  0004                =1    71     INTERRUPT_SIZE               EQU        4    ;each vector is 4 addresses large
+                      =1    72     
+                      =1    73     ;Addresses
+  FF22                =1    74     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
+  FF32                =1    75     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
+                      =1    76     
+  FF38                =1    77     ICON0Address    EQU     0FF38H           ;address of ICON0 register
+                      =1    78     ;ICON1Address                            ;address of ICON1 register
+                      =1    79     
+                      =1    80     ; Register Values
+  0001                =1    81     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
+                      =1    82                                             ;000000000000----  reserved
+                      =1    83                                             ;------------0---  enable timer interrupt
+                      =1    84                                             ;-------------001  timer priority
+                      =1    85     
+  0013                =1    86     ICON0ON        EQU      0013H           ;0000000000010011b
+                      =1    87                                             ;000000000-------b  ;reserved
+                      =1    88                                             ;---------0------b  ;no nesting
+                      =1    89                                             ;----------0-----b  ;no cascade mode
+                      =1    90                                             ;-----------1----b  ;level triggered
+                      =1    91                                             ;------------0---b  ;enable interrupts
+                      =1    92                                             ;--------------11b  ;set priority to 3
+                      =1    93     
+  001B                =1    94     ICON0OFF        EQU      001BH          ;0000000000011011b
+                      =1    95                                             ;000000000-------b  ;reserved
+                      =1    96                                             ;---------0------b  ;no nesting
+                      =1    97                                             ;----------0-----b  ;no cascade mode
+                      =1    98                                             ;-----------1----b  ;level triggered
+                      =1    99                                             ;------------1---b  ;disable interrupts
+                      =1   100                                             ;--------------11b  ;set priority to 3
+                      =1   101     
+                      =1   102     ; End of Interrupt values
+  8000                =1   103     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
+  0008                =1   104     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
+  000C                =1   105     INT0EOI         EQU     0000CH          ;INT0 EOI
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1   106     ;                                   EE/CS 51                                 ;
-                      =1   107     ;                                                                            ;
-                      =1   108     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   109     
-                      =1   110     ; This file contains general definitions and constants.
-                      =1   111     ;
-                      =1   112     ; Revision History:
-                      =1   113     ;    11/3/15     Timothy Liu     initial revision
-                      =1   114     ;    11/5/15     Timothy Liu     fixed formatting
-                      =1   115     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
-                      =1   116     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
-                      =1   117     ;    11/19/15    Timothy Liu     removed interrupt related definitions
-                      =1   118     ;    12/5/15     Timothy Liu     added ASCII definitions
-                      =1   119     
-                      =1   120     
+                      =1   106     ;INT1EOI
+                      =1   107     
+                      =1   108     ; Interrupt Vector
+  0008                =1   109     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
+  0012                =1   110     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
+  000C                =1   111     INT0Vec         EQU     12              ;interrupt vector for INT0
+                      =1   112     ;INT1VEc
+                           113 +1  $INCLUDE(GENERAL.INC)
+                      =1   114     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1   115     ;                                                                            ;
+                      =1   116     ;                                  General.INC                               ;
+                      =1   117     ;                               General include file                         ;
+                      =1   118     ;                                   EE/CS 51                                 ;
+                      =1   119     ;                                                                            ;
+                      =1   120     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                       =1   121     
-  0004                =1   122     BitsPerNibble        EQU        4         ;number of bits in a nibble
-                      =1   123     
-  0002                =1   124     OffSize              EQU        2         ;offset size in bytes
-                      =1   125     
-                      =1   126     ;Ascii definitions
-  000D                =1   127     ASCII_CR             EQU       13         ;ASCII carriage return
-  0044                =1   128     ASCII_D              EQU       68         ;ASCII code for D
-  0045                =1   129     ASCII_E              EQU       69         ;ASCII E
-  0046                =1   130     ASCII_F              EQU       70         ;F character for fire (laser on)
-  0049                =1   131     ASCII_I              EQU       73         ;I character
-  004C                =1   132     ASCII_L              EQU       76         ;L character
-  004F                =1   133     ASCII_O              EQU       79         ;O character for off (laser off)
-  0050                =1   134     ASCII_P              EQU       80         ;P character
-  0052                =1   135     ASCII_R              EQU       82         ;R character
-  0053                =1   136     ASCII_S              EQU       83         ;S character
-  0054                =1   137     ASCII_T              EQU       84         ;T character
-  0000                =1   138     ASCII_NULL           EQU        0         ;ASCII null character
-  0020                =1   139     ASCII_SPACE          EQU       32         ;ASCII space
-  003A                =1   140     ASCII_COLON          EQU       58         ;ASCII colon
-  003E                =1   141     ASCII_RArrow         EQU       62         ;ASCII > symbol
-                      =1   142     
-  0001                =1   143     TRUE                 EQU        1         ;true
-  0000                =1   144     FALSE                EQU        0         ;false
-                      =1   145     
-  0002                =1   146     WORD_SIZE            EQU        2         ;2 bytes per word
-  0002                =1   147     FAR_SIZE             EQU        2         ;2 words per far address
-                           148     
-                           149     CGROUP    GROUP    CODE
-                           150     DGROUP    GROUP    DATA
-                           151     
-                           152     
-                           153     
-----                       154     CODE SEGMENT PUBLIC 'CODE'
-                           155     
-                           156             ASSUME  CS:CGROUP, DS:DGROUP 
-                           157     
-                           158     ;external function declarations
-                           159     
+                      =1   122     ; This file contains general definitions and constants.
+                      =1   123     ;
+                      =1   124     ; Revision History:
+                      =1   125     ;    11/3/15     Timothy Liu     initial revision
+                      =1   126     ;    11/5/15     Timothy Liu     fixed formatting
+                      =1   127     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
+                      =1   128     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
+                      =1   129     ;    11/19/15    Timothy Liu     removed interrupt related definitions
+                      =1   130     ;    12/5/15     Timothy Liu     added ASCII definitions
+                      =1   131     
+                      =1   132     
+                      =1   133     
+  0004                =1   134     BitsPerNibble        EQU        4         ;number of bits in a nibble
+                      =1   135     
+  0002                =1   136     OffSize              EQU        2         ;offset size in bytes
+                      =1   137     
+                      =1   138     ;Ascii definitions
+  000D                =1   139     ASCII_CR             EQU       13         ;ASCII carriage return
+  0044                =1   140     ASCII_D              EQU       68         ;ASCII code for D
+  0045                =1   141     ASCII_E              EQU       69         ;ASCII E
+  0046                =1   142     ASCII_F              EQU       70         ;F character for fire (laser on)
+  0049                =1   143     ASCII_I              EQU       73         ;I character
+  004C                =1   144     ASCII_L              EQU       76         ;L character
+  004F                =1   145     ASCII_O              EQU       79         ;O character for off (laser off)
+  0050                =1   146     ASCII_P              EQU       80         ;P character
+  0052                =1   147     ASCII_R              EQU       82         ;R character
+  0053                =1   148     ASCII_S              EQU       83         ;S character
+  0054                =1   149     ASCII_T              EQU       84         ;T character
+  0000                =1   150     ASCII_NULL           EQU        0         ;ASCII null character
+  0020                =1   151     ASCII_SPACE          EQU       32         ;ASCII space
+  003A                =1   152     ASCII_COLON          EQU       58         ;ASCII colon
+  003E                =1   153     ASCII_RArrow         EQU       62         ;ASCII > symbol
+                      =1   154     
+  0001                =1   155     TRUE                 EQU        1         ;true
+  0000                =1   156     FALSE                EQU        0         ;false
+                      =1   157     
+  0002                =1   158     WORD_SIZE            EQU        2         ;2 bytes per word
+  0002                =1   159     FAR_SIZE             EQU        2         ;2 words per far address
                            160     
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           161     
-                           162     ;Name:               AudioEH
-                           163     ;
-                           164     ;Description:        This function handles audio data request interrupts.
-                           165     ;                    The function is called whenever the VS1011 MP3
-                           166     ;                    decoder needs more data.
-                           167     ; 
-                           168     ;Operation:          The function first saves the registers. It then loads
-                           169     ;                    the constant RefreshRows into BX. RefreshRows is the
-                           170     ;                    number of rows that will be refreshed with each
-                           171     ;                    call to RefreshDRAM. The function then loops
-                           172     ;                    and reads from PCS4Address RefreshRows times. The
-                           173     ;                    function then restores the registers and returns.
-                           174     ;
-                           175     ;Arguments:          None
-                           176     ;
-                           177     ;Return Values:      None
-                           178     ;
-                           179     ;Local Variables:    None
-                           180     ;
-                           181     ;Shared Variables:   None
-                           182     ;
-                           183     ;Output:             None
-                           184     ;
-                           185     ;Error Handling:     None
+                           161     CGROUP    GROUP    CODE
+                           162     DGROUP    GROUP    DATA
+                           163     
+                           164     
+                           165     
+----                       166     CODE SEGMENT PUBLIC 'CODE'
+                           167     
+                           168             ASSUME  CS:CGROUP, DS:DGROUP 
+                           169     
+                           170     ;external function declarations
+                           171     
+                           172     
+                           173     
+                           174     ;Name:               AudioEH
+                           175     ;
+                           176     ;Description:        This function handles audio data request interrupts.
+                           177     ;                    The function is called whenever the VS1011 MP3
+                           178     ;                    decoder needs more data.
+                           179     ; 
+                           180     ;Operation:          The function first saves the registers. It then loads
+                           181     ;                    the constant RefreshRows into BX. RefreshRows is the
+                           182     ;                    number of rows that will be refreshed with each
+                           183     ;                    call to RefreshDRAM. The function then loops
+                           184     ;                    and reads from PCS4Address RefreshRows times. The
+                           185     ;                    function then restores the registers and returns.
                            186     ;
-                           187     ;Algorithms:         None
+                           187     ;Arguments:          None
                            188     ;
-                           189     ;Registers Used:     None
+                           189     ;Return Values:      None
                            190     ;
-                           191     ;Known Bugs:         None
+                           191     ;Local Variables:    None
                            192     ;
-                           193     ;Limitations:        None
+                           193     ;Shared Variables:   None
                            194     ;
-                           195     ;Author:             Timothy Liu
+                           195     ;Output:             None
                            196     ;
-                           197     ;Last Modified       5/19/16
-                           198     
-0000                       199     AudioEH        PROC    NEAR
-                           200                    PUBLIC  AudioEH
-                           201     
-0000                       202     AudioEHStart:                            ;save the registers
-0000 50                    203         PUSH    AX
-0001 53                    204         PUSH    BX
-0002 52                    205         PUSH    DX
-0003 E80400                206         CALL    AudioOutput                  ;call function to output audio data
-                           207     
-0006                       208     AudioEHDone:                             ;restore registers and return
-0006 5A                    209         POP     DX
-0007 5B                    210         POP     BX
-0008 58                    211         POP     AX
-                           212         
-0009 CF                    213         IRET                                 ;IRET from interrupt handlers
-                           214     
-                           215     AudioEH        ENDP
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    5
+                           197     ;Error Handling:     None
+                           198     ;
+                           199     ;Algorithms:         None
+                           200     ;
+                           201     ;Registers Used:     None
+                           202     ;
+                           203     ;Known Bugs:         None
+                           204     ;
+                           205     ;Limitations:        None
+                           206     ;
+                           207     ;Author:             Timothy Liu
+                           208     ;
+                           209     ;Last Modified       5/19/16
+                           210     
+0000                       211     AudioEH        PROC    NEAR
+                           212                    PUBLIC  AudioEH
+                           213     
+0000                       214     AudioEHStart:                            ;save the registers
+0000 50                    215         PUSH    AX
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     
-                           217     
-                           218     ;Name:               AudioOutput
-                           219     ;
-                           220     ;Description:        None
-                           221     ; 
-                           222     ;Operation:          None
-                           223     ;
-                           224     ;Arguments:          None
-                           225     ;
-                           226     ;Return Values:      None
-                           227     ;
-                           228     ;Local Variables:    None
+0001 51                    216         PUSH    CX
+0002 E80300                217         CALL    AudioOutput                  ;call function to output audio data
+                           218     
+0005                       219     AudioEHDone:                             ;restore registers and return
+0005 59                    220         POP     CX
+0006 58                    221         POP     AX
+                           222         
+0007 CF                    223         IRET                                 ;IRET from interrupt handlers
+                           224     
+                           225     AudioEH        ENDP
+                           226     
+                           227     
+                           228     ;Name:               AudioOutput
                            229     ;
-                           230     ;Shared Variables:   None
-                           231     ;
-                           232     ;Output:             None
-                           233     ;
-                           234     ;Error Handling:     None
-                           235     ;
-                           236     ;Algorithms:         None
-                           237     ;
-                           238     ;Registers Used:     None
-                           239     ;
-                           240     ;Known Bugs:         None
-                           241     ;
-                           242     ;Limitations:        None
-                           243     ;
-                           244     ;Author:             Timothy Liu
-                           245     
-                           246     
-                           247     
-000A                       248     AudioOutput        PROC    NEAR
-                           249                        PUBLIC  AudioOutput
-                           250     
-000A                       251     AudioOutputStart:
-                           252     
-000A                       253     AudioOutputDone:                             ;stub function for now 
-000A C3                    254          RET
-                           255     
-                           256     AudioOutput    ENDP
-                           257     
-                           258     
-                           259     ;Name:               Audio_Play(unsigned short int far *, int)
-                           260     ;
-                           261     ;Description:        This function is called when the audio output is 
-                           262     ;                    started. This function is passed the address of the
-                           263     ;                    data buffer. The address is stored in CurrentBuffer.
-                           264     ;                    The function copies the second argument, the length
-                           265     ;                    of the buffer in words, to the shared variable
-                           266     ;                    CurBuffLeft. The function then activates ICON0 to enable
-                           267     ;                    data request interrupts. 
-                           268     ; 
-                           269     ;Operation:          The function first copies the stack pointer to BP and 
-                           270     ;                    indexes into the stack. The function copies the 32 bit 
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    6
+                           230     ;Description:        This function sends data serially to the MP3 decoder.
+                           231     ;                    The function copies bytes from CurrentBuffer and performs
+                           232     ;                    bit banging to output the bytes. After each byte is
+                           233     ;                    transferred, the function decrements CurBuffLeft. If
+                           234     ;                    CurBuffLeft is equal to zero, then the function swaps
+                           235     ;                    the NextBuffer into CurrentBuffer and continues playing
+                           236     ;                    from CurrentBuffer. The function also sets the NeedData
+                           237     ;                    flag to indicate that more data is need so that
+                           238     ;                    NextBuffer is filled. The function is called whenever
+                           239     ;                    the MP3 decoder sends a data request interrupt.
+                           240     ; 
+                           241     ;Operation:          The function first checks if CurBuffLeft is equal to
+                           242     ;                    to zero, indicating the current buffer is empty.
+                           243     ;                    If the current data buffer is empty, the function
+                           244     ;                    makes the next buffer the current buffer and sets
+                           245     ;                    NeedData to indicate that a new buffer is needed. If
+                           246     ;                    the next buffer is also empty, then the function 
+                           247     ;                    turns off ICON0 interrupts and returns. If there is
+                           248     ;                    data in the current buffer, then the function outputs
+                           249     ;                    BytesPerTransfer bytes starting at CurrentBuffer.
+                           250     ;                    AudioOutput copies the byte CurrentBuffer points to
+                           251     ;                    and outputs the bits serially. The first bit (MSB) 
+                           252     ;                    is output to PCS3. After the first bit is output, the
+                           253     ;                    other bits are shifted to DB0 and output to PCS2
+                           254     ;                    until the byte is fully output. The function increments
+                           255     ;                    the pointer CurrentBuffer and outputs BytesPerTransfer
+                           256     ;                    bytes. After the bytes are output, the function
+                           257     ;                    decrements CurBuffLeft by BytesPerTransfer. The
+                           258     ;                    size of the passed buffers MUST be a multiple of
+                           259     ;                    BytesPerTransfer.
+                           260     ;                    
+                           261     ;                    
+                           262     ;
+                           263     ;Arguments:          None
+                           264     ;
+                           265     ;Return Values:      None
+                           266     ;
+                           267     ;Local Variables:    CX - Bytes left to transfer
+                           268     ;
+                           269     ;Shared Variables:   CurrentBuffer(R/W) - 32 bit address of current data buffer
+                           270     ;                                         being played from
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ;                    address passed as the first argument to CurrentBuffer.
-                           272     ;                    The function indexes into the stack to copy the second
-                           273     ;                    argument into CurBuffLeft, which is the number of words
-                           274     ;                    left in the buffer to play. The function then outputs
-                           275     ;                    ICON0ON to ICON0Address to enable data request
-                           276     ;                    interrupts. The function also sends an INT0EOI to the
-                           277     ;                    EOI register and returns.
+                           271     ;                    CurBuffLeft(R/W)   - bytes left in the data buffer
+                           272     ;                    NextBuffer(R)      - 32 bit address of next data buffer
+                           273     ;                    NextBuffLeft(R)    - bytes left in next data buffer
+                           274     ;                    NeedData(R/W)      - indicates more data is needed 
+                           275     ;
+                           276     ;Output:             MP3 audio output data output to MP3 decoder through
+                           277     ;                    DB0
                            278     ;
-                           279     ;Arguments:          unsigned short int far * - address of data buffer
-                           280     ;                    int - length of buffer in words
-                           281     ;
-                           282     ;Return Values:      None
-                           283     ;
-                           284     ;Local Variables:    None
-                           285     ;
-                           286     ;Shared Variables:   CurrentBuffer(W) - 16 bit address of current data buffer
-                           287     ;                                       being played from
-                           288     ;                    CurBuffLeft(W) -   number of words left in the data buffer
-                           289     ;
-                           290     ;Output:             None
-                           291     ;
-                           292     ;Error Handling:     None
-                           293     ;
-                           294     ;Algorithms:         None
-                           295     ;
-                           296     ;Registers Used:     None
-                           297     ;
-                           298     ;Known Bugs:         None
-                           299     ;
-                           300     ;Limitations:        None
-                           301     ;
-                           302     ;Author:             Timothy Liu
-                           303     
-                           304     
-                           305     ;  #######Audio_Play CODE ########
-                           306     
-                           307     
-                           308     ;Name:               Audio_Halt
-                           309     ;
-                           310     ;Description:        This function terminates the output of audio data. The 
-                           311     ;                    function does not return any value.
-                           312     ; 
-                           313     ;Operation:          The function writes the value ICON0OFF to ICON0ADDRESS.
-                           314     ;                    This disables interrupts from INT0 and disables MP3
-                           315     ;                    audio data request interrupts. The function the returns.
-                           316     ;
-                           317     ;Arguments:          None
-                           318     ;
-                           319     ;Return Values:      None
-                           320     ;
-                           321     ;Local Variables:    None
-                           322     ;
-                           323     ;Shared Variables:   None
-                           324     ;
-                           325     ;Output:             None
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    7
+                           279     ;Error Handling:     None
+                           280     ;
+                           281     ;Algorithms:         None
+                           282     ;
+                           283     ;Registers Used:     AX, CX - these registers preserved by event handler
+                           284     ;
+                           285     ;Known Bugs:         None
+                           286     ;
+                           287     ;Limitations:        Size of audio data buffers is assumed to be a multiple
+                           288     ;                    of BYTES_PER_TRANSFER
+                           289     ;                    Data buffers are assumed to be entirely in a single segment
+                           290     ;
+                           291     ;Author:             Timothy Liu
+                           292     
+                           293     ;Outline
+                           294     ;AudioOutput()
+                           295     ;    IF    CurBuffLeft = 0:          ;Current buffer going to run out
+                           296     ;        IF NeedData == True:        ;both buffers are empty - panic!
+                           297     ;            ICON0 = ICON0Off        ;shut off the interrupt handler
+                           298     ;            CALL AudioHalt          ;these two are the same things
+                           299     ;        CurrentBuffer = NextBuffer  ;make the next buffer the current buffer
+                           300     ;        CurBufferLeft = NextBuffLeft
+                           301     ;        NeedData = TRUE             ;indicate more data is needed
+                           302     ;    ELSE:                           ;there is enough data
+                           303     ;        For i in BytesPerTransfer   ;loop outputting 32 bytes
+                           304     ;            AL = [CurrentBuffer]    ;load byte to output
+                           305     ;            SHL                         ;put most significant byte in DB0
+                           306     ;            OUT AL, PCS3                ;first bit goes to PCS3
+                           307     ;            For j in LowBits            ;loop outputting other 7 bits
+                           308     ;                                        ;loop will be unrolled for speed
+                           309     ;                SHL                     ;shift to next bit
+                           310     ;                OUT AL, PCS2            ;output the next bit
+                           311     ;            [CurrentBuffer] += 1           ;increment to next byte
+                           312     ;        CurBufferLeft -= BytesPerTransfer ;32 fewer bytes in buffer
+                           313             
+                           314     
+                           315     
+0008                       316     AudioOutput        PROC    NEAR
+                           317                        PUBLIC  AudioOutput
+                           318     
+0008                       319     AudioOutputStart:                            ;starting label - save registers
+0008 56                    320         PUSH    SI
+0009 06                    321         PUSH    ES
+                           322     
+000A                       323     AudioOutputCheckCur:                         ;check if current buffer is empty
+000A 833E080000     R      324         CMP    CurBuffLeft, 0                    ;no bytes left in buffer
+000F 7403                  325         JE     AudioOutputCheckNext              ;check if next buffer is empty
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           326     ;
-                           327     ;Error Handling:     None
-                           328     ;
-                           329     ;Algorithms:         None
-                           330     ;
-                           331     ;Registers Used:     None
-                           332     ;
-                           333     ;Known Bugs:         None
-                           334     ;
-                           335     ;Limitations:        None
-                           336     ;
-                           337     ;Author:             Timothy Liu
-                           338     
-000B                       339     Audio_Halt        PROC    NEAR
-                           340                       PUBLIC  Audio_Halt
-                           341     
-000B                       342     AudioHaltStart:                        ;starting label - save registers
-000B 50                    343         PUSH    AX
-000C 52                    344         PUSH    DX
+0011 EB2990                326         JMP    AudioOutputByteLoopPrep           ;buffers not empty - output data
+                           327     
+0014                       328     AudioOutputCheckNext:
+0014 803E0C0001     R      329         CMP    NeedData, TRUE                    ;see if next buffer is empty
+0019 741B                  330         JE     AudioOutputEmpty                  ;both buffers are empty
+                           331         ;JMP    AudioOutputSwap                  ;make NextBuffer -> CurrentBuffer
+                           332     
+001B                       333     AudioOutputSwap:                             ;read from NextBuffer
+001B A10400         R      334        MOV    AX, NextBuffer[0]                  ;copy segment of NextBuffer
+001E A30000         R      335        MOV    CurrentBuffer[0], AX               ;make NextBuffer CurrentBuffer
+                           336     
+0021 A10500         R      337        MOV    AX, NextBuffer[1]                  ;copy offset of NextBuffer
+0024 A30100         R      338        MOV    CurrentBuffer[1], AX
+                           339     
+0027 A10A00         R      340        MOV    AX, NextBuffLeft                   ;copy bytes left of NextBuffer
+002A A30800         R      341        MOV    CurBuffLeft, AX                    ;to CurBuffLeft
+                           342     
+002D C6060C000190   R      343        MOV    NeedData, TRUE                     ;indicate more data is needed
+0033 EB0790                344        JMP    AudioOutputByteLoopPrep            ;prepare to output data
                            345     
-000D                       346     AudioHaltWrite:                        ;turn off data request interrupts
-000D BA38FF                347         MOV    DX, ICON0Address            ;address of INT0 control register
-0010 B81B00                348         MOV    AX, ICON0OFF                ;value to turn off data request IRQ
-0013 EF                    349         OUT    DX, AX                      ;shut off interrupts
-                           350     
-0014                       351     AudioHaltDone:                         ;done - restore labels and return
-0014 5A                    352         POP    DX
-0015 58                    353         POP    AX
-0016 C3                    354         RET
+0036                       346     AudioOutputEmpty:                            ;both audio buffers are empty
+0036 E84600                347        CALL   Audio_Halt                         ;switch off audio interrupts
+0039 EB3890                348        JMP    AudioOutputDone                    ;canb^^t output any data
+                           349     
+003C                       350     AudioOutputByteLoopPrep:                     ;prepare to output buffer data
+003C B92000                351         MOV   CX, Bytes_Per_Transfer             ;number bytes left to transfer
+                           352                                                  ;for this interrupt
+003F A10100         R      353         MOV   AX, CurrentBuffer[1]               ;copy buffer segment to ES
+0042 8EC0                  354         MOV   ES, AX
                            355     
-                           356     
-                           357     Audio_Halt    ENDP
+0044 8B360000       R      356         MOV   SI, CurrentBuffer[0]               ;copy buffer offset to SI
+                           357         ;JMP  AudioOutputLoop                    ;go to loop
                            358     
-                           359     ;Name:               Update
-                           360     ;
-                           361     ;Description:        This function stores the address of a fresh audio buffer
-                           362     ;                    if the secondary audio buffer is empty. The function
-                           363     ;                    returns TRUE if the passed buffer was stored and a new
-                           364     ;                    buffer with more audio data is needed. The function
-                           365     ;                    returns FALSE if more audio data is not needed. The
-                           366     ;                    function is passed the address of the new buffer, and the
-                           367     ;                    length of the new buffer. If the new audio buffer is
-                           368     ;                    stored, then the length of the new audio buffer is 
-                           369     ;                    stored in NextBufferLeft.
-                           370     ; 
-                           371     ;Operation:          The function copies SP to BP and uses the base pointer
-                           372     ;                    to index into the stack. The checks the flag NeedData
-                           373     ;                    to see if more data is needed. If more data is needed, 
-                           374     ;                    then the function copies the first argument (the address
-                           375     ;                    of the new buffer) into NextBuffer and the second argument
-                           376     ;                    (the length of the new buffer in bytes) into 
-                           377     ;                    NextBufferLeft. The function resets the NeedData flag
-                           378     ;                    to FALSE, indicating that there is data in both buffers.
-                           379     ;                    If the passed pointer is used, then the function returns
-                           380     ;                    FALSE. If more data is not needed, then the function
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    02:07:36  05/20/;6  PAGE    8
+0048                       359     AudioOutputLoop:
+0048 83F900                360         CMP   CX, 0                              ;check if no bytes left
+004B 7426                  361         JE    AudioOutputDone                    ;no bytes left - function done
+004D 268A04                362         MOV   AL, ES:[SI]                        ;copy byte to be transferred
+                           363     
+0050                       364     AudioOutputSerial:                           ;serially send data to MP3 - MSB
+                           365                                                  ;first
+0050 32E4                  366         XOR   AH, AH                             ;only low byte has valid data
+0052 BA8001                367         MOV   DX, PCS3Address                    ;address to output DB7 to
+0055 D0C0                  368         ROL   AL, 1                              ;output MSB on DB0
+0057 EF                    369         OUT   DX, AX                             ;first bit goes to PCS3 to trigger
+                           370                                                  ;BSYNC
+                           371     
+0058 BA0001                372         MOV   DX, PCS2Address                    ;address to output bits 0-6
+005B D0C0                  373         ROL   AL, 1                              ;shift so DB6 is LSB
+005D EF                    374         OUT   DX, AX                             ;output other bits to PCS2
+                           375         
+005E D0C0                  376         ROL   AL, 1                              ;shift so DB5 is LSB
+0060 EF                    377         OUT   DX, AX                             ;output other bits to PCS2
+                           378         
+0061 D0C0                  379         ROL   AL, 1                              ;shift so DB4 is LSB
+0063 EF                    380         OUT   DX, AX                             ;output other bits to PCS2
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           381     ;                    does nothing but return FALSE.
-                           382     ;
-                           383     ;Arguments:          unsigned short int far* - address of new audio buffer
-                           384     ;                    int - length of the new buffer in words
-                           385     ;
-                           386     ;Return Values:      TRUE if more data was needed; FALSE otherwise
-                           387     ;
-                           388     ;Local Variables:    None
-                           389     ;
-                           390     ;Shared Variables:   NextBuffer(W) - pointer to second data buffer
-                           391     ;                    NextBufferLen(W) - length of the passed data buffer
-                           392     ;                    NeedData(R/W) - indicates if more data is needed
-                           393     ;
-                           394     ;Output:             None
-                           395     ;
-                           396     ;Error Handling:     None
-                           397     ;
-                           398     ;Algorithms:         None
-                           399     ;
-                           400     ;Registers Used:     None
-                           401     ;
-                           402     ;Known Bugs:         None
-                           403     ;
-                           404     ;Limitations:        None
-                           405     ;
-                           406     ;Author:             Timothy Liu
+                           381         
+0064 D0C0                  382         ROL   AL, 1                              ;shift so DB3 is LSB
+0066 EF                    383         OUT   DX, AX                             ;output other bits to PCS2
+                           384         
+0067 D0C0                  385         ROL   AL, 1                              ;shift so DB2 is LSB
+0069 EF                    386         OUT   DX, AX                             ;output other bits to PCS2
+                           387         
+006A D0C0                  388         ROL   AL, 1                              ;shift so DB1 is LSB
+006C EF                    389         OUT   DX, AX                             ;output other bits to PCS2
+                           390         
+006D D0C0                  391         ROL   AL, 1                              ;shift so DB0 is LSB
+006F EF                    392         OUT   DX, AX                             ;output other bits to PCS2
+                           393     
+0070                       394     AudioOutputUpdateByte:
+0070 46                    395         INC   SI                                 ;update pointer to next byte
+0071 EBD5                  396         JMP   AudioOutputLoop                    ;prepare to output next byte
+                           397     
+                           398     
+0073                       399     AudioOutputDone:                             ;stub function for now 
+0073 89360000       R      400         MOV    CurrentBuffer[0], SI              ;store the buffer location to 
+                           401                                                  ;start reading from
+0077 832E080020     R      402         SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
+                           403                                                  ;the buffer
+007C 07                    404         POP    ES
+007D 5E                    405         POP    SI
+007E C3                    406         RET
                            407     
-                           408     
-                           409     ;####### UPDATE CODE ###########
+                           408     AudioOutput    ENDP
+                           409     
                            410     
-----                       411     CODE ENDS
-                           412     
-                           413     ;start data segment
-                           414     
-                           415     
-----                       416     DATA    SEGMENT    PUBLIC  'DATA'
-                           417     
-0000 (2                    418     CurrentBuffer    DW FAR_SIZE DUP (?)     ;32 bit address of current audio buffer
+                           411     ;Name:               Audio_Play(unsigned short int far *, int)
+                           412     ;
+                           413     ;Description:        This function is called when the audio output is 
+                           414     ;                    started. This function is passed the address of the
+                           415     ;                    data buffer. The address is stored in CurrentBuffer.
+                           416     ;                    The function multiplies the second argument, the length
+                           417     ;                    of the buffer in words, by WORD_SIZE and moves the 
+                           418     ;                    product to the shared variable
+                           419     ;                    CurBuffLeft. The function then activates ICON0 to enable
+                           420     ;                    data request interrupts. 
+                           421     ; 
+                           422     ;Operation:          The function first copies the stack pointer to BP and 
+                           423     ;                    indexes into the stack. The function copies the 32 bit 
+                           424     ;                    address passed as the first argument to CurrentBuffer.
+                           425     ;                    The function indexes into the stack to copy the second
+                           426     ;                    argument into CurBuffLeft, which is the number of words
+                           427     ;                    left in the buffer to play. The function then outputs
+                           428     ;                    ICON0ON to ICON0Address to enable data request
+                           429     ;                    interrupts. The function also sends an INT0EOI to the
+                           430     ;                    EOI register and returns.
+                           431     ;
+                           432     ;Arguments:          unsigned short int far * - address of data buffer
+                           433     ;                    int - length of buffer in words
+                           434     ;
+                           435     ;Return Values:      None
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE    9
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           436     ;
+                           437     ;Local Variables:    None
+                           438     ;
+                           439     ;Shared Variables:   CurrentBuffer(W) - 16 bit address of current data buffer
+                           440     ;                                       being played from
+                           441     ;                    CurBuffLeft(W) -   number of words left in the data buffer
+                           442     ;
+                           443     ;Output:             None
+                           444     ;
+                           445     ;Error Handling:     None
+                           446     ;
+                           447     ;Algorithms:         None
+                           448     ;
+                           449     ;Registers Used:     None
+                           450     ;
+                           451     ;Known Bugs:         None
+                           452     ;
+                           453     ;Limitations:        None
+                           454     ;
+                           455     ;Author:             Timothy Liu
+                           456     
+                           457     
+                           458     ;  #######Audio_Play CODE ########
+                           459     
+                           460     
+                           461     ;Name:               Audio_Halt
+                           462     ;
+                           463     ;Description:        This function terminates the output of audio data. The 
+                           464     ;                    function does not return any value.
+                           465     ; 
+                           466     ;Operation:          The function writes the value ICON0OFF to ICON0ADDRESS.
+                           467     ;                    This disables interrupts from INT0 and disables MP3
+                           468     ;                    audio data request interrupts. The function the returns.
+                           469     ;
+                           470     ;Arguments:          None
+                           471     ;
+                           472     ;Return Values:      None
+                           473     ;
+                           474     ;Local Variables:    None
+                           475     ;
+                           476     ;Shared Variables:   None
+                           477     ;
+                           478     ;Output:             None
+                           479     ;
+                           480     ;Error Handling:     None
+                           481     ;
+                           482     ;Algorithms:         None
+                           483     ;
+                           484     ;Registers Used:     None
+                           485     ;
+                           486     ;Known Bugs:         None
+                           487     ;
+                           488     ;Limitations:        None
+                           489     ;
+                           490     ;Author:             Timothy Liu
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE   10
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           491     
+007F                       492     Audio_Halt        PROC    NEAR
+                           493                       PUBLIC  Audio_Halt
+                           494     
+007F                       495     AudioHaltStart:                        ;starting label - save registers
+007F 50                    496         PUSH    AX
+0080 52                    497         PUSH    DX
+                           498     
+0081                       499     AudioHaltWrite:                        ;turn off data request interrupts
+0081 BA38FF                500         MOV    DX, ICON0Address            ;address of INT0 control register
+0084 B81B00                501         MOV    AX, ICON0OFF                ;value to turn off data request IRQ
+0087 EF                    502         OUT    DX, AX                      ;shut off interrupts
+                           503     
+0088                       504     AudioHaltDone:                         ;done - restore labels and return
+0088 5A                    505         POP    DX
+0089 58                    506         POP    AX
+008A C3                    507         RET
+                           508     
+                           509     
+                           510     Audio_Halt    ENDP
+                           511     
+                           512     ;Name:               Update
+                           513     ;
+                           514     ;Description:        This function stores the address of a fresh audio buffer
+                           515     ;                    if the secondary audio buffer is empty. The function
+                           516     ;                    returns TRUE if the passed buffer was stored and a new
+                           517     ;                    buffer with more audio data is needed. The function
+                           518     ;                    returns FALSE if more audio data is not needed. The
+                           519     ;                    function is passed the address of the new buffer, and the
+                           520     ;                    length of the new buffer. If the new audio buffer is
+                           521     ;                    stored, then the length of the new audio buffer is 
+                           522     ;                    stored in NextBufferLeft.
+                           523     ; 
+                           524     ;Operation:          The function copies SP to BP and uses the base pointer
+                           525     ;                    to index into the stack. The checks the flag NeedData
+                           526     ;                    to see if more data is needed. If more data is needed, 
+                           527     ;                    then the function multiplies the first argument (the 
+                           528     ;                    address of the new buffer) by WORD_SIZE and moves the
+                           529     ;                    product into NextBufferLeft, which is the number of 
+                           530     ;                    bytes remaining in NextBuffer.
+                           531     ;                    The function resets the NeedData flag
+                           532     ;                    to FALSE, indicating that there is data in both buffers.
+                           533     ;                    If the passed pointer is used, then the function returns
+                           534     ;                    FALSE. If more data is not needed, then the function
+                           535     ;                    does nothing but return FALSE.
+                           536     ;
+                           537     ;Arguments:          unsigned short int far* - address of new audio buffer
+                           538     ;                    int - length of the new buffer in words
+                           539     ;
+                           540     ;Return Values:      TRUE if more data was needed; FALSE otherwise
+                           541     ;
+                           542     ;Local Variables:    None
+                           543     ;
+                           544     ;Shared Variables:   NextBuffer(W) - pointer to second data buffer
+                           545     ;                    NextBufferLen(W) - length of the passed data buffer
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    14:29:21  05/21/;6  PAGE   11
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           546     ;                    NeedData(R/W) - indicates if more data is needed
+                           547     ;
+                           548     ;Output:             None
+                           549     ;
+                           550     ;Error Handling:     None
+                           551     ;
+                           552     ;Algorithms:         None
+                           553     ;
+                           554     ;Registers Used:     None
+                           555     ;
+                           556     ;Known Bugs:         None
+                           557     ;
+                           558     ;Limitations:        None
+                           559     ;
+                           560     ;Author:             Timothy Liu
+                           561     
+                           562     
+                           563     ;####### UPDATE CODE ###########
+                           564     
+----                       565     CODE ENDS
+                           566     
+                           567     ;start data segment
+                           568     
+                           569     
+----                       570     DATA    SEGMENT    PUBLIC  'DATA'
+                           571     
+0000 (2                    572     CurrentBuffer    DW FAR_SIZE DUP (?)     ;32 bit address of current audio buffer
      ????
      )
-0004 (2                    419     NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
+0004 (2                    573     NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
      ????
      )
-0008 ????                  420     CurBuffLeft      DW               ?      ;words left in current buffer
-000A ????                  421     NextBufferLeft   DW               ?      ;words left in next buffer
-000C ??                    422     NeedData         DB               ?      ;flag set when CurrentBuffer is empty
-                           423                                              ;and more data is needed
-                           424     
-----                       425     DATA ENDS
-                           426     
-                           427             END
+0008 ????                  574     CurBuffLeft      DW               ?      ;bytes left in current buffer
+000A ????                  575     NextBuffLeft     DW               ?      ;bytes left in next buffer
+                           576     
+000C ??                    577     NeedData         DB               ?      ;flag set when CurrentBuffer is empty
+                           578                                              ;and more data is needed
+                           579     
+----                       580     DATA ENDS
+                           581     
+                           582             END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND
