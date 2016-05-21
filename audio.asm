@@ -16,7 +16,8 @@
 ;    AudioOutput  -outputs audio data to the MP3 decoder
 ;    Audio_Play   -sets up shared variables for outputting audio
 ;    Audio_Halt   -stops audio play by turning off ICON0 interrupts
-;    Update       -returns if NextBuffer is empty 
+;    Update       -returns if NextBuffer is empty
+;    AudioIRQOn   -turns on INT0 audio data request interrupts
 
 
 ; Revision History:
@@ -25,8 +26,9 @@
 ;    5/20/16    Tim Liu    wrote outlines for all functions
 ;    5/20/16    Tim Liu    wrote Audio_Halt and AudioEH
 ;    5/21/16    Tim Liu    wrote AudioOutput
-;    
-;
+;    5/21/16    Tim Liu    wrote Audio_Play
+;    5/21/16    Tim Liu    wrote AudioIRQOn
+;    5/21/16    Tim Liu    wrote Update
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
@@ -43,6 +45,68 @@ CODE SEGMENT PUBLIC 'CODE'
         ASSUME  CS:CGROUP, DS:DGROUP 
 
 ;external function declarations
+
+;Name:               AudioIRQOn
+;
+;Description:        This function enables data request interrupts from the
+;                    MP3 decoder. The function writes ICON0ON to ICON0Address.
+;                    The function also sends an EOI to clear out the interrupt
+;                    handler.
+; 
+;Operation:          The function copies ICON0ON to AX and copies ICON0Address
+;                    to DX. The function then outputs the address to the
+;                    peripheral control block. The function then outputs
+;                    INT0EOI to INTCtrlrEOI to clear the interrupt controller.
+;
+;Arguments:          None
+;
+;Return Values:      None
+;
+;Local Variables:    None
+;
+;Shared Variables:   None
+;
+;Output:             None
+;
+;Error Handling:     None
+;
+;Algorithms:         None
+;
+;Registers Used:     None
+;
+;Known Bugs:         None
+;
+;Limitations:        None
+;
+;Author:             Timothy Liu
+;
+;Last Modified       5/21/16
+
+AudioIRQOn            PROC    NEAR
+                      PUBLIC  AudioIRQOn
+
+AudioIRQOnStart:                          ;save registers
+    PUSH    AX
+    PUSH    DX
+
+AudioIRQOnOutput:                         ;turn on INT0 data request interrupts
+                                          ;and send an EOI
+    MOV     DX, ICON0Address              ;address of INT0 interrupt controller
+    MOV     AX, ICON0On                   ;value to start int 0 interrupts
+    OUT     DX, AX
+
+    MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
+    MOV     AX, INT0EOI                   ;INT0 end of interrupt
+    OUT     DX, AX                        ;output to peripheral control block
+
+AudioIRQOnDone:                           ;restore registers and return
+    POP     DX
+    POP     AX
+    RET
+
+
+
+AudioIRQOn        ENDP
 
 
 
@@ -104,8 +168,8 @@ AudioEH        ENDP
 ;
 ;Description:        This function sends data serially to the MP3 decoder.
 ;                    The function copies bytes from CurrentBuffer and performs
-;                    bit banging to output the bytes. After each byte is
-;                    transferred, the function decrements CurBuffLeft. If
+;                    bit banging to output the bytes. The function transfer
+;                    Bytes_Per_Transfer each time the function is called. If
 ;                    CurBuffLeft is equal to zero, then the function swaps
 ;                    the NextBuffer into CurrentBuffer and continues playing
 ;                    from CurrentBuffer. The function also sets the NeedData
@@ -122,15 +186,18 @@ AudioEH        ENDP
 ;                    turns off ICON0 interrupts and returns. If there is
 ;                    data in the current buffer, then the function outputs
 ;                    BytesPerTransfer bytes starting at CurrentBuffer.
-;                    AudioOutput copies the byte CurrentBuffer points to
+;                    The address pointed to by CurrentBuffer is copied to ES:SI.
+;                    AudioOutput copies the byte ES:SI points to
 ;                    and outputs the bits serially. The first bit (MSB) 
 ;                    is output to PCS3. After the first bit is output, the
 ;                    other bits are shifted to DB0 and output to PCS2
 ;                    until the byte is fully output. The function increments
-;                    the pointer CurrentBuffer and outputs BytesPerTransfer
+;                    the SI after each byte transfer and outputs BytesPerTransfer
 ;                    bytes. After the bytes are output, the function
-;                    decrements CurBuffLeft by BytesPerTransfer. The
-;                    size of the passed buffers MUST be a multiple of
+;                    decrements CurBuffLeft by BytesPerTransfer. The function
+;                    copies SI to CurrentBuffer[0] to update the offset of
+;                    the buffer. CurrentBuffer points to the next byte to output
+;                    The size of the passed buffers MUST be a multiple of
 ;                    BytesPerTransfer.
 ;                    
 ;                    
@@ -140,6 +207,8 @@ AudioEH        ENDP
 ;Return Values:      None
 ;
 ;Local Variables:    CX - Bytes left to transfer
+;                    SI - offset of current buffer pointer
+;                    ES - segment of current buffer pointer
 ;
 ;Shared Variables:   CurrentBuffer(R/W) - 32 bit address of current data buffer
 ;                                         being played from
@@ -155,7 +224,7 @@ AudioEH        ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     AX, CX - these registers preserved by event handler
+;Registers Used:     AX, CX - these registers are preserved by event handler
 ;
 ;Known Bugs:         None
 ;
@@ -164,6 +233,9 @@ AudioEH        ENDP
 ;                    Data buffers are assumed to be entirely in a single segment
 ;
 ;Author:             Timothy Liu
+;
+;Last Modified       5/21/16
+
 
 ;Outline
 ;AudioOutput()
@@ -198,7 +270,8 @@ AudioOutputStart:                            ;starting label - save registers
 AudioOutputCheckCur:                         ;check if current buffer is empty
     CMP    CurBuffLeft, 0                    ;no bytes left in buffer
     JE     AudioOutputCheckNext              ;check if next buffer is empty
-    JMP    AudioOutputByteLoopPrep           ;buffers not empty - output data
+    JMP    AudioOutputByteLoopPrep           ;Current buffer not empty - 
+                                             ;output data
 
 AudioOutputCheckNext:
     CMP    NeedData, TRUE                    ;see if next buffer is empty
@@ -268,6 +341,7 @@ AudioOutputSerial:                           ;serially send data to MP3 - MSB
 
 AudioOutputUpdateByte:
     INC   SI                                 ;update pointer to next byte
+    DEC   CX                                 ;one fewer byte left to transfer
     JMP   AudioOutputLoop                    ;prepare to output next byte
 
 
@@ -291,18 +365,19 @@ AudioOutput    ENDP
 ;                    The function multiplies the second argument, the length
 ;                    of the buffer in words, by WORD_SIZE and moves the 
 ;                    product to the shared variable
-;                    CurBuffLeft. The function then activates ICON0 to enable
-;                    data request interrupts. 
+;                    CurBuffLeft. The function then calls AudioIRQON enable
+;                    data request interrupts. Finally, the function indicates
+;                    that the next buffer is empty and more data is needed.
 ; 
 ;Operation:          The function first copies the stack pointer to BP and 
 ;                    indexes into the stack. The function copies the 32 bit 
 ;                    address passed as the first argument to CurrentBuffer.
 ;                    The function indexes into the stack to copy the second
 ;                    argument into CurBuffLeft, which is the number of words
-;                    left in the buffer to play. The function then outputs
-;                    ICON0ON to ICON0Address to enable data request
-;                    interrupts. The function also sends an INT0EOI to the
-;                    EOI register and returns.
+;                    left in the buffer to play. The function then calls
+;                    AudioIRQON to enable data request
+;                    interrupts. The function writes TRUE to NeedData to indicate
+;                    that the next buffer is empty.
 ;
 ;Arguments:          unsigned short int far * - address of data buffer
 ;                    int - length of buffer in words
@@ -328,9 +403,40 @@ AudioOutput    ENDP
 ;Limitations:        None
 ;
 ;Author:             Timothy Liu
+;
+;Last Modified       5/21/16
 
+Audio_Play        PROC    NEAR
+                  PUBLIC  Audio_Play
 
-;  #######Audio_Play CODE ########
+AudioPlayStart:                          ;set up BP to index into stack
+    PUSH    BP                           ;save base pointer
+    MOV     BP, SP                       ;base pointer used to index into stack
+    PUSH    AX
+AudioPlayArgs:                           ;pull the arguments from the stack
+    MOV     AX, SS:[BP+4]                ;buffer offset
+    MOV     CurrentBuffer[0], AX         ;write offset to CurrentBuffer
+
+    MOV     AX, SS:[BP+6]                ;buffer segment
+    MOV     CurrentBuffer[1], AX         ;write buffer segment to CurrentBuffer
+
+    MOV     AX, SS:[BP+8]                ;length of the buffer in words
+    SHL     AX, 1                        ;double to convert to number of bytes
+    MOV     CurBuffLeft, AX              ;load number of bytes left
+
+AudioPlayNeedData:                       ;indicate that the next buffer is empty
+    MOV     NeedData, TRUE               ;next buffer is empty
+
+AudioPlayIRQON:
+    CALL    AudioIRQOn                   ;turn audio data request interrupts on
+
+AudioPlayDone:
+    POP     AX
+    POP     BP
+    RET
+    
+
+Audio_Play    ENDP
 
 
 ;Name:               Audio_Halt
@@ -363,6 +469,8 @@ AudioOutput    ENDP
 ;Limitations:        None
 ;
 ;Author:             Timothy Liu
+;
+;Last Modified       5/21/16
 
 Audio_Halt        PROC    NEAR
                   PUBLIC  Audio_Halt
@@ -426,16 +534,52 @@ Audio_Halt    ENDP
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     None
+;Registers Used:     AX
 ;
 ;Known Bugs:         None
 ;
 ;Limitations:        None
 ;
 ;Author:             Timothy Liu
+;
+;Last Modified       5/21/16
+
+Update            PROC    NEAR
+                  PUBLIC  Update
+
+UpdateStart:                            ;prepare BP to index into stack
+    PUSH    BP                          ;preserve BP
+    MOV     BP, SP                      ;use BP as stack index
+
+UpdateCheckNeed:                        ;see if more data is needed
+    CMP    NeedData, FALSE              ;
+    JE     UpdateNoNeed                 ;next buffer filled - no data needed
+    ;JMP   UpdateNextEmpty              ;more data is needed
+
+UpdateNextEmpty:                        ;next buffer is empty
+    MOV    AX, SS:[BP+4]                ;offset of the new buffer
+    MOV    NextBuffer[0], AX            ;load offset of the new buffer
+
+    MOV    AX, SS:[BP+6]                ;segment of the new buffer
+    MOV    NextBuffer[1], AX            ;load the offset of the new buffer
+
+    MOV    AX, SS:[BP+8]                ;length of the new buffer in words
+    SHL    AX, 1                        ;double to get length of buffer in bytes
+    MOV    NextBuffLeft, AX             ;store the length in bytes
+
+    CALL   AudioIRQOn                   ;turn on data request interrupts
+    MOV    AX, TRUE                     ;passed buffer was used
+    JMP    UpdateDone
+
+UpdateNoNeed:
+    MOV    AX, FALSE                    ;not ready for more data
+
+UpdateDone:
+    POP    BP
+    RET
 
 
-;####### UPDATE CODE ###########
+Update        ENDP
 
 CODE ENDS
 
@@ -449,7 +593,7 @@ NextBuffer       DW FAR_SIZE DUP (?)     ;32 bit address of next audio buffer
 CurBuffLeft      DW               ?      ;bytes left in current buffer
 NextBuffLeft     DW               ?      ;bytes left in next buffer
 
-NeedData         DB               ?      ;flag set when CurrentBuffer is empty
+NeedData         DB               ?      ;flag set when NextBuffer is empty
                                          ;and more data is needed
 
 DATA ENDS
