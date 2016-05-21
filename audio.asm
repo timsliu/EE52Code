@@ -12,12 +12,12 @@
 
 ; Table of Contents
 ;
+;    AudioIRQOn   -turns on INT0 audio data request interrupts
 ;    AudioEH      -event handler for audio data request interrupts
 ;    AudioOutput  -outputs audio data to the MP3 decoder
 ;    Audio_Play   -sets up shared variables for outputting audio
 ;    Audio_Halt   -stops audio play by turning off ICON0 interrupts
 ;    Update       -returns if NextBuffer is empty
-;    AudioIRQOn   -turns on INT0 audio data request interrupts
 
 
 ; Revision History:
@@ -116,12 +116,11 @@ AudioIRQOn        ENDP
 ;                    The function is called whenever the VS1011 MP3
 ;                    decoder needs more data.
 ; 
-;Operation:          The function first saves the registers. It then loads
-;                    the constant RefreshRows into BX. RefreshRows is the
-;                    number of rows that will be refreshed with each
-;                    call to RefreshDRAM. The function then loops
-;                    and reads from PCS4Address RefreshRows times. The
-;                    function then restores the registers and returns.
+;Operation:          The function first saves the registers that will be
+;                    modified by AudioOutput. The function calls AudioOutput,
+;                    which checks if the data buffers have data and serially
+;                    outputs data to the MP3 decoder. The function then restores
+;                    the registers and IRET.
 ;
 ;Arguments:          None
 ;
@@ -176,6 +175,9 @@ AudioEH        ENDP
 ;                    flag to indicate that more data is need so that
 ;                    NextBuffer is filled. The function is called whenever
 ;                    the MP3 decoder sends a data request interrupt.
+;                    If both the current buffer and next buffer are empty, the
+;                    function calls Audio_Halt to shut off data request interrupts.
+;                    Interrupts are not restored until more data is provided.
 ; 
 ;Operation:          The function first checks if CurBuffLeft is equal to
 ;                    to zero, indicating the current buffer is empty.
@@ -183,7 +185,8 @@ AudioEH        ENDP
 ;                    makes the next buffer the current buffer and sets
 ;                    NeedData to indicate that a new buffer is needed. If
 ;                    the next buffer is also empty, then the function 
-;                    turns off ICON0 interrupts and returns. If there is
+;                    calls Audio_Halt to turns off ICON0 interrupts and returns.
+;                    If there is
 ;                    data in the current buffer, then the function outputs
 ;                    BytesPerTransfer bytes starting at CurrentBuffer.
 ;                    The address pointed to by CurrentBuffer is copied to ES:SI.
@@ -192,14 +195,14 @@ AudioEH        ENDP
 ;                    is output to PCS3. After the first bit is output, the
 ;                    other bits are shifted to DB0 and output to PCS2
 ;                    until the byte is fully output. The function increments
-;                    the SI after each byte transfer and outputs BytesPerTransfer
+;                    SI after each byte transfer and outputs BytesPerTransfer
 ;                    bytes. After the bytes are output, the function
 ;                    decrements CurBuffLeft by BytesPerTransfer. The function
 ;                    copies SI to CurrentBuffer[0] to update the offset of
-;                    the buffer. CurrentBuffer points to the next byte to output
-;                    The size of the passed buffers MUST be a multiple of
-;                    BytesPerTransfer.
-;                    
+;                    the buffer. The function copies ES to CurrentBuffer[1] to
+;                    update the segment. CurrentBuffer points to the next byte
+;                    to output The size of the passed buffers MUST be
+;                    a multiple of BytesPerTransfer. 
 ;                    
 ;
 ;Arguments:          None
@@ -225,6 +228,7 @@ AudioEH        ENDP
 ;Algorithms:         None
 ;
 ;Registers Used:     AX, CX - these registers are preserved by event handler
+;                    Flag register
 ;
 ;Known Bugs:         None
 ;
@@ -340,14 +344,24 @@ AudioOutputSerial:                           ;serially send data to MP3 - MSB
     OUT   DX, AX                             ;output other bits to PCS2
 
 AudioOutputUpdateByte:
-    INC   SI                                 ;update pointer to next byte
     DEC   CX                                 ;one fewer byte left to transfer
-    JMP   AudioOutputLoop                    ;prepare to output next byte
+    INC   SI                                 ;update pointer to next byte
+    JNC   AudioOutputLoop                    ;SI didn’t overflow - same segment
+                                             ;go back to loop
+    ;JMP  AudioOutputUpdateSegment           ;SI overflowed - update the segment
 
+AudioOutputUpdateSegment:
+    MOV   AX, ES                             ;use accumulator to perform addition
+    ADD   AX, Segment_Overlap                ;change segment so ES:SI points to
+                                             ;next physical address
+    MOV   ES, AX                             ;write new segment back to ES
+    JMP   AudioOutputLoop                    ;go back to loop
 
 AudioOutputDone:                             ;stub function for now 
     MOV    CurrentBuffer[0], SI              ;store the buffer location to 
                                              ;start reading from
+    MOV    AX, ES                            ;store the updated buffer segment
+    MOV    CurrentBuffer[1], AX
     SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
                                              ;the buffer
     POP    ES
@@ -412,7 +426,8 @@ Audio_Play        PROC    NEAR
 AudioPlayStart:                          ;set up BP to index into stack
     PUSH    BP                           ;save base pointer
     MOV     BP, SP                       ;base pointer used to index into stack
-    PUSH    AX
+    PUSH    AX                           ;save register
+
 AudioPlayArgs:                           ;pull the arguments from the stack
     MOV     AX, SS:[BP+4]                ;buffer offset
     MOV     CurrentBuffer[0], AX         ;write offset to CurrentBuffer
@@ -430,7 +445,7 @@ AudioPlayNeedData:                       ;indicate that the next buffer is empty
 AudioPlayIRQON:
     CALL    AudioIRQOn                   ;turn audio data request interrupts on
 
-AudioPlayDone:
+AudioPlayDone:                           ;restores registers
     POP     AX
     POP     BP
     RET
@@ -446,7 +461,7 @@ Audio_Play    ENDP
 ; 
 ;Operation:          The function writes the value ICON0OFF to ICON0ADDRESS.
 ;                    This disables interrupts from INT0 and disables MP3
-;                    audio data request interrupts. The function the returns.
+;                    audio data request interrupts. The function then returns.
 ;
 ;Arguments:          None
 ;
@@ -506,16 +521,20 @@ Audio_Halt    ENDP
 ; 
 ;Operation:          The function copies SP to BP and uses the base pointer
 ;                    to index into the stack. The checks the flag NeedData
-;                    to see if more data is needed. If more data is needed, 
-;                    then the function multiplies the first argument (the 
+;                    to see if more data is needed. If more data is needed,
+;                    then the function copies the first argument - the address
+;                    of the data buffer - into NextBuffer. Next, 
+;                    the function multiplies the second argument (the 
 ;                    address of the new buffer) by WORD_SIZE and moves the
 ;                    product into NextBufferLeft, which is the number of 
-;                    bytes remaining in NextBuffer.
-;                    The function resets the NeedData flag
-;                    to FALSE, indicating that there is data in both buffers.
-;                    If the passed pointer is used, then the function returns
-;                    FALSE. If more data is not needed, then the function
-;                    does nothing but return FALSE.
+;                    bytes remaining in NextBuffer. The function then resets
+;                    the NeedData flag to FALSE, indicating that
+;                    there is data in NextBuffer. If the passed pointer is
+;                    used, then the function returns TRUE. If more data is
+;                    not needed (NeedData was False) , then the function                  
+;                    does nothing but return FALSE. The function calls
+;                    AudioIRQOn to turn on INT0 data request interrupts if the
+;                    new buffer was used.
 ;
 ;Arguments:          unsigned short int far* - address of new audio buffer
 ;                    int - length of the new buffer in words
@@ -569,6 +588,7 @@ UpdateNextEmpty:                        ;next buffer is empty
 
     CALL   AudioIRQOn                   ;turn on data request interrupts
     MOV    AX, TRUE                     ;passed buffer was used
+    MOV    NeedData, False              ;NextBuffer is filled - no need for data
     JMP    UpdateDone
 
 UpdateNoNeed:

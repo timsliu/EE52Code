@@ -44,3 +44,5 @@ FALSE                EQU        0         ;false
 
 WORD_SIZE            EQU        2         ;2 bytes per word
 FAR_SIZE             EQU        2         ;2 words per far address
+Segment_Overlap      EQU    1000H         ;number of unique ways to map physical
+                                          ;address
