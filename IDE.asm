@@ -75,7 +75,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Algorithms:         None
 ;
-;Registers Used:     SI, flags register
+;Registers Used:     flags register
 ;
 ;Known Bugs:         None
 ;
@@ -401,6 +401,7 @@ GetBlocksStart:                               ;starting label
     PUSH    BX                                ;save registers
     PUSH    CX
     PUSH    DX
+    PUSH    SI
 
 GetBlocksLoadRemaining:                       ;load number of sectors remaining
     MOV    CX, SS:[BP+8]                      ;total sectors to read
@@ -450,8 +451,8 @@ GetBlocksPrepareDMA:                          ;set up DMA control registers
     CALL   SetupDMA                           ;call function to set up DMA registers
 
 GetBlocksCheckTransfer:                       ;check if IDE is ready to transfer data
-    MOV   AH, IDETransferMask                 ;mask out unimportant status bits
-    MOV   AL, IDETransfer                     ;value to compare to
+    MOV   DH, IDETransferMask                 ;mask out unimportant status bits
+    MOV   DL, IDETransfer                     ;value to compare to
     CALL  CheckIDEBusy                        ;return when IDE is ready
 
 GetBlocksDMA:                                 ;write to DxCON and perform DMA
@@ -476,6 +477,7 @@ GetBlocksRecalculate:                         ;recalculate LBA and destination p
   
 GetBlocksDone:
     MOV    AX, SectorsRead                    ;return number of sectors read
+    POP    SI
     POP    DX                                 ;restore registers
     POP    CX
     POP    BX
