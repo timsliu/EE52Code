@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE TIMER0M
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ; Revision History:
                       =1    49     ;    11/4/15     Timothy Liu     initial revision
                       =1    50     ;    04/4/16     Timothy Liu     changed name to Timer0M.INC for MP3 player
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -101,256 +101,280 @@ LOC  OBJ                  LINE     SOURCE
                       =1    86     ;
                       =1    87     ; Revision History:
                       =1    88     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
-                      =1    89     
+                      =1    89     ;    5/19/16    Timothy Liu     added INT0 interrupt definition
                       =1    90     
-                      =1    91     ;Interrupt Vector Table
-  0001                =1    92     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
-  0003                =1    93     LAST_RESERVED_VEC            EQU          3
-  0100                =1    94     NUM_IRQ_VECTORS              EQU      256  ;number of interrupt vectors
-  0004                =1    95     INTERRUPT_SIZE               EQU        4  ;each vector is 4 addresses large
-                      =1    96     
-                      =1    97     ;Addresses
-  FF22                =1    98     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
-  FF32                =1    99     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
-                      =1   100     
-                      =1   101     ;ICON0Address                            ;address of ICON0 register
-                      =1   102     ;ICON1Address                            ;address of ICON1 register
-                      =1   103     
-                      =1   104     ; Register Values
-  0001                =1   105     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    3
+                      =1    91     
+                      =1    92     ;Interrupt Vector Table
+  0001                =1    93     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
+  0003                =1    94     LAST_RESERVED_VEC            EQU          3
+  0100                =1    95     NUM_IRQ_VECTORS              EQU      256    ;number of interrupt vectors
+  0004                =1    96     INTERRUPT_SIZE               EQU        4    ;each vector is 4 addresses large
+                      =1    97     
+                      =1    98     ;Addresses
+  FF22                =1    99     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
+  FF32                =1   100     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
+                      =1   101     
+  FF38                =1   102     ICON0Address    EQU     0FF38H           ;address of ICON0 register
+                      =1   103     ;ICON1Address                            ;address of ICON1 register
+                      =1   104     
+                      =1   105     ; Register Values
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1   106                                             ;000000000000----  reserved
-                      =1   107                                             ;------------0---  enable timer interrupt
-                      =1   108                                             ;-------------001  timer priority
-                      =1   109     
+  0001                =1   106     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
+                      =1   107                                             ;000000000000----  reserved
+                      =1   108                                             ;------------0---  enable timer interrupt
+                      =1   109                                             ;-------------001  timer priority
                       =1   110     
-                      =1   111     ; End of Interrupt values
-  8000                =1   112     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
-  0008                =1   113     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
-                      =1   114     ;INT0EOI
-                      =1   115     ;INT1EOI
-                      =1   116     
-                      =1   117     ; Interrupt Vector
-  0008                =1   118     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
-  0012                =1   119     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
-                      =1   120     ;INT0Vec
-                      =1   121     ;INT1VEc
-                           122 +1  $INCLUDE(GENERAL.INC)
-                      =1   123     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   124     ;                                                                            ;
-                      =1   125     ;                                  General.INC                               ;
-                      =1   126     ;                               General include file                         ;
-                      =1   127     ;                                   EE/CS 51                                 ;
-                      =1   128     ;                                                                            ;
-                      =1   129     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   130     
-                      =1   131     ; This file contains general definitions and constants.
-                      =1   132     ;
-                      =1   133     ; Revision History:
-                      =1   134     ;    11/3/15     Timothy Liu     initial revision
-                      =1   135     ;    11/5/15     Timothy Liu     fixed formatting
-                      =1   136     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
-                      =1   137     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
-                      =1   138     ;    11/19/15    Timothy Liu     removed interrupt related definitions
-                      =1   139     ;    12/5/15     Timothy Liu     added ASCII definitions
-                      =1   140     
-                      =1   141     
-                      =1   142     
-  0004                =1   143     BitsPerNibble        EQU        4         ;number of bits in a nibble
-                      =1   144     
-  0002                =1   145     OffSize              EQU        2         ;offset size in bytes
+  0013                =1   111     ICON0ON        EQU      0013H           ;0000000000010011b
+                      =1   112                                             ;000000000-------b  ;reserved
+                      =1   113                                             ;---------0------b  ;no nesting
+                      =1   114                                             ;----------0-----b  ;no cascade mode
+                      =1   115                                             ;-----------1----b  ;level triggered
+                      =1   116                                             ;------------0---b  ;enable interrupts
+                      =1   117                                             ;--------------11b  ;set priority to 3
+                      =1   118     
+  001B                =1   119     ICON0OFF        EQU      001BH          ;0000000000011011b
+                      =1   120                                             ;000000000-------b  ;reserved
+                      =1   121                                             ;---------0------b  ;no nesting
+                      =1   122                                             ;----------0-----b  ;no cascade mode
+                      =1   123                                             ;-----------1----b  ;level triggered
+                      =1   124                                             ;------------1---b  ;disable interrupts
+                      =1   125                                             ;--------------11b  ;set priority to 3
+                      =1   126     
+                      =1   127     ; End of Interrupt values
+  8000                =1   128     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
+  0008                =1   129     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
+  000C                =1   130     INT0EOI         EQU     0000CH          ;INT0 EOI
+                      =1   131     ;INT1EOI
+                      =1   132     
+                      =1   133     ; Interrupt Vector
+  0008                =1   134     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
+  0012                =1   135     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
+  000C                =1   136     INT0Vec         EQU     12              ;interrupt vector for INT0
+                      =1   137     ;INT1VEc
+                           138 +1  $INCLUDE(GENERAL.INC)
+                      =1   139     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1   140     ;                                                                            ;
+                      =1   141     ;                                  General.INC                               ;
+                      =1   142     ;                               General include file                         ;
+                      =1   143     ;                                   EE/CS 51                                 ;
+                      =1   144     ;                                                                            ;
+                      =1   145     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                       =1   146     
-                      =1   147     ;Ascii definitions
-  000D                =1   148     ASCII_CR             EQU       13         ;ASCII carriage return
-  0044                =1   149     ASCII_D              EQU       68         ;ASCII code for D
-  0045                =1   150     ASCII_E              EQU       69         ;ASCII E
-  0046                =1   151     ASCII_F              EQU       70         ;F character for fire (laser on)
-  0049                =1   152     ASCII_I              EQU       73         ;I character
-  004C                =1   153     ASCII_L              EQU       76         ;L character
-  004F                =1   154     ASCII_O              EQU       79         ;O character for off (laser off)
-  0050                =1   155     ASCII_P              EQU       80         ;P character
-  0052                =1   156     ASCII_R              EQU       82         ;R character
-  0053                =1   157     ASCII_S              EQU       83         ;S character
-  0054                =1   158     ASCII_T              EQU       84         ;T character
-  0000                =1   159     ASCII_NULL           EQU        0         ;ASCII null character
-  0020                =1   160     ASCII_SPACE          EQU       32         ;ASCII space
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    4
+                      =1   147     ; This file contains general definitions and constants.
+                      =1   148     ;
+                      =1   149     ; Revision History:
+                      =1   150     ;    11/3/15     Timothy Liu     initial revision
+                      =1   151     ;    11/5/15     Timothy Liu     fixed formatting
+                      =1   152     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
+                      =1   153     ;    11/17/15    Timothy Liu     update for HW7 - added Serial_Vector and INT2EOI
+                      =1   154     ;    11/19/15    Timothy Liu     removed interrupt related definitions
+                      =1   155     ;    12/5/15     Timothy Liu     added ASCII definitions
+                      =1   156     
+                      =1   157     
+                      =1   158     
+  0004                =1   159     BitsPerNibble        EQU        4         ;number of bits in a nibble
+                      =1   160     
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-  003A                =1   161     ASCII_COLON          EQU       58         ;ASCII colon
-  003E                =1   162     ASCII_RArrow         EQU       62         ;ASCII > symbol
-                      =1   163     
-  0001                =1   164     TRUE                 EQU        1         ;true
-  0000                =1   165     FALSE                EQU        0         ;false
-                      =1   166     
-  0002                =1   167     WORD_SIZE            EQU        2         ;2 bytes per word
-                           168     
-                           169     
-                           170     CGROUP    GROUP    CODE
-                           171     
-                           172     
-                           173     
-----                       174     CODE SEGMENT PUBLIC 'CODE'
-                           175     
-                           176             ASSUME  CS:CGROUP
-                           177     
-                           178     ; external function declarations
-                           179     
-                           180             EXTRN       ButtonDebounce:NEAR      ;scan and check keypad
-                           181             EXTRN       UpdateClock:NEAR         ;update clock tracking milliseconds
-                           182     
-                           183     
-                           184     ; InitTimer0
-                           185     ;
-                           186     ; Description:       Initialize the 80188 timer0.  The timer is initialized
-                           187     ;                    to generate interrupts every COUNTS_PER_MS clock cycles.
-                           188     ;                    The interrupt controller is also initialized to allow the
-                           189     ;                    timer interrupts. Timer #0 counts COUNTS_PER_MS.
-                           190     ;
-                           191     ; Operation:         Timer0 is first reset. The appropriate values are written
-                           192     ;                    to the timer control registers in the PCB. Finally, the
-                           193     ;                    interrupt controller is setup to accept timer interrupts
-                           194     ;                    and any pending interrupts are cleared by sending 
-                           195     ;                    a TimerEOI to the interrupt controller.
-                           196     ;                    
-                           197     ;
-                           198     ; Arguments:         None.
-                           199     ; Return Value:      None.
-                           200     ;
-                           201     ; Local Variables:   None.
-                           202     ; Shared Variables:  None.
-                           203     ; Global Variables:  None.
+  0002                =1   161     OffSize              EQU        2         ;offset size in bytes
+                      =1   162     
+                      =1   163     ;Ascii definitions
+  000D                =1   164     ASCII_CR             EQU       13         ;ASCII carriage return
+  0044                =1   165     ASCII_D              EQU       68         ;ASCII code for D
+  0045                =1   166     ASCII_E              EQU       69         ;ASCII E
+  0046                =1   167     ASCII_F              EQU       70         ;F character for fire (laser on)
+  0049                =1   168     ASCII_I              EQU       73         ;I character
+  004C                =1   169     ASCII_L              EQU       76         ;L character
+  004F                =1   170     ASCII_O              EQU       79         ;O character for off (laser off)
+  0050                =1   171     ASCII_P              EQU       80         ;P character
+  0052                =1   172     ASCII_R              EQU       82         ;R character
+  0053                =1   173     ASCII_S              EQU       83         ;S character
+  0054                =1   174     ASCII_T              EQU       84         ;T character
+  0000                =1   175     ASCII_NULL           EQU        0         ;ASCII null character
+  0020                =1   176     ASCII_SPACE          EQU       32         ;ASCII space
+  003A                =1   177     ASCII_COLON          EQU       58         ;ASCII colon
+  003E                =1   178     ASCII_RArrow         EQU       62         ;ASCII > symbol
+                      =1   179     
+  0001                =1   180     TRUE                 EQU        1         ;true
+  0000                =1   181     FALSE                EQU        0         ;false
+                      =1   182     
+  0002                =1   183     WORD_SIZE            EQU        2         ;2 bytes per word
+  0002                =1   184     FAR_SIZE             EQU        2         ;2 words per far address
+  1000                =1   185     Segment_Overlap      EQU    1000H         ;number of unique ways to map physical
+                      =1   186                                               ;address
+                           187     
+                           188     
+                           189     CGROUP    GROUP    CODE
+                           190     
+                           191     
+                           192     
+----                       193     CODE SEGMENT PUBLIC 'CODE'
+                           194     
+                           195             ASSUME  CS:CGROUP
+                           196     
+                           197     ; external function declarations
+                           198     
+                           199             EXTRN       ButtonDebounce:NEAR      ;scan and check keypad
+                           200             EXTRN       UpdateClock:NEAR         ;update clock tracking milliseconds
+                           201     
+                           202     
+                           203     ; InitTimer0
                            204     ;
-                           205     ; Input:             None.
-                           206     ; Output:            None.
-                           207     ;
-                           208     ; Error Handling:    None.
+                           205     ; Description:       Initialize the 80188 timer0.  The timer is initialized
+                           206     ;                    to generate interrupts every COUNTS_PER_MS clock cycles.
+                           207     ;                    The interrupt controller is also initialized to allow the
+                           208     ;                    timer interrupts. Timer #0 counts COUNTS_PER_MS.
                            209     ;
-                           210     ; Algorithms:        None.
-                           211     ; Data Structures:   None.
-                           212     ;
-                           213     ; Registers Changed: AX, DX
-                           214     ; Stack Depth:       0 words
-                           215     ;
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    5
+                           210     ; Operation:         Timer0 is first reset. The appropriate values are written
+                           211     ;                    to the timer control registers in the PCB. Finally, the
+                           212     ;                    interrupt controller is setup to accept timer interrupts
+                           213     ;                    and any pending interrupts are cleared by sending 
+                           214     ;                    a TimerEOI to the interrupt controller.
+                           215     ;                    
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     ; Author:            Timothy Liu
-                           217     ; Last Modified:     10/27/15
-                           218     
-0000                       219     InitTimer0      PROC    NEAR
-                           220                     PUBLIC  InitTimer0
-                           221     
-                           222     
-0000 BA50FF                223             MOV     DX, Tmr0Count   ;initialize the count register to 0
-0003 33C0                  224             XOR     AX, AX
-0005 EE                    225             OUT     DX, AL
-                           226     
-0006 BA52FF                227             MOV     DX, Tmr0MaxCntA  ;setup max count for 1ms counts
-0009 B8B80B                228             MOV     AX, COUNTS_PER_MS
-000C EE                    229             OUT     DX, AL
-                           230     
-000D BA56FF                231             MOV     DX, Tmr0Ctrl    ;setup the control register
-0010 B801E0                232             MOV     AX, Tmr0CtrlVal
-0013 EE                    233             OUT     DX, AL
-                           234     
-                           235     
-                           236                                     ;initialize interrupt controller for timers
-0014 BA32FF                237             MOV     DX, INTCtrlrCtrl;setup the interrupt control register
-0017 B80100                238             MOV     AX, INTCtrlrCVal
-001A EE                    239             OUT     DX, AL
+                           216     ;
+                           217     ; Arguments:         None.
+                           218     ; Return Value:      None.
+                           219     ;
+                           220     ; Local Variables:   None.
+                           221     ; Shared Variables:  None.
+                           222     ; Global Variables:  None.
+                           223     ;
+                           224     ; Input:             None.
+                           225     ; Output:            None.
+                           226     ;
+                           227     ; Error Handling:    None.
+                           228     ;
+                           229     ; Algorithms:        None.
+                           230     ; Data Structures:   None.
+                           231     ;
+                           232     ; Registers Changed: AX, DX
+                           233     ; Stack Depth:       0 words
+                           234     ;
+                           235     ; Author:            Timothy Liu
+                           236     ; Last Modified:     10/27/15
+                           237     
+0000                       238     InitTimer0      PROC    NEAR
+                           239                     PUBLIC  InitTimer0
                            240     
-001B BA22FF                241             MOV     DX, INTCtrlrEOI ;send a timer EOI (to clear out int. controller)
-001E B80800                242             MOV     AX, TimerEOI
-0021 EE                    243             OUT     DX, AL
-                           244     
+                           241     
+0000 BA50FF                242             MOV     DX, Tmr0Count   ;initialize the count register to 0
+0003 33C0                  243             XOR     AX, AX
+0005 EE                    244             OUT     DX, AL
                            245     
-0022 C3                    246             RET                     ;done so return
-                           247     
-                           248     
-                           249     InitTimer0       ENDP
-                           250     
-                           251     
-                           252     
-                           253     ; ButtonEH
-                           254     ;
-                           255     ; Description:       This procedure is the event handler for the timer0
-                           256     ;                    interrupt. This function saves the registers and
-                           257     ;                    calls ButtonDebounce. Every call to ButtonDebounce
-                           258     ;                    scans the buttons and checks for a button press.
-                           259     ;                    The procedure also calls UpdateClock, which updates
-                           260     ;                    the number of milliseconds that have elapsed.
-                           261     ;                    The function then pops the stack
-                           262     ;                    and sends an EOI.
-                           263     ;
-                           264     ; Operation:         Save all the registers and call ButtonDebounce to scan 
-                           265     ;                    the 8 UI buttons for key presses. Call UpdateClock
-                           266     ;                    to increment the MP3 timer Send an EOI at the end.
-                           267     ;                    
-                           268     ; Arguments:         None.
-                           269     ; Return Value:      None.
-                           270     ;
-8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  14:05:58  05/14/;6  PAGE    6
+0006 BA52FF                246             MOV     DX, Tmr0MaxCntA  ;setup max count for 1ms counts
+0009 B8B80B                247             MOV     AX, COUNTS_PER_MS
+000C EE                    248             OUT     DX, AL
+                           249     
+000D BA56FF                250             MOV     DX, Tmr0Ctrl    ;setup the control register
+0010 B801E0                251             MOV     AX, Tmr0CtrlVal
+0013 EE                    252             OUT     DX, AL
+                           253     
+                           254     
+                           255                                     ;initialize interrupt controller for timers
+0014 BA32FF                256             MOV     DX, INTCtrlrCtrl;setup the interrupt control register
+0017 B80100                257             MOV     AX, INTCtrlrCVal
+001A EE                    258             OUT     DX, AL
+                           259     
+001B BA22FF                260             MOV     DX, INTCtrlrEOI ;send a timer EOI (to clear out int. controller)
+001E B80800                261             MOV     AX, TimerEOI
+0021 EE                    262             OUT     DX, AL
+                           263     
+                           264     
+0022 C3                    265             RET                     ;done so return
+                           266     
+                           267     
+                           268     InitTimer0       ENDP
+                           269     
+                           270     
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ; Local Variables:   None
-                           272     ; Shared Variables:  None.
+                           271     
+                           272     ; ButtonEH
                            273     ;
-                           274     ; Input:             None.
-                           275     ; Output:            None
-                           276     ;
-                           277     ; Error Handling:    None.
-                           278     ;
-                           279     ; Algorithms:        None.
-                           280     ; Data Structures:   None.
-                           281     ;
-                           282     ; Registers Changed: None
-                           283     ;
-                           284     ; Author:            Timothy Liu
-                           285     ; Last Modified:     5/5/16
-                           286     
-0023                       287     ButtonEH                    PROC    NEAR
-                           288                                 PUBLIC  ButtonEH
-                           289     
-0023 50                    290             PUSH    AX                      ;save the registers
-0024 53                    291             PUSH    BX                      ;
-0025 52                    292             PUSH    DX                      ;
-0026 E80000         E      293             Call    ButtonDebounce          ;check the keypad
-0029 E80000         E      294             CALL    UpdateClock             ;increment milliseconds elapsed
-                           295     
-                           296     
-002C                       297     EndButtonEH:                            ;done taking care of the timer
-                           298     
-002C BA22FF                299             MOV     DX, INTCtrlrEOI         ;send Timer EOI to the INT controller
-002F B80800                300             MOV     AX, TimerEOI
-0032 EE                    301             OUT     DX, AL
-                           302     
-0033 5A                    303             POP     DX                      ;restore the registers
-0034 5B                    304             POP     BX
-0035 58                    305             POP     AX
-                           306     
-                           307     
-0036 CF                    308             IRET                            ;and return
-                           309     
-                           310     
-                           311     
-                           312     
-                           313     ButtonEH       ENDP
+                           274     ; Description:       This procedure is the event handler for the timer0
+                           275     ;                    interrupt. This function saves the registers and
+                           276     ;                    calls ButtonDebounce. Every call to ButtonDebounce
+                           277     ;                    scans the buttons and checks for a button press.
+                           278     ;                    The procedure also calls UpdateClock, which updates
+                           279     ;                    the number of milliseconds that have elapsed.
+                           280     ;                    The function then pops the stack
+                           281     ;                    and sends an EOI.
+                           282     ;
+                           283     ; Operation:         Save all the registers and call ButtonDebounce to scan 
+                           284     ;                    the 8 UI buttons for key presses. Call UpdateClock
+                           285     ;                    to increment the MP3 timer Send an EOI at the end.
+                           286     ;                    
+                           287     ; Arguments:         None.
+                           288     ; Return Value:      None.
+                           289     ;
+                           290     ; Local Variables:   None
+                           291     ; Shared Variables:  None.
+                           292     ;
+                           293     ; Input:             None.
+                           294     ; Output:            None
+                           295     ;
+                           296     ; Error Handling:    None.
+                           297     ;
+                           298     ; Algorithms:        None.
+                           299     ; Data Structures:   None.
+                           300     ;
+                           301     ; Registers Changed: None
+                           302     ;
+                           303     ; Author:            Timothy Liu
+                           304     ; Last Modified:     5/5/16
+                           305     
+0023                       306     ButtonEH                    PROC    NEAR
+                           307                                 PUBLIC  ButtonEH
+                           308     
+0023 50                    309             PUSH    AX                      ;save the registers
+0024 53                    310             PUSH    BX                      ;
+0025 52                    311             PUSH    DX                      ;
+0026 E80000         E      312             Call    ButtonDebounce          ;check the keypad
+0029 E80000         E      313             CALL    UpdateClock             ;increment milliseconds elapsed
                            314     
                            315     
-----                       316     CODE ENDS
+002C                       316     EndButtonEH:                            ;done taking care of the timer
                            317     
-                           318     
-                           319             END
+002C BA22FF                318             MOV     DX, INTCtrlrEOI         ;send Timer EOI to the INT controller
+002F B80800                319             MOV     AX, TimerEOI
+0032 EE                    320             OUT     DX, AL
+                           321     
+0033 5A                    322             POP     DX                      ;restore the registers
+0034 5B                    323             POP     BX
+0035 58                    324             POP     AX
+                           325     
+8086/87/88/186 MACRO ASSEMBLER    TIMER0M                                                  19:48:27  05/28/;6  PAGE    7
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           326     
+0036 CF                    327             IRET                            ;and return
+                           328     
+                           329     
+                           330     
+                           331     
+                           332     ButtonEH       ENDP
+                           333     
+                           334     
+----                       335     CODE ENDS
+                           336     
+                           337     
+                           338             END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

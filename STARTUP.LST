@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:05:58  05/14/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  19:48:27  05/28/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -29,226 +29,213 @@ LOC  OBJ                  LINE     SOURCE
                             19     ; compiler).
                             20     ;
                             21     ;
-                            22     ; Revision History:
-                            23     ;    3/7/94   Glen George       Initial revision.
-                            24     ;    2/28/95  Glen George       Fixed segment alignments.
-                            25     ;                               Fixed SP initialization.
-                            26     ;                               Removed CS:IP initialization (END Start -> END).
-                            27     ;                               Updated comments.
-                            28     ;    2/29/96  Glen George       Updated comments.
-                            29     ;    2/24/98  Glen George       Updated comments.
-                            30     ;   11/18/98  Glen George       Updated comments.
-                            31     ;   12/26/99  Glen George       Changed formatting.
-                            32     ;    1/30/02  Glen George       Added proper assume for ES.
-                            33     ;    1/27/03  Glen George       Changed to looping if main() returns instead
-                            34     ;                                  of halting
-                            35     ;    4/19/16  Tim Liu       Added initcs and created infinite loop
-                            36     ;    4/19/16  Tim Liu       Changed name to STARTUP
-                            37     ;    4/19/16  Tim Liu       Reordered assumes and group declarations
-                            38     ;    4/19/16  Tim Liu       Added START and END START CS:IP init
-                            39     ;    4/20/16  Tim Liu       Added write to LMCS before func calls
-                            40     ;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
-                            41     ;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
-                            42     ;    5/7/16   Tim Liu       Added call to InitClock
-                            43     ; local include files
-                            44     
-                            45 +1  $INCLUDE(INITREG.INC)
-                      =1    46     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    47     ;                                                                            ;
-                      =1    48     ;                                 initreg.INC                                ;
-                      =1    49     ;                       Initialize Registers MP3 Include File                ;
-                      =1    50     ;                                   EE/CS 52                                 ;
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:05:58  05/14/;6  PAGE    2
+                            22     ;    4/19/16  Tim Liu       Added initcs and created infinite loop
+                            23     ;    4/19/16  Tim Liu       Changed name to STARTUP
+                            24     ;    4/19/16  Tim Liu       Reordered assumes and group declarations
+                            25     ;    4/19/16  Tim Liu       Added START and END START CS:IP init
+                            26     ;    4/20/16  Tim Liu       Added write to LMCS before func calls
+                            27     ;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
+                            28     ;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
+                            29     ;    5/7/16   Tim Liu       Added call to InitClock
+                            30     ;    5/19/16  Tim Liu     Added commented out call to InstallDreqHandler
+                            31     ; local include files
+                            32     
+                            33 +1  $INCLUDE(INITREG.INC)
+                      =1    34     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    35     ;                                                                            ;
+                      =1    36     ;                                 initreg.INC                                ;
+                      =1    37     ;                       Initialize Registers MP3 Include File                ;
+                      =1    38     ;                                   EE/CS 52                                 ;
+                      =1    39     ;                                                                            ;
+                      =1    40     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    41     
+                      =1    42     ; This file contains the definitions for initcs.asm.
+                      =1    43     ;
+                      =1    44     ; Revision History:
+                      =1    45     ;    11/4/15     Timothy Liu     initial revision
+                      =1    46     ;    11/5/15     Timothy Liu     fixed formatting
+                      =1    47     ;    11/17/15    Timothy Liu     changed to only have values for initcs.asm
+                      =1    48     ;    4/4/16      Timothy Liu     changed name to InitCSM to signify file
+                      =1    49     ;                                is for 80188 MP3 player
+                      =1    50     ;    4/4/16      Timothy Liu     added MMCS, LMCs UMCS reg and val definitions
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  19:48:27  05/28/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1    51     ;                                                                            ;
-                      =1    52     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1    53     
-                      =1    54     ; This file contains the definitions for initcs.asm.
-                      =1    55     ;
-                      =1    56     ; Revision History:
-                      =1    57     ;    11/4/15     Timothy Liu     initial revision
-                      =1    58     ;    11/5/15     Timothy Liu     fixed formatting
-                      =1    59     ;    11/17/15    Timothy Liu     changed to only have values for initcs.asm
-                      =1    60     ;    4/4/16      Timothy Liu     changed name to InitCSM to signify file
-                      =1    61     ;                                is for 80188 MP3 player
-                      =1    62     ;    4/4/16      Timothy Liu     added MMCS, LMCs UMCS reg and val definitions
-                      =1    63     ;                                but no values
-                      =1    64     ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
-                      =1    65     ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
-                      =1    66     ;    5/9/16      Timothy Liu     changed MMCSval start address
-                      =1    67     
-                      =1    68     
-                      =1    69     ; Chip Select Unit Definitions
-                      =1    70     
-                      =1    71     ; Addresses
-  FFA4                =1    72     PACSreg         EQU     0FFA4H          ;address of PACS register
-  FFA8                =1    73     MPCSreg         EQU     0FFA8H          ;address of MPCS register
-  FFA6                =1    74     MMCSreg         EQU     0FFA6H          ;address of MMCS register
-  FFA2                =1    75     LMCSreg         EQU     0FFA2H          ;address of LMCS register
-  FFA0                =1    76     UMCSreg         EQU     0FFA0H          ;address of UMCS register
-                      =1    77     
-                      =1    78     ; Control Register Values
-  0003                =1    79     PACSval         EQU     00003H          ;PCS base at 0, 3 wait states
-                      =1    80                                             ;0000000000------  starts at address 0
-                      =1    81                                             ;----------000---  reserved
-                      =1    82                                             ;-------------0--  wait for RDY inputs
-                      =1    83                                             ;--------------11  3 wait states
-  4083                =1    84     MPCSval         EQU     04083H          ;PCS in I/O space, use PCS5/6, 3 wait states
-                      =1    85                                             ;0---------000---  reserved
-                      =1    86                                             ;-1000000--------  MCS is 512KB
-                      =1    87                                             ;--------1-------  output PCS5/PCS6
-                      =1    88                                             ;---------0------  PCS in I/O space
-                      =1    89                                             ;-------------0--  wait for RDY inputs
-                      =1    90                                             ;--------------11  3 wait states
-                      =1    91     
-  8003                =1    92     MMCSval        EQU     08003H           ;MMCS base 80000H, 3 wait states
-                      =1    93                                             ;1000000---------  start address
-                      =1    94                                             ;-------000000---  reserved
-                      =1    95                                             ;-------------0--  enable bus ready
-                      =1    96                                             ;--------------11  3 wait states
-                      =1    97     
-  07C3                =1    98     LMCSval        EQU     007C3H           ;LCS end at 07FFFFH, 3 wait states
-                      =1    99                                             ;00--------------  reserved
-                      =1   100                                             ;--00011111------  end address
-                      =1   101                                             ;----------000---  reserved
-                      =1   102                                             ;-------------0--  enable bus ready
-                      =1   103                                             ;--------------11  3 wait states
+                      =1    51     ;                                but no values
+                      =1    52     ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
+                      =1    53     ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
+                      =1    54     ;    5/9/16      Timothy Liu     changed MMCSval start address
+                      =1    55     
+                      =1    56     
+                      =1    57     ; Chip Select Unit Definitions
+                      =1    58     
+                      =1    59     ; Addresses
+  FFA4                =1    60     PACSreg         EQU     0FFA4H          ;address of PACS register
+  FFA8                =1    61     MPCSreg         EQU     0FFA8H          ;address of MPCS register
+  FFA6                =1    62     MMCSreg         EQU     0FFA6H          ;address of MMCS register
+  FFA2                =1    63     LMCSreg         EQU     0FFA2H          ;address of LMCS register
+  FFA0                =1    64     UMCSreg         EQU     0FFA0H          ;address of UMCS register
+                      =1    65     
+                      =1    66     ; Control Register Values
+  0003                =1    67     PACSval         EQU     00003H          ;PCS base at 0, 3 wait states
+                      =1    68                                             ;0000000000------  starts at address 0
+                      =1    69                                             ;----------000---  reserved
+                      =1    70                                             ;-------------0--  wait for RDY inputs
+                      =1    71                                             ;--------------11  3 wait states
+  4083                =1    72     MPCSval         EQU     04083H          ;PCS in I/O space, use PCS5/6, 3 wait states
+                      =1    73                                             ;0---------000---  reserved
+                      =1    74                                             ;-1000000--------  MCS is 512KB
+                      =1    75                                             ;--------1-------  output PCS5/PCS6
+                      =1    76                                             ;---------0------  PCS in I/O space
+                      =1    77                                             ;-------------0--  wait for RDY inputs
+                      =1    78                                             ;--------------11  3 wait states
+                      =1    79     
+  8003                =1    80     MMCSval        EQU     08003H           ;MMCS base 80000H, 3 wait states
+                      =1    81                                             ;1000000---------  start address
+                      =1    82                                             ;-------000000---  reserved
+                      =1    83                                             ;-------------0--  enable bus ready
+                      =1    84                                             ;--------------11  3 wait states
+                      =1    85     
+  07C3                =1    86     LMCSval        EQU     007C3H           ;LCS end at 07FFFFH, 3 wait states
+                      =1    87                                             ;00--------------  reserved
+                      =1    88                                             ;--00011111------  end address
+                      =1    89                                             ;----------000---  reserved
+                      =1    90                                             ;-------------0--  enable bus ready
+                      =1    91                                             ;--------------11  3 wait states
+                      =1    92     
+  3003                =1    93     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
+                      =1    94                                             ;00--------------  reserved
+                      =1    95                                             ;--11000000------  start address F0000
+                      =1    96                                             ;----------000---  reserved
+                      =1    97                                             ;-------------0--  enable bus ready
+                      =1    98                                             ;--------------11  3 wait states
+                      =1    99     
+                      =1   100     
+                      =1   101     
+                      =1   102     
+                      =1   103     
                       =1   104     
-  3003                =1   105     UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:05:58  05/14/;6  PAGE    3
+                      =1   105     
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  19:48:27  05/28/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1   106                                             ;00--------------  reserved
-                      =1   107                                             ;--11000000------  start address F0000
-                      =1   108                                             ;----------000---  reserved
-                      =1   109                                             ;-------------0--  enable bus ready
-                      =1   110                                             ;--------------11  3 wait states
+                      =1   106     
+                      =1   107     
+                      =1   108     
+                      =1   109     
+                      =1   110     
                       =1   111     
-                      =1   112     
-                      =1   113     
-                      =1   114     
-                      =1   115     
-                      =1   116     
-                      =1   117     
-                      =1   118     
-                      =1   119     
-                      =1   120     
-                      =1   121     
-                      =1   122     
-                      =1   123     
-                           124     
+                           112     
+                           113     
+                           114     ; setup code and data groups
+                           115     CGROUP  GROUP   CODE
+                           116     DGROUP  GROUP   DATA, STACK
+                           117     
+                           118     
+                           119     
+                           120     ; the actual startup code - should be executed (jumped to) after reset
+                           121     
+----                       122     CODE    SEGMENT  WORD  PUBLIC  'CODE'
+                           123     
+                           124     ; segment register assumptions
                            125     
-                           126     ; setup code and data groups
-                           127     CGROUP  GROUP   CODE
-                           128     DGROUP  GROUP   DATA, STACK
+                           126             ASSUME  CS:CGROUP, DS:DGROUP, ES:NOTHING, SS:DGROUP
+                           127     
+                           128     
                            129     
-                           130     
-                           131     
-                           132     ; the actual startup code - should be executed (jumped to) after reset
-                           133     
-----                       134     CODE    SEGMENT  WORD  PUBLIC  'CODE'
-                           135     
-                           136     ; segment register assumptions
-                           137     
-                           138             ASSUME  CS:CGROUP, DS:DGROUP, ES:NOTHING, SS:DGROUP
-                           139     
-                           140     
-                           141     
-                           142             EXTRN    main:NEAR              ;declare the main function
-                           143             EXTRN    InitCS:NEAR            ;initialize chip selects
-                           144             EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
-                           145             EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
-                           146             EXTRN    InitTimer0:NEAR        ;start up timer0
-                           147             EXTRN    InitButtons:NEAR       ;initialize the buttons
-                           148             EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
-                           149             EXTRN    InitClock:NEAR         ;initialize MP3 clock
-                           150             EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
-                           151             EXTRN    InitTimer1:NEAR        ;start up timer 1
-                           152     
-0000                       153     START:
+                           130             EXTRN    main:NEAR              ;declare the main function
+                           131             EXTRN    InitCS:NEAR            ;initialize chip selects
+                           132             EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
+                           133             EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
+                           134             EXTRN    InitTimer0:NEAR        ;start up timer0
+                           135             EXTRN    InitButtons:NEAR       ;initialize the buttons
+                           136             EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
+                           137             EXTRN    InitClock:NEAR         ;initialize MP3 clock
+                           138             EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
+                           139             EXTRN    InitTimer1:NEAR        ;start up timer 1
+                           140             EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
+                           141             EXTRN    AudioInit:NEAR
+                           142     
+0000                       143     START:
+                           144     
+                           145     
+0000                       146     BEGIN:                                  ;start the program
+0000 FA                    147             CLI                             ;disable interrupts
+0001 B8----         R      148             MOV     AX, DGROUP              ;initialize the stack pointer
+0004 8ED0                  149             MOV     SS, AX
+0006 BC800290       R      150             MOV     SP, OFFSET(DGROUP:TopOfStack)
+                           151     
+000A B8----         R      152             MOV     AX, DGROUP              ;initialize the data segment
+000D 8ED8                  153             MOV     DS, AX
                            154     
-                           155     
-0000                       156     BEGIN:                                  ;start the program
-0000 FA                    157             CLI                             ;disable interrupts
-0001 B8----         R      158             MOV     AX, DGROUP              ;initialize the stack pointer
-0004 8ED0                  159             MOV     SS, AX
-0006 BC800290       R      160             MOV     SP, OFFSET(DGROUP:TopOfStack)
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:05:58  05/14/;6  PAGE    4
+                           155             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           156             ; user initialization code goes here ;
+                           157             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           158     
+000F BAA2FF                159             MOV     DX, LMCSreg             ;setup to write to MPCS register
+0012 B8C307                160             MOV     AX, LMCSval
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  19:48:27  05/28/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           161     
-000A B8----         R      162             MOV     AX, DGROUP              ;initialize the data segment
-000D 8ED8                  163             MOV     DS, AX
-                           164     
-                           165             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           166             ; user initialization code goes here ;
-                           167             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           168     
-000F BAA2FF                169             MOV     DX, LMCSreg             ;setup to write to MPCS register
-0012 B8C307                170             MOV     AX, LMCSval
-0015 EE                    171             OUT     DX, AL                  ;write MPCSval to MPCS
-                           172     
-0016 E80000         E      173             CALL    InitCS                  ;initialize chip selects
-0019 E80000         E      174             CALL    ClrIRQVectors           ;clear interrupt vector table
-                           175     
-001C E80000         E      176             CALL    InitButtons             ;initialize the buttons
-001F E80000         E      177             CALL    InitDisplayLCD          ;initialize the LCD display
-0022 E80000         E      178             CALL    InitClock               ;initialize the MP3 clock
-                           179     
-0025 E80000         E      180             CALL    InstallTimer0Handler    ;install handler
-0028 E80000         E      181             CALL    InstallTimer1Handler    ;install timer1 handler
-002B E80000         E      182             CALL    InitTimer0              ;initialize timer0 for button interrupt
-002E E80000         E      183             CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+0015 EE                    161             OUT     DX, AL                  ;write MPCSval to MPCS
+                           162     
+0016 E80000         E      163             CALL    InitCS                  ;initialize chip selects
+0019 E80000         E      164             CALL    ClrIRQVectors           ;clear interrupt vector table
+                           165     
+001C E80000         E      166             CALL    InitButtons             ;initialize the buttons
+001F E80000         E      167             CALL    InitDisplayLCD          ;initialize the LCD display
+0022 E80000         E      168             CALL    InitClock               ;initialize the MP3 clock
+                           169     
+0025 E80000         E      170             CALL    InstallTimer0Handler    ;install handler
+0028 E80000         E      171             CALL    InstallTimer1Handler    ;install timer1 handler
+002B E80000         E      172             CALL    InitTimer0              ;initialize timer0 for button interrupt
+002E E80000         E      173             CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+0031 E80000         E      174             CALL    InstallDreqHandler      ;install handler for audio data request
+0034 E80000         E      175             CALL    AudioInit               ;initialize audio fixed buffer
+                           176     
+0037 FB                    177             STI                             ;enable interrupts
+                           178     
+0038 E80000         E      179             CALL    main                    ;run the main function (no arguments)
+003B                       180     Infinite:
+003B EBFE                  181             JMP    Infinite
+                           182     
+003D EBC1                  183             JMP     Start                   ;if return - reinitialize and try again
                            184     
-0031 FB                    185             STI                             ;enable interrupts
-                           186     
-0032 E80000         E      187             CALL    main                    ;run the main function (no arguments)
-0035                       188     Infinite:
-0035 EBFE                  189             JMP    Infinite
+                           185     
+----                       186     CODE    ENDS
+                           187     
+                           188     ; the stack segment - used for subroutine linkage, argument passing, and
+                           189     ; local variables
                            190     
-0037 EBC7                  191             JMP     Start                   ;if return - reinitialize and try again
+----                       191     STACK   SEGMENT  WORD  STACK  'STACK'
                            192     
                            193     
-----                       194     CODE    ENDS
-                           195     
-                           196     ; the stack segment - used for subroutine linkage, argument passing, and
-                           197     ; local variables
-                           198     
-----                       199     STACK   SEGMENT  WORD  STACK  'STACK'
-                           200     
-                           201     
-0000 (80                   202             DB      80 DUP ('Stack   ')             ;320 words
+0000 (80                   194             DB      80 DUP ('Stack   ')             ;320 words
      537461636B2020
      20
      )
-                           203     
-0280                       204     TopOfStack      LABEL   WORD
+                           195     
+0280                       196     TopOfStack      LABEL   WORD
+                           197     
+                           198     
+----                       199     STACK   ENDS
+                           200     
+                           201     ; the data segment - used for static and global variables
+                           202     
+----                       203     DATA    SEGMENT  WORD  PUBLIC  'DATA'
+                           204     
                            205     
-                           206     
-----                       207     STACK   ENDS
+----                       206     DATA    ENDS
+                           207     
                            208     
-                           209     ; the data segment - used for static and global variables
+                           209     
                            210     
-----                       211     DATA    SEGMENT  WORD  PUBLIC  'DATA'
-                           212     
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  14:05:58  05/14/;6  PAGE    5
-
-
-LOC  OBJ                  LINE     SOURCE
-
-                           213     
-----                       214     DATA    ENDS
-                           215     
-                           216     
-                           217     
-                           218     
-                           219             END START
+                           211             END START
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

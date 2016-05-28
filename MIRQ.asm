@@ -210,6 +210,14 @@ InstallDreqHandler    PROC    NEAR
     MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
     MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
 
+    MOV     DX, ICON0Address              ;address of INT0 interrupt controller
+    MOV     AX, ICON0On                   ;value to start int 0 interrupts
+    OUT     DX, AX
+
+    MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
+    MOV     AX, INT0EOI                   ;INT0 end of interrupt
+    OUT     DX, AX                        ;output to peripheral control block
+
     ;check that no EOI is sent and no write to the interrupt controller
     ;needs to be made by the function
 

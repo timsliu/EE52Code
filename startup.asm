@@ -59,7 +59,8 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         EXTRN    InitClock:NEAR         ;initialize MP3 clock
         EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
         EXTRN    InitTimer1:NEAR        ;start up timer 1
-        ;EXTRN    InstallDreqHandler     ;install audio data request handler
+        EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
+        EXTRN    AudioInit:NEAR
 
 START:
 
@@ -92,7 +93,8 @@ BEGIN:                                  ;start the program
         CALL    InstallTimer1Handler    ;install timer1 handler
         CALL    InitTimer0              ;initialize timer0 for button interrupt
         CALL    InitTimer1              ;initialize timer1 for DRAM refresh
-        ;CALL    InstallDreqHandler      ;install handler for audio data request
+        CALL    InstallDreqHandler      ;install handler for audio data request
+        CALL    AudioInit               ;initialize audio fixed buffer
 
         STI                             ;enable interrupts
 

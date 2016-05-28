@@ -1,4 +1,4 @@
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   1
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE SIMIDE
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
    49             #include  "mp3defs.h"
    50             #include  "interfac.h"
    51             
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   2
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   2
 
 
    52             
@@ -118,7 +118,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   106             int  get_blocks(unsigned long int block, int length, unsigned short int far *dest)
   107             {
   108     1           /* variables */
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   3
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   3
 
 
   109     1       
@@ -178,7 +178,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   163     1               0x54, 0x00, 0x72, 0x00, 0x73, 0x00, 0x74, 0x00, /* cluster 112 - 115 */
   164     1               0x75, 0x00, 0x2B, 0x00, 0x00, 0x00, 0x00, 0x00,
   165     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   4
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   4
 
 
   166     1               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -238,7 +238,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   220     1               "    "
   221     1               "                        \0\x40\x42\x79\0\0\0",
   222     1               "TAG"                                           /* song 2 */
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   5
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   5
 
 
   223     1               "Spiderwebs\0                   "
@@ -298,7 +298,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   277     4                           /* still boot sector information - copy it */
   278     4                           *dest++ = boot_sector[2 * j] | (boot_sector[2 * j + 1] << 8);
   279     4                       else
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   6
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   6
 
 
   280     4                           /* now in the boot code part of the sector - just zero it */
@@ -358,7 +358,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   334     3                   for (j = 0, k = 30; j < IDE_BLOCK_SIZE; j++, k += 2)  {
   335     4                       /* does the fake data exist? */
   336     4                       if (k >= 128)
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   7
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   7
 
 
   337     4                           /* not in ID3 tag - zero it */
@@ -418,7 +418,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   391     4       
   392     4                       /* figure out what to output */
   393     4                       if (j < BLOCK_LENGTH)  {
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   8
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   8
 
 
   394     5       
@@ -451,7 +451,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
   421     1           return  no_blocks;
   422     1       
   423     1       }
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE   9
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE   9
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -511,7 +511,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
                            @9:
                                                    ; STATEMENT # 267
              0458  C45E0E          LES     BX,[BP].dest
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  10
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  10
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -571,7 +571,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
                                                    ; STATEMENT # 282
              04DB  E9B0FF          JMP     @13
                            @14:
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  11
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  11
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -631,7 +631,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              0550  E96A03          JMP     @25
                            @19:
              0553  8B46FA          MOV     AX,[BP].i
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  12
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  12
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -691,7 +691,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              05C9  034608          ADD     AX,[BP].block
              05CC  13560A          ADC     DX,[BP].block+2H
              05CF  09D2            OR      DX,DX
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  13
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  13
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -751,7 +751,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              0641  034608          ADD     AX,[BP].block
              0644  13560A          ADC     DX,[BP].block+2H
              0647  09D2            OR      DX,DX
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  14
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  14
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -811,7 +811,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              06C0  09D2            OR      DX,DX
              06C2  7504            JNZ     $+6H
              06C4  81F8C01A        CMP     AX,1AC0H
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  15
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  15
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -871,7 +871,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              073A  7504            JNZ     $+6H
              073C  81F8001D        CMP     AX,1D00H
              0740  7403            JZ      $+5H
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  16
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  16
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -931,7 +931,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              07C2  D1E3            SAL     BX,1
              07C4  2E8A846B03      MOV     AL,CS:ID3_tags[SI+100H]
              07C9  B400            MOV     AH,0H
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  17
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  17
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -991,7 +991,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              0838  8B46FA          MOV     AX,[BP].i
              083B  99              CWD
              083C  034608          ADD     AX,[BP].block
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  18
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  18
                   ASSEMBLY LISTING OF OBJECT CODE
 
 
@@ -1051,7 +1051,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL
              08BA  E963FF          JMP     @68
                            @69:
                                                    ; STATEMENT # 416
-iC-86  COMPILER   SIMIDE                                                                     05/14/;6 14:05:02  PAGE  19
+iC-86  COMPILER   SIMIDE                                                                     05/28/;6 00:44:00  PAGE  19
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

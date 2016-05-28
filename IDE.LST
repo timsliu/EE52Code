@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE IDE
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;
                       =1    49     ; Revision History:
                       =1    50     ;    5/9/16    Tim Liu    created file
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     ; Constant Register DMA values
   B426                =1   104     D0ConVal        EQU     0B426H      ; value to write to DxCON to initiate DMA
                       =1   105                                         ;1011010000100110b
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   158     ;                                  General.INC                               ;
                       =1   159     ;                               General include file                         ;
                       =1   160     ;                                   EE/CS 51                                 ;
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -223,579 +223,584 @@ LOC  OBJ                  LINE     SOURCE
   0000                =1   198     FALSE                EQU        0         ;false
                       =1   199     
   0002                =1   200     WORD_SIZE            EQU        2         ;2 bytes per word
-                           201     
-                           202     CGROUP    GROUP    CODE
-                           203     DGROUP    GROUP    DATA
+  0002                =1   201     FAR_SIZE             EQU        2         ;2 words per far address
+  1000                =1   202     Segment_Overlap      EQU    1000H         ;number of unique ways to map physical
+                      =1   203                                               ;address
                            204     
-                           205     
-----                       206     CODE SEGMENT PUBLIC 'CODE'
+                           205     CGROUP    GROUP    CODE
+                           206     DGROUP    GROUP    DATA
                            207     
-                           208             ASSUME  CS:CGROUP, DS:DGROUP
-                           209     
-                           210     ;external function declarations
-                           211     
-                           212     ;Name:               Add32Bit
-                           213     ;
-                           214     ;Description:        This function adds a value to a 32 bit unsigned value in
-                           215     ;                    memory. The function is passed two arguments - the 
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    5
+                           208     
+----                       209     CODE SEGMENT PUBLIC 'CODE'
+                           210     
+                           211             ASSUME  CS:CGROUP, DS:DGROUP
+                           212     
+                           213     ;external function declarations
+                           214     
+                           215     ;Name:               Add32Bit
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           216     ;                    value to add in AX and the address of the 32 bit value
-                           217     ;                    in ES:SI. 
-                           218     ; 
-                           219     ;Operation:          The function adds AX to the low word pointed to by
-                           220     ;                    ES:SI. The function then adds with carry 0 to the
-                           221     ;                    high word pointed to by ES:SI+1 to add the carry
-                           222     ;                    flag.
-                           223     ;
-                           224     ;Arguments:          AX - value to add
-                           225     ;                    ES:SI - address of 32 bit value
+                           216     ;
+                           217     ;Description:        This function adds a value to a 32 bit unsigned value in
+                           218     ;                    memory. The function is passed two arguments - the 
+                           219     ;                    value to add in AX and the address of the 32 bit value
+                           220     ;                    in ES:SI. 
+                           221     ; 
+                           222     ;Operation:          The function adds AX to the low word pointed to by
+                           223     ;                    ES:SI. The function then adds with carry 0 to the
+                           224     ;                    high word pointed to by ES:SI+1 to add the carry
+                           225     ;                    flag.
                            226     ;
-                           227     ;Return Values:      None
-                           228     ;
-                           229     ;Local Variables:    None
-                           230     ;
-                           231     ;Shared Variables:   None
-                           232     ;
-                           233     ;Output:             None
-                           234     ;
-                           235     ;Error Handling:     None
-                           236     ;
-                           237     ;Algorithms:         None
-                           238     ;
-                           239     ;Registers Used:     SI, flags register
-                           240     ;
-                           241     ;Known Bugs:         None
-                           242     ;
-                           243     ;Limitations:        None
-                           244     ;
-                           245     ;Author:             Timothy Liu
-                           246     ;
-                           247     ;Last Modified       5/13/16
-                           248     
-0000                       249     Add32Bit        PROC    NEAR
-                           250                     PUBLIC  Add32Bit
+                           227     ;Arguments:          AX - value to add
+                           228     ;                    ES:SI - address of 32 bit value
+                           229     ;
+                           230     ;Return Values:      None
+                           231     ;
+                           232     ;Local Variables:    None
+                           233     ;
+                           234     ;Shared Variables:   None
+                           235     ;
+                           236     ;Output:             None
+                           237     ;
+                           238     ;Error Handling:     None
+                           239     ;
+                           240     ;Algorithms:         None
+                           241     ;
+                           242     ;Registers Used:     flags register
+                           243     ;
+                           244     ;Known Bugs:         None
+                           245     ;
+                           246     ;Limitations:        None
+                           247     ;
+                           248     ;Author:             Timothy Liu
+                           249     ;
+                           250     ;Last Modified       5/13/16
                            251     
-0000                       252     Add32BitStart:                           ;starting label
-0000 260104                253         ADD    ES:[SI], AX                   ;add value to low word
-0003 2683540200            254         ADC    WORD PTR ES:[SI+2], 0         ;add the carry flag
-                           255     
-0008                       256     Add32BitEnd:
-0008 C3                    257         RET                                  ;function done
+0000                       252     Add32Bit        PROC    NEAR
+                           253                     PUBLIC  Add32Bit
+                           254     
+0000                       255     Add32BitStart:                           ;starting label
+0000 260104                256         ADD    ES:[SI], AX                   ;add value to low word
+0003 2683540200            257         ADC    WORD PTR ES:[SI+2], 0         ;add the carry flag
                            258     
-                           259     
-                           260     ADD32Bit    ENDP
+0008                       259     Add32BitEnd:
+0008 C3                    260         RET                                  ;function done
                            261     
-                           262     ;Name:               CalculatePhysical
-                           263     ;
-                           264     ;Description:        This function calculates the physical address from
-                           265     ;                    the segment and the offset. The segment and offset
-                           266     ;                    are passed to the function through ES:SI. The
-                           267     ;                    function writes the 20 bit physical address to
-                           268     ;                    BX and CX with the low 16 bits in BX and the high
-                           269     ;                    nibble in CX.
-                           270     ; 
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    6
+                           262     
+                           263     ADD32Bit    ENDP
+                           264     
+                           265     ;Name:               CalculatePhysical
+                           266     ;
+                           267     ;Description:        This function calculates the physical address from
+                           268     ;                    the segment and the offset. The segment and offset
+                           269     ;                    are passed to the function through ES:SI. The
+                           270     ;                    function writes the 20 bit physical address to
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ;Operation:          The function copies the segment in ES:[SI+1] to CX.
-                           272     ;                    The function then shifts CX so that the high order
-                           273     ;                    nibble is in the lowest nibble and the three highest
-                           274     ;                    nibbles are clear. The function then shifts the
-                           275     ;                    high order word in ES:[SI] to the left to multiply
-                           276     ;                    it by 16. The function places the lower order word
-                           277     ;                    ES:[SI] in BX and adds the high order word ES:[SI+1]
-                           278     ;                    to the low order word in BX. Finally, the function
-                           279     ;                    adds with carry 0 to CX to carry the highest order
-                           280     ;                    nibble. The function then returns with the low nibble
-                           281     ;                    in BX and the high nibble in CX.
-                           282     ;
-                           283     ;Arguments:          ES:SI - 32 bit segment and offset
-                           284     ;
-                           285     ;Return Values:      BX - low 16 bits of physical address
-                           286     ;                    CX - high 4 bits of physical address
+                           271     ;                    BX and CX with the low 16 bits in BX and the high
+                           272     ;                    nibble in CX.
+                           273     ; 
+                           274     ;Operation:          The function copies the segment in ES:[SI+1] to CX.
+                           275     ;                    The function then shifts CX so that the high order
+                           276     ;                    nibble is in the lowest nibble and the three highest
+                           277     ;                    nibbles are clear. The function then shifts the
+                           278     ;                    high order word in ES:[SI] to the left to multiply
+                           279     ;                    it by 16. The function places the lower order word
+                           280     ;                    ES:[SI] in BX and adds the high order word ES:[SI+1]
+                           281     ;                    to the low order word in BX. Finally, the function
+                           282     ;                    adds with carry 0 to CX to carry the highest order
+                           283     ;                    nibble. The function then returns with the low nibble
+                           284     ;                    in BX and the high nibble in CX.
+                           285     ;
+                           286     ;Arguments:          ES:SI - 32 bit segment and offset
                            287     ;
-                           288     ;Local Variables:    None
-                           289     ;
-                           290     ;Shared Variables:   None
-                           291     ;
-                           292     ;Output:             None
-                           293     ;
-                           294     ;Error Handling:     None
-                           295     ;
-                           296     ;Algorithms:         None
-                           297     ;
-                           298     ;Registers Used:     BX, CX
-                           299     ;
-                           300     ;Known Bugs:         None
-                           301     ;
-                           302     ;Limitations:        None
-                           303     ;
-                           304     ;Author:             Timothy Liu
-                           305     ;
-                           306     ;Last Modified       5/13/16
-                           307     
-0009                       308     CalculatePhysical        PROC    NEAR
-                           309     
-0009                       310     CalculatePhysicalStart:                  ;starting label
-0009 50                    311         PUSH    AX                           ;register
-000A 52                    312         PUSH    DX                           ;save register
-                           313     
-000B                       314     CalculatePhysicalCopy:                   ;copy seg/offset to register
-000B 268B1C                315         MOV     BX, ES:[SI]                  ;copy offset to register
-000E 268B4C02              316         MOV     CX, ES:[SI+2]                ;copy segment to register
-0012 268B5402              317         MOV     DX, ES:[SI+2]                ;second copy of segment
-                           318     
-0016                       319     CalculatePhysicalShift:                  ;shift registers to prepare for add
-0016 C1E90C                320         SHR     CX, 3*BitsPerNibble          ;high order of seg in lowest nibble
-0019 C1E204                321         SHL     DX, BitsPerNibble            ;shift copy of segment by one
-                           322                                              ;nibble to prepare for add
-                           323     
-001C                       324     CalculatePhysicalAdd:                    ;calculate the 20 bit address
-001C 03DA                  325         ADD    BX, DX                        ;calculate low 16 bits of address
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    7
+                           288     ;Return Values:      BX - low 16 bits of physical address
+                           289     ;                    CX - high 4 bits of physical address
+                           290     ;
+                           291     ;Local Variables:    None
+                           292     ;
+                           293     ;Shared Variables:   None
+                           294     ;
+                           295     ;Output:             None
+                           296     ;
+                           297     ;Error Handling:     None
+                           298     ;
+                           299     ;Algorithms:         None
+                           300     ;
+                           301     ;Registers Used:     BX, CX
+                           302     ;
+                           303     ;Known Bugs:         None
+                           304     ;
+                           305     ;Limitations:        None
+                           306     ;
+                           307     ;Author:             Timothy Liu
+                           308     ;
+                           309     ;Last Modified       5/13/16
+                           310     
+0009                       311     CalculatePhysical        PROC    NEAR
+                           312     
+0009                       313     CalculatePhysicalStart:                  ;starting label
+0009 50                    314         PUSH    AX                           ;register
+000A 52                    315         PUSH    DX                           ;save register
+                           316     
+000B                       317     CalculatePhysicalCopy:                   ;copy seg/offset to register
+000B 268B1C                318         MOV     BX, ES:[SI]                  ;copy offset to register
+000E 268B4C02              319         MOV     CX, ES:[SI+2]                ;copy segment to register
+0012 268B5402              320         MOV     DX, ES:[SI+2]                ;second copy of segment
+                           321     
+0016                       322     CalculatePhysicalShift:                  ;shift registers to prepare for add
+0016 C1E90C                323         SHR     CX, 3*BitsPerNibble          ;high order of seg in lowest nibble
+0019 C1E204                324         SHL     DX, BitsPerNibble            ;shift copy of segment by one
+                           325                                              ;nibble to prepare for add
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
-001E 83D100                326         ADC    CX, 0                         ;add carry bit to highest nibble
-                           327     
-0021                       328     CalculatePhysicalDone:                   ;end of function
-0021 5A                    329        POP     DX                            ;restore registers
-0022 58                    330        POP     AX
-0023 C3                    331        RET
-                           332     
-                           333     CalculatePhysical    ENDP
-                           334     
+                           326     
+001C                       327     CalculatePhysicalAdd:                    ;calculate the 20 bit address
+001C 03DA                  328         ADD    BX, DX                        ;calculate low 16 bits of address
+001E 83D100                329         ADC    CX, 0                         ;add carry bit to highest nibble
+                           330     
+0021                       331     CalculatePhysicalDone:                   ;end of function
+0021 5A                    332        POP     DX                            ;restore registers
+0022 58                    333        POP     AX
+0023 C3                    334        RET
                            335     
-                           336     
+                           336     CalculatePhysical    ENDP
                            337     
-                           338     ;Name:               CheckIDEBusy
-                           339     ;
-                           340     ;Description:        This function checks the IDE to see if it is busy.
-                           341     ;                    The function loops repeatedly checking the IDE until
-                           342     ;                    it is no longer busy. The function does not return
-                           343     ;                    until the IDE is ready. 
-                           344     ; 
-                           345     ;Operation:          The function loads the segment of the IDE status register
-                           346     ;                    into ES and the offset into SI. The function then
-                           347     ;                    reads the IDE status register and masks the bits with
-                           348     ;                    IDEBitMask which is passed through DH. The function
-                           349     ;                    then compares the result to ReadyMask passed in DL.
-                           350     ;                    If the value is the same, then the
-                           351     ;                    function returns and restores the registers. If the
-                           352     ;                    IDE status register is not ready, then the function
-                           353     ;                    loops repeatedly until the IDE is ready.
-                           354     ;
-                           355     ;Arguments:          ReadyMask (DL)  - bit pattern indicating ready
-                           356     ;                    IDEBitMask (DH) - bit mask ANDed with the status register
+                           338     
+                           339     
+                           340     
+                           341     ;Name:               CheckIDEBusy
+                           342     ;
+                           343     ;Description:        This function checks the IDE to see if it is busy.
+                           344     ;                    The function loops repeatedly checking the IDE until
+                           345     ;                    it is no longer busy. The function does not return
+                           346     ;                    until the IDE is ready. 
+                           347     ; 
+                           348     ;Operation:          The function loads the segment of the IDE status register
+                           349     ;                    into ES and the offset into SI. The function then
+                           350     ;                    reads the IDE status register and masks the bits with
+                           351     ;                    IDEBitMask which is passed through DH. The function
+                           352     ;                    then compares the result to ReadyMask passed in DL.
+                           353     ;                    If the value is the same, then the
+                           354     ;                    function returns and restores the registers. If the
+                           355     ;                    IDE status register is not ready, then the function
+                           356     ;                    loops repeatedly until the IDE is ready.
                            357     ;
-                           358     ;Return Values:      None
-                           359     ;
-                           360     ;Local Variables:    None
-                           361     ;
-                           362     ;Shared Variables:   None
-                           363     ;
-                           364     ;Output:             None
-                           365     ;
-                           366     ;Error Handling:     None
-                           367     ;
-                           368     ;Algorithms:         None
-                           369     ;
-                           370     ;Registers Used:     None
-                           371     ;
-                           372     ;Known Bugs:         None
-                           373     ;
-                           374     ;Limitations:        None
-                           375     ;
-                           376     ;Author:             Timothy Liu
-                           377     ;
-                           378     ;Last Modified       5/17/16
-                           379     
-0024                       380     CheckIDEBusy    PROC    NEAR
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    8
+                           358     ;Arguments:          ReadyMask (DL)  - bit pattern indicating ready
+                           359     ;                    IDEBitMask (DH) - bit mask ANDed with the status register
+                           360     ;
+                           361     ;Return Values:      None
+                           362     ;
+                           363     ;Local Variables:    None
+                           364     ;
+                           365     ;Shared Variables:   None
+                           366     ;
+                           367     ;Output:             None
+                           368     ;
+                           369     ;Error Handling:     None
+                           370     ;
+                           371     ;Algorithms:         None
+                           372     ;
+                           373     ;Registers Used:     None
+                           374     ;
+                           375     ;Known Bugs:         None
+                           376     ;
+                           377     ;Limitations:        None
+                           378     ;
+                           379     ;Author:             Timothy Liu
+                           380     ;
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           381     
-0024                       382     CheckIDEBusyStart:                      ;starting label
-0024 06                    383         PUSH ES
-0025 56                    384         PUSH SI                             ;save registers
-0026 53                    385         PUSH BX
-                           386     
-0027                       387     CheckIDEBusyAddress:                    ;set up address of status register
-0027 BB00C0                388         MOV  BX, IDESegment
-002A 8EC3                  389         MOV  ES, BX                         ;segment of the IDE Status register
-002C BE000E                390         MOV  SI, IDEStatusOffset            ;offset of the IDE status register
-                           391     
-002F                       392     CheckIDEBusyLoop:                       ;loop reading the status register
-002F 268A1C                393         MOV  BL, ES:[SI]                    ;read the status register
-0032 22DE                  394         AND  BL, DH                         ;bit mask passed in DH
-0034 3ADA                  395         CMP  BL, DL                         ;check if the register is ready
-0036 7402                  396         JE   CheckIDEBusyDone               ;IDE ready - done
-0038 EBF5                  397         JMP  CheckIDEBusyLoop               ;otherwise keep looping until ready
-                           398     
-003A                       399     CheckIDEBusyDone:
-003A 5B                    400         POP   BX
-003B 5E                    401         POP   SI
-003C 07                    402         POP   ES
-003D C3                    403         RET
-                           404     
-                           405     
-                           406     CheckIDEBusy    ENDP
+                           381     ;Last Modified       5/17/16
+                           382     
+0024                       383     CheckIDEBusy    PROC    NEAR
+                           384     
+0024                       385     CheckIDEBusyStart:                      ;starting label
+0024 06                    386         PUSH ES
+0025 56                    387         PUSH SI                             ;save registers
+0026 53                    388         PUSH BX
+                           389     
+0027                       390     CheckIDEBusyAddress:                    ;set up address of status register
+0027 BB00C0                391         MOV  BX, IDESegment
+002A 8EC3                  392         MOV  ES, BX                         ;segment of the IDE Status register
+002C BE000E                393         MOV  SI, IDEStatusOffset            ;offset of the IDE status register
+                           394     
+002F                       395     CheckIDEBusyLoop:                       ;loop reading the status register
+002F 268A1C                396         MOV  BL, ES:[SI]                    ;read the status register
+0032 22DE                  397         AND  BL, DH                         ;bit mask passed in DH
+0034 3ADA                  398         CMP  BL, DL                         ;check if the register is ready
+0036 7402                  399         JE   CheckIDEBusyDone               ;IDE ready - done
+0038 EBF5                  400         JMP  CheckIDEBusyLoop               ;otherwise keep looping until ready
+                           401     
+003A                       402     CheckIDEBusyDone:
+003A 5B                    403         POP   BX
+003B 5E                    404         POP   SI
+003C 07                    405         POP   ES
+003D C3                    406         RET
                            407     
-                           408     ;Name:               SetupDMA
-                           409     ;
-                           410     ;Description:        This writes to 5 DMA control registers to set
-                           411     ;                    up a DMA transfer.
-                           412     ; 
-                           413     ;Operation:          The function first calculates the physical
-                           414     ;                    address of the destination pointer by calling
-                           415     ;                    the function CalculatePhysical. The function
-                           416     ;                    then writes to D0STL, D0SRCH, D0SRCL, and D0TC.
-                           417     ;                    The function restores all registers and returns
-                           418     ;
-                           419     ;Arguments:          None
-                           420     ;
-                           421     ;Return Values:      None
-                           422     ;
-                           423     ;Local Variables:    None
-                           424     ;
-                           425     ;Shared Variables:   None
-                           426     ;
-                           427     ;Output:             None
-                           428     ;
-                           429     ;Error Handling:     None
-                           430     ;
-                           431     ;Algorithms:         None
-                           432     ;
-                           433     ;Registers Used:     None
-                           434     ;
-                           435     ;Known Bugs:         None
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE    9
+                           408     
+                           409     CheckIDEBusy    ENDP
+                           410     
+                           411     ;Name:               SetupDMA
+                           412     ;
+                           413     ;Description:        This writes to 5 DMA control registers to set
+                           414     ;                    up a DMA transfer.
+                           415     ; 
+                           416     ;Operation:          The function first calculates the physical
+                           417     ;                    address of the destination pointer by calling
+                           418     ;                    the function CalculatePhysical. The function
+                           419     ;                    then writes to D0STL, D0SRCH, D0SRCL, and D0TC.
+                           420     ;                    The function restores all registers and returns
+                           421     ;
+                           422     ;Arguments:          None
+                           423     ;
+                           424     ;Return Values:      None
+                           425     ;
+                           426     ;Local Variables:    None
+                           427     ;
+                           428     ;Shared Variables:   None
+                           429     ;
+                           430     ;Output:             None
+                           431     ;
+                           432     ;Error Handling:     None
+                           433     ;
+                           434     ;Algorithms:         None
+                           435     ;
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           436     ;
-                           437     ;Limitations:        None
-                           438     ;
-                           439     ;Author:             Timothy Liu
-                           440     ;
-                           441     ;Last Modified:      5/17/16
-                           442     
-003E                       443     SetupDMA        PROC    NEAR
-                           444     
-003E                       445     SetupDMAStart:                                ;save registers
-003E 50                    446         PUSH    AX
-003F 53                    447         PUSH    BX
-0040 51                    448         PUSH    CX
-0041 52                    449         PUSH    DX
-0042 56                    450         PUSH    SI
-0043 06                    451         PUSH    ES
-                           452     
-0044                       453     SetupDMAWrite:                                ;write to DMA control registers
-0044 8CD0                  454         MOV   AX, SS                              ;copy stack segment to ES
-0046 8EC0                  455         MOV   ES, AX
-0048 8BF5                  456         MOV   SI, BP                              ;copy base pointer
-004A 83C60A                457         ADD   SI, DestPointer                     ;calculate address of destination ptr
-004D E8B9FF                458         CALL  CalculatePhysical                   ;physical address returned in CX, BX
-                           459     
-0050 BAC6FF                460         MOV   DX, D0DSTH                          ;address of high destination pointer
-0053 8BC1                  461         MOV   AX, CX                              ;copy high 4 bits of physical address
-0055 EF                    462         OUT   DX, AX                              ;write to peripheral control block
-                           463     
-0056 BAC4FF                464         MOV   DX, D0DSTL                          ;address of low destination pointer
-0059 8BC3                  465         MOV   AX, BX                              ;copy low 16 bits of physical address
-005B EF                    466         OUT   DX, AX                              ;write to peripheral control block
-                           467     
-005C BAC2FF                468         MOV   DX, D0SRCH                          ;address of high source pointer
-005F B80C00                469         MOV   AX, D0SRCHVal                       ;high 16 bits of source phy address
-0062 EF                    470         OUT   DX, AX                              ;write the high source pointer
-                           471         
-0063 BAC0FF                472         MOV   DX, D0SRCL                          ;address of low source pointer
-0066 B80000                473         MOV   AX, D0SRCLVal                       ;low 16 bits of source phy address
-0069 EF                    474         OUT   DX, AX                              ;write the low source pointer
-                           475     
-006A BAC8FF                476         MOV   DX, D0TC                            ;address of DMA transfer count
-006D B80002                477         MOV   AX, NumTransfers                    ;value to write to transfer count
-0070 EF                    478         OUT   DX, AX                              ;write to transfer count register
-                           479     
-0071                       480     SetupDMADone:                                 ;restore registers and return
-0071 07                    481         POP    ES
-0072 5E                    482         POP    SI
-0073 5A                    483         POP    DX
-0074 59                    484         POP    CX
-0075 5B                    485         POP    BX
-0076 58                    486         POP    AX
-0077 C3                    487         RET
-                           488     
-                           489     SetupDMA        ENDP
-                           490     
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE   10
+                           436     ;Registers Used:     None
+                           437     ;
+                           438     ;Known Bugs:         None
+                           439     ;
+                           440     ;Limitations:        None
+                           441     ;
+                           442     ;Author:             Timothy Liu
+                           443     ;
+                           444     ;Last Modified:      5/17/16
+                           445     
+003E                       446     SetupDMA        PROC    NEAR
+                           447     
+003E                       448     SetupDMAStart:                                ;save registers
+003E 50                    449         PUSH    AX
+003F 53                    450         PUSH    BX
+0040 51                    451         PUSH    CX
+0041 52                    452         PUSH    DX
+0042 56                    453         PUSH    SI
+0043 06                    454         PUSH    ES
+                           455     
+0044                       456     SetupDMAWrite:                                ;write to DMA control registers
+0044 8CD0                  457         MOV   AX, SS                              ;copy stack segment to ES
+0046 8EC0                  458         MOV   ES, AX
+0048 8BF5                  459         MOV   SI, BP                              ;copy base pointer
+004A 83C60A                460         ADD   SI, DestPointer                     ;calculate address of destination ptr
+004D E8B9FF                461         CALL  CalculatePhysical                   ;physical address returned in CX, BX
+                           462     
+0050 BAC6FF                463         MOV   DX, D0DSTH                          ;address of high destination pointer
+0053 8BC1                  464         MOV   AX, CX                              ;copy high 4 bits of physical address
+0055 EF                    465         OUT   DX, AX                              ;write to peripheral control block
+                           466     
+0056 BAC4FF                467         MOV   DX, D0DSTL                          ;address of low destination pointer
+0059 8BC3                  468         MOV   AX, BX                              ;copy low 16 bits of physical address
+005B EF                    469         OUT   DX, AX                              ;write to peripheral control block
+                           470     
+005C BAC2FF                471         MOV   DX, D0SRCH                          ;address of high source pointer
+005F B80C00                472         MOV   AX, D0SRCHVal                       ;high 16 bits of source phy address
+0062 EF                    473         OUT   DX, AX                              ;write the high source pointer
+                           474         
+0063 BAC0FF                475         MOV   DX, D0SRCL                          ;address of low source pointer
+0066 B80000                476         MOV   AX, D0SRCLVal                       ;low 16 bits of source phy address
+0069 EF                    477         OUT   DX, AX                              ;write the low source pointer
+                           478     
+006A BAC8FF                479         MOV   DX, D0TC                            ;address of DMA transfer count
+006D B80002                480         MOV   AX, NumTransfers                    ;value to write to transfer count
+0070 EF                    481         OUT   DX, AX                              ;write to transfer count register
+                           482     
+0071                       483     SetupDMADone:                                 ;restore registers and return
+0071 07                    484         POP    ES
+0072 5E                    485         POP    SI
+0073 5A                    486         POP    DX
+0074 59                    487         POP    CX
+0075 5B                    488         POP    BX
+0076 58                    489         POP    AX
+0077 C3                    490         RET
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            491     
-                           492     ;Name:       Get_Blocks(unsigned long int, int, unsigned short int far *)
+                           492     SetupDMA        ENDP
                            493     
-                           494     ;
-                           495     ;Description:        This function retrieves a number of blocks from the
-                           496     ;                    IDE and transfers it to a specified address. The
-                           497     ;                    function is passed three arguments - the address
-                           498     ;                    of the blocks, the number of blocks, and the 
-                           499     ;                    address to write to. The function reads from the 
-                           500     ;                    IDE and performs a DMA transfer to the specified
-                           501     ;                    location. The function returns the number of blocks
-                           502     ;                    actually read.
-                           503     ; 
-                           504     ;Operation:          The function first saves the registers to the stack.
-                           505     ;                    The function then uses BP to index into the stack and
-                           506     ;                    copy the number of sectors to read to SectorsRemaining
-                           507     ;                    and sets SectorsRead to 0. The function then loops through
-                           508     ;                    IDERegTable and writes to the IDE registers. The function
-                           509     ;                    calls CheckIDEBusy to check that the appropriate 
-                           510     ;                    status flags are set before writing to the IDE register.
-                           511     ;                    The function indexes into the stack and copies the 
-                           512     ;                    IDE register values to write into the stack or it
-                           513     ;                    writes a constant value to the IDE register, depending on
-                           514     ;                    register. After writing to the IDE registers, the function
-                           515     ;                    calls SetupDMA to set up the DMA control registers, except
-                           516     ;                    for D0Con. The function checks that the IDE is ready to
-                           517     ;                    transfer data and then writes to D0Con to initiate the
-                           518     ;                    DMA transfer. After the transfer is complete, the function 
-                           519     ;                    increments SectorsRead and recalculates the DMA
-                           520     ;                    destination pointer and the LBA. The function loops
-                           521     ;                    repeatedly until all sectors have been read. The function
-                           522     ;                    returns with the number of sectors read in AX.                 
-                           523     ;
-                           524     ;Arguments:          StartBlock(unsigned long int) - starting logical block
-                           525     ;                    to read from
+                           494     
+                           495     ;Name:       Get_Blocks(unsigned long int, int, unsigned short int far *)
+                           496     
+                           497     ;
+                           498     ;Description:        This function retrieves a number of blocks from the
+                           499     ;                    IDE and transfers it to a specified address. The
+                           500     ;                    function is passed three arguments - the address
+                           501     ;                    of the blocks, the number of blocks, and the 
+                           502     ;                    address to write to. The function reads from the 
+                           503     ;                    IDE and performs a DMA transfer to the specified
+                           504     ;                    location. The function returns the number of blocks
+                           505     ;                    actually read.
+                           506     ; 
+                           507     ;Operation:          The function first saves the registers to the stack.
+                           508     ;                    The function then uses BP to index into the stack and
+                           509     ;                    copy the number of sectors to read to SectorsRemaining
+                           510     ;                    and sets SectorsRead to 0. The function then loops through
+                           511     ;                    IDERegTable and writes to the IDE registers. The function
+                           512     ;                    calls CheckIDEBusy to check that the appropriate 
+                           513     ;                    status flags are set before writing to the IDE register.
+                           514     ;                    The function indexes into the stack and copies the 
+                           515     ;                    IDE register values to write into the stack or it
+                           516     ;                    writes a constant value to the IDE register, depending on
+                           517     ;                    register. After writing to the IDE registers, the function
+                           518     ;                    calls SetupDMA to set up the DMA control registers, except
+                           519     ;                    for D0Con. The function checks that the IDE is ready to
+                           520     ;                    transfer data and then writes to D0Con to initiate the
+                           521     ;                    DMA transfer. After the transfer is complete, the function 
+                           522     ;                    increments SectorsRead and recalculates the DMA
+                           523     ;                    destination pointer and the LBA. The function loops
+                           524     ;                    repeatedly until all sectors have been read. The function
+                           525     ;                    returns with the number of sectors read in AX.                 
                            526     ;
-                           527     ;                    NumBlocks(int) - number of blocks to retrieve
-                           528     ;
-                           529     ;                    DestinationPointer(unsigned short in far *) -
-                           530     ;                    address of destination
-                           531     ;                      
-                           532     ;
-                           533     ;Return Values:      AX - number of blocks actually read
-                           534     ;
-                           535     ;Local Variables:    None
-                           536     ;
-                           537     ;Shared Variables:   SectorsRemaining (R/W) - number of sectors left to read
-                           538     ;                    SectorsRead(R/W) - sectors the function has read
+                           527     ;Arguments:          StartBlock(unsigned long int) - starting logical block
+                           528     ;                    to read from
+                           529     ;
+                           530     ;                    NumBlocks(int) - number of blocks to retrieve
+                           531     ;
+                           532     ;                    DestinationPointer(unsigned short in far *) -
+                           533     ;                    address of destination
+                           534     ;                      
+                           535     ;
+                           536     ;Return Values:      AX - number of blocks actually read
+                           537     ;
+                           538     ;Local Variables:    None
                            539     ;
-                           540     ;Output:             None
-                           541     ;
-                           542     ;Error Handling:     None
-                           543     ;
-                           544     ;Algorithms:         None
-                           545     ;
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE   11
+                           540     ;Shared Variables:   SectorsRemaining (R/W) - number of sectors left to read
+                           541     ;                    SectorsRead(R/W) - sectors the function has read
+                           542     ;
+                           543     ;Output:             None
+                           544     ;
+                           545     ;Error Handling:     None
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           546     ;Registers Used:     None
-                           547     ;
-                           548     ;Known Bugs:         None
-                           549     ;
-                           550     ;Limitations:        None
-                           551     ;
-                           552     ;Author:             Timothy Liu
-                           553     ;
-                           554     ;Last Modified       5/17/16   
-                           555     
-0078                       556     Get_Blocks        PROC    NEAR
-                           557                       PUBLIC  Get_Blocks
+                           546     ;
+                           547     ;Algorithms:         None
+                           548     ;
+                           549     ;Registers Used:     None
+                           550     ;
+                           551     ;Known Bugs:         None
+                           552     ;
+                           553     ;Limitations:        None
+                           554     ;
+                           555     ;Author:             Timothy Liu
+                           556     ;
+                           557     ;Last Modified       5/17/16   
                            558     
-0078                       559     GetBlocksStart:                               ;starting label
-0078 55                    560         PUSH    BP                                ;save base pointer
-0079 8BE5                  561         MOV     SP, BP                            ;use BP to index into stack
-007B 53                    562         PUSH    BX                                ;save registers
-007C 51                    563         PUSH    CX
-007D 52                    564         PUSH    DX
-                           565     
-007E                       566     GetBlocksLoadRemaining:                       ;load number of sectors remaining
-007E 8B4E08                567         MOV    CX, SS:[BP+8]                      ;total sectors to read
-0081 890E0000       R      568         MOV    SectorsRemaining, CX               ;shared variable number of sectors
-0085 C70602000000   R      569         MOV    SectorsRead, 0                     ;no sectors have been read
-                           570     
-008B                       571     GetBlocksCheckLeft:
-008B 833E000000     R      572         CMP    SectorsRemaining, 0                ;check if no sectors left
-0090 7479                  573         JE     GetBlocksDone                      ;finished - go to end
+0078                       559     Get_Blocks        PROC    NEAR
+                           560                       PUBLIC  Get_Blocks
+                           561     
+0078                       562     GetBlocksStart:                               ;starting label
+0078 55                    563         PUSH    BP                                ;save base pointer
+0079 8BEC                  564         MOV     BP, SP                            ;use BP to index into stack
+007B 53                    565         PUSH    BX                                ;save registers
+007C 51                    566         PUSH    CX
+007D 52                    567         PUSH    DX
+007E 56                    568         PUSH    SI
+                           569     
+007F                       570     GetBlocksLoadRemaining:                       ;load number of sectors remaining
+007F 8B4E08                571         MOV    CX, SS:[BP+8]                      ;total sectors to read
+0082 890E0000       R      572         MOV    SectorsRemaining, CX               ;shared variable number of sectors
+0086 C70602000000   R      573         MOV    SectorsRead, 0                     ;no sectors have been read
                            574     
-0092                       575     GetBlocksWriteSegment:                        ;load IDE segment into ES
-0092 B800C0                576         MOV    AX, IDESegment
-0095 8EC0                  577         MOV    ES, AX                             ;segment of IDE register
-0097 B80000                578         MOV    AX, 0                              ;number of registers written to
-                           579     
-009A                       580     GetBlocksIDELoop:                             ;loop writing instructions to IDE
-009A 3D0600                581         CMP    AX, NumIDERegisters                ;number of IDE registers written to
-009D 743A                  582         JE     GetBlocksPrepareDMA                ;done writing - send read sector com.
-009F 6BD808                583         IMUL   BX, AX, SIZE IDERegEntry           ;calculate table offset
-                           584     
-00A2                       585     GetBlocksPrepReg:                             ;prepare to a register
-00A2 2E8AB71301     R      586         MOV    DH, CS:IDERegTable[BX].FlagMask    ;look up bit mask
-00A7 2E8A971401     R      587         MOV    DL, CS:IDERegTable[BX].IDEReady    ;value indicating IDE is ready
-00AC E875FF                588         CALL   CheckIDEBusy                       ;return when IDE is not busy
-00AF 2E8BB71501     R      589         MOV    SI, CS:IDERegTable[BX].RegOffset   ;offset of IDE register
-00B4 2E83BF170100   R      590         CMP    CS:IDERegTable[BX].BPIndex, NoStackArg    ;check if reg value is stack arg
-00BA 7412                  591         JE     GetBlocksConstant                  ;go to label to prepare constant comman
+008C                       575     GetBlocksCheckLeft:
+008C 833E000000     R      576         CMP    SectorsRemaining, 0                ;check if no sectors left
+0091 7479                  577         JE     GetBlocksDone                      ;finished - go to end
+                           578     
+0093                       579     GetBlocksWriteSegment:                        ;load IDE segment into ES
+0093 B800C0                580         MOV    AX, IDESegment
+0096 8EC0                  581         MOV    ES, AX                             ;segment of IDE register
+0098 B80000                582         MOV    AX, 0                              ;number of registers written to
+                           583     
+009B                       584     GetBlocksIDELoop:                             ;loop writing instructions to IDE
+009B 3D0600                585         CMP    AX, NumIDERegisters                ;number of IDE registers written to
+009E 743A                  586         JE     GetBlocksPrepareDMA                ;done writing - send read sector com.
+00A0 6BD808                587         IMUL   BX, AX, SIZE IDERegEntry           ;calculate table offset
+                           588     
+00A3                       589     GetBlocksPrepReg:                             ;prepare to a register
+00A3 2E8AB71501     R      590         MOV    DH, CS:IDERegTable[BX].FlagMask    ;look up bit mask
+00A8 2E8A971601     R      591         MOV    DL, CS:IDERegTable[BX].IDEReady    ;value indicating IDE is ready
+00AD E874FF                592         CALL   CheckIDEBusy                       ;return when IDE is not busy
+00B0 2E8BB71701     R      593         MOV    SI, CS:IDERegTable[BX].RegOffset   ;offset of IDE register
+00B5 2E83BF190100   R      594         CMP    CS:IDERegTable[BX].BPIndex, NoStackArg    ;check if reg value is stack arg
+00BB 7412                  595         JE     GetBlocksConstant                  ;go to label to prepare constant comman
                                    d
-                           592         ;JMP   GetBlocksStackArg                  ;otherwise itb^^s a stack argument
-                           593     
-00BC                       594     GetBlocksStackArg:                            ;argument is on the stack
-00BC 55                    595         PUSH   BP                                 ;save base pointer
-00BD 2E03AF1701     R      596         ADD    BP, CS:IDERegTable[BX].BPIndex     ;change base pointer to point to addres
-                                   s
-00C2 8A5600                597         MOV    DL, SS:[BP]                        ;load the argument
-00C5 2E0A971A01     R      598         OR     DL, CS:IDERegTable[BX].ArgMask     ;apply mask
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE   12
+                           596         ;JMP   GetBlocksStackArg                  ;otherwise itb^^s a stack argument
+                           597     
+00BD                       598     GetBlocksStackArg:                            ;argument is on the stack
+00BD 55                    599         PUSH   BP                                 ;save base pointer
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
 
-00CA 5D                    599         POP    BP                                 ;restore the base pointer
-00CB EB0690                600         JMP    GetBlocksOutput                    ;go write to the register
-                           601     
-00CE                       602     GetBlocksConstant:
-00CE 2E8A971901     R      603         MOV    DL, CS:IDERegTable[BX].ConstComm   ;write the constant command
-                           604     
-00D3                       605     GetBlocksOutput:
-00D3 268814                606         MOV    ES:[SI], DL                        ;output to the IDE register - value in 
+00BE 2E03AF1901     R      600         ADD    BP, CS:IDERegTable[BX].BPIndex     ;change base pointer to point to addres
+                                   s
+00C3 8A5600                601         MOV    DL, SS:[BP]                        ;load the argument
+00C6 2E0A971C01     R      602         OR     DL, CS:IDERegTable[BX].ArgMask     ;apply mask
+00CB 5D                    603         POP    BP                                 ;restore the base pointer
+00CC EB0690                604         JMP    GetBlocksOutput                    ;go write to the register
+                           605     
+00CF                       606     GetBlocksConstant:
+00CF 2E8A971B01     R      607         MOV    DL, CS:IDERegTable[BX].ConstComm   ;write the constant command
+                           608     
+00D4                       609     GetBlocksOutput:
+00D4 268814                610         MOV    ES:[SI], DL                        ;output to the IDE register - value in 
                                    DL
-00D6 40                    607         INC    AX                                 ;one more command written
-00D7 EBC1                  608         JMP    GetBlocksIDELoop                   ;back to top of loop for writing to reg
+00D7 40                    611         INC    AX                                 ;one more command written
+00D8 EBC1                  612         JMP    GetBlocksIDELoop                   ;back to top of loop for writing to reg
                                    s
-                           609     
-00D9                       610     GetBlocksPrepareDMA:                          ;set up DMA control registers
-00D9 E862FF                611         CALL   SetupDMA                           ;call function to set up DMA registers
-                           612     
-00DC                       613     GetBlocksCheckTransfer:                       ;check if IDE is ready to transfer data
-00DC B408                  614         MOV   AH, IDETransferMask                 ;mask out unimportant status bits
-00DE B008                  615         MOV   AL, IDETransfer                     ;value to compare to
-00E0 E841FF                616         CALL  CheckIDEBusy                        ;return when IDE is ready
-                           617     
-00E3                       618     GetBlocksDMA:                                 ;write to DxCON and perform DMA
-00E3 BACAFF                619         MOV   DX, D0Con                           ;address of DxCon register
-00E6 B826B4                620         MOV   AX, D0ConVal                        ;value to write to DxCon
-00E9 EF                    621         OUT   DX, AX                              ;write to DMA to initiate transfer
-00EA FF060200       R      622         INC   SectorsRead                         ;one more sector has been read 
-                           623     
-00EE                       624     GetBlocksRecalculate:                         ;recalculate LBA and destination pointe
+                           613     
+00DA                       614     GetBlocksPrepareDMA:                          ;set up DMA control registers
+00DA E861FF                615         CALL   SetupDMA                           ;call function to set up DMA registers
+                           616     
+00DD                       617     GetBlocksCheckTransfer:                       ;check if IDE is ready to transfer data
+00DD B608                  618         MOV   DH, IDETransferMask                 ;mask out unimportant status bits
+00DF B208                  619         MOV   DL, IDETransfer                     ;value to compare to
+00E1 E840FF                620         CALL  CheckIDEBusy                        ;return when IDE is ready
+                           621     
+00E4                       622     GetBlocksDMA:                                 ;write to DxCON and perform DMA
+00E4 BACAFF                623         MOV   DX, D0Con                           ;address of DxCon register
+00E7 B826B4                624         MOV   AX, D0ConVal                        ;value to write to DxCon
+00EA EF                    625         OUT   DX, AX                              ;write to DMA to initiate transfer
+00EB FF060200       R      626         INC   SectorsRead                         ;one more sector has been read 
+                           627     
+00EF                       628     GetBlocksRecalculate:                         ;recalculate LBA and destination pointe
                                    r
-00EE 8CD0                  625         MOV   AX, SS                              ;copy stack segment to extra segment
-00F0 8EC0                  626         MOV   ES, AX
-00F2 8BF5                  627         MOV   SI, BP                              ;pointer to LBA start block
-00F4 83C604                628         ADD   SI, LBA07                           ;calculate address of LBA0:7 register
-00F7 B80002                629         MOV   AX, NumTransfers                    ;amount to increment address by
-00FA E803FF                630         CALL  Add32Bit                            ;recalculate the LBA start block
-                           631         
-00FD 8BF5                  632         MOV   SI, BP                              ;pointer to destination pointer
-00FF 83C60A                633         ADD   SI, DestPointer                     ;calculate address of dest. pointer
-0102 E8FBFE                634         CALL  Add32Bit                            ;recalculate destination pointer
-0105 FF0E0000       R      635         DEC   SectorsRemaining                    ;one fewer sector to read
-0109 EB80                  636         JMP   GetBlocksCheckLeft                  ;jump to top of loop
-                           637       
-010B                       638     GetBlocksDone:
-010B A10200         R      639         MOV    AX, SectorsRead                    ;return number of sectors read
-010E 5A                    640         POP    DX                                 ;restore registers
-010F 59                    641         POP    CX
-0110 5B                    642         POP    BX
-0111 5D                    643         POP    BP
-0112 C3                    644         RET
-                           645     
-                           646     Get_Blocks      ENDP
-                           647     
-                           648     ; IDERegTable
-                           649     ; Description:   This table contains IDERegEntry structs describing what
-                           650     ;                values to output to the IDE registers. Each table entry
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE   13
+00EF 8CD0                  629         MOV   AX, SS                              ;copy stack segment to extra segment
+00F1 8EC0                  630         MOV   ES, AX
+00F3 8BF5                  631         MOV   SI, BP                              ;pointer to LBA start block
+00F5 83C604                632         ADD   SI, LBA07                           ;calculate address of LBA0:7 register
+00F8 B80100                633         MOV   AX, SecPerTran                      ;number of blocks read
+00FB E802FF                634         CALL  Add32Bit                            ;recalculate the LBA start block
+                           635         
+00FE 8BF5                  636         MOV   SI, BP                              ;pointer to destination pointer
+0100 83C60A                637         ADD   SI, DestPointer                     ;calculate address of dest. pointer
+0103 E8FAFE                638         CALL  Add32Bit                            ;recalculate destination pointer
+0106 FF0E0000       R      639         DEC   SectorsRemaining                    ;one fewer sector to read
+010A EB80                  640         JMP   GetBlocksCheckLeft                  ;jump to top of loop
+                           641       
+010C                       642     GetBlocksDone:
+010C A10200         R      643         MOV    AX, SectorsRead                    ;return number of sectors read
+010F 5E                    644         POP    SI
+0110 5A                    645         POP    DX                                 ;restore registers
+0111 59                    646         POP    CX
+0112 5B                    647         POP    BX
+0113 5D                    648         POP    BP
+0114 C3                    649         RET
+                           650     
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE   13
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           651     ;                corresponds to a different IDE register being written to.
-                           652     ;                The function get_blocks indexes into the table and looks
-                           653     ;                up the values to be written, where to write them to, and 
-                           654     ;                other information.
-                           655     ;
-                           656     ; Last Modified: 5/17/16
-                           657     ;                
-                           658     ; Author:        Timothy Liu
-                           659     ;  
-                           660                   
-0113                       661     IDERegTable        LABEL    IDERegEntry
-                           662     
-                           663     ;   IDERegEntry<FlagMask    , IDEREady, RegOffset    , BPIndex   , ConstComm    , Arg
+                           651     Get_Blocks      ENDP
+                           652     
+                           653     ; IDERegTable
+                           654     ; Description:   This table contains IDERegEntry structs describing what
+                           655     ;                values to output to the IDE registers. Each table entry
+                           656     ;                corresponds to a different IDE register being written to.
+                           657     ;                The function get_blocks indexes into the table and looks
+                           658     ;                up the values to be written, where to write them to, and 
+                           659     ;                other information.
+                           660     ;
+                           661     ; Last Modified: 5/17/16
+                           662     ;                
+                           663     ; Author:        Timothy Liu
+                           664     ;  
+                           665                   
+0115                       666     IDERegTable        LABEL    IDERegEntry
+                           667     
+                           668     ;   IDERegEntry<FlagMask    , IDEREady, RegOffset    , BPIndex   , ConstComm    , Arg
                                    Mask  > ;IDERegEntry Struc
-                           664     
-0113 88                    665         IDERegEntry<SCRdyMask   , SCRdy   , SCOffset     , NoStackArg, SecPerTran   , Bla
+                           669     
+0115 88                    670         IDERegEntry<SCRdyMask   , SCRdy   , SCOffset     , NoStackArg, SecPerTran   , Bla
                                    nkMask> ;sector count register
-0114 00
-0115 0004
-0117 0000
-0119 01
-011A 00
-011B 88                    666         IDERegEntry<LBARdyMask  , LBARdy  , LBA70Offset  , LBA07     , NoConstant   , Bla
-                                   nkMask> ;LBA (0:7) register
+0116 00
+0117 0004
+0119 0000
+011B 01
 011C 00
-011D 0006
-011F 0400
-0121 00
-0122 00
-0123 88                    667         IDERegEntry<LBARdyMask  , LBARdy  , LBA158Offset , LBA815    , NoConstant   , Bla
-                                   nkMask> ;LBA (8:15) register
+011D 88                    671         IDERegEntry<LBARdyMask  , LBARdy  , LBA70Offset  , LBA07     , NoConstant   , Bla
+                                   nkMask> ;LBA (0:7) register
+011E 00
+011F 0006
+0121 0400
+0123 00
 0124 00
-0125 0008
-0127 0500
-0129 00
-012A 00
-012B 88                    668         IDERegEntry<LBARdyMask  , LBARdy  , LBA2316Offset, LBA2316   , NoConstant   , Bla
-                                   nkMask> ;LBA (16:23) register
+0125 88                    672         IDERegEntry<LBARdyMask  , LBARdy  , LBA158Offset , LBA815    , NoConstant   , Bla
+                                   nkMask> ;LBA (8:15) register
+0126 00
+0127 0008
+0129 0500
+012B 00
 012C 00
-012D 000A
-012F 0600
-0131 00
-0132 00
-0133 88                    669         IDERegEntry<DeLBARdyMask, DeLBARdy, DeLBAOffset  , DeLBA     , NoConstant   , DeL
-                                   BAMask> ;Device LBA register
+012D 88                    673         IDERegEntry<LBARdyMask  , LBARdy  , LBA2316Offset, LBA2316   , NoConstant   , Bla
+                                   nkMask> ;LBA (16:23) register
+012E 00
+012F 000A
+0131 0600
+0133 00
 0134 00
-0135 000C
-0137 0700
-0139 00
-013A E0
-013B 40                    670         IDERegEntry<ComRdyMask  , ComRdy  , ComOffset    , NoStackArg, ReadSector   , Bla
-                                   nkMask> ;IDE Command register
-013C 40
-013D 000E
-013F 0000
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      00:15:10  05/18/;6  PAGE   14
+0135 88                    674         IDERegEntry<DeLBARdyMask, DeLBARdy, DeLBAOffset  , DeLBA     , NoConstant   , DeL
+                                   BAMask> ;Device LBA register
+0136 00
+0137 000C
+0139 0700
+013B 00
+013C E0
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      19:48:28  05/28/;6  PAGE   14
 
 
 LOC  OBJ                  LINE     SOURCE
 
-0141 20
-0142 00
-                           671     
-                           672     
-----                       673     CODE ENDS
-                           674     
-----                       675     DATA    SEGMENT PUBLIC  'DATA'
+013D 40                    675         IDERegEntry<ComRdyMask  , ComRdy  , ComOffset    , NoStackArg, ReadSector   , Bla
+                                   nkMask> ;IDE Command register
+013E 40
+013F 000E
+0141 0000
+0143 20
+0144 00
                            676     
-0000 ????                  677     SectorsRemaining    DW    ?      ;sectors left to read
-0002 ????                  678     SectorsRead         DW    ?      ;sectors that have been read
-----                       679     DATA    ENDS
-                           680     
+                           677     
+----                       678     CODE ENDS
+                           679     
+----                       680     DATA    SEGMENT PUBLIC  'DATA'
                            681     
-                           682             END
+0000 ????                  682     SectorsRemaining    DW    ?      ;sectors left to read
+0002 ????                  683     SectorsRead         DW    ?      ;sectors that have been read
+----                       684     DATA    ENDS
+                           685     
+                           686     
+                           687             END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

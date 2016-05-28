@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE TIMER1M
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     
                       =1    49     ;Control Register Values
                       =1    50     
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
   0050                =1   103     ASCII_P              EQU       80         ;P character
   0052                =1   104     ASCII_R              EQU       82         ;R character
   0053                =1   105     ASCII_S              EQU       83         ;S character
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -133,213 +133,237 @@ LOC  OBJ                  LINE     SOURCE
   0000                =1   113     FALSE                EQU        0         ;false
                       =1   114     
   0002                =1   115     WORD_SIZE            EQU        2         ;2 bytes per word
-                           116 +1  $INCLUDE(MIRQ.INC)
-                      =1   117     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   118     ;                                                                            ;
-                      =1   119     ;                                   MIRQ.INC                                 ;
-                      =1   120     ;                          MP3 Interrupt Include File                        ;
-                      =1   121     ;                                   EE/CS 52                                 ;
-                      =1   122     ;                                                                            ;
-                      =1   123     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                      =1   124     
-                      =1   125     ; This file contains the definitions for initcs.asm.
-                      =1   126     ;
-                      =1   127     ; Revision History:
-                      =1   128     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
-                      =1   129     
-                      =1   130     
-                      =1   131     ;Interrupt Vector Table
-  0001                =1   132     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
-  0003                =1   133     LAST_RESERVED_VEC            EQU          3
-  0100                =1   134     NUM_IRQ_VECTORS              EQU      256  ;number of interrupt vectors
-  0004                =1   135     INTERRUPT_SIZE               EQU        4  ;each vector is 4 addresses large
-                      =1   136     
-                      =1   137     ;Addresses
-  FF22                =1   138     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
-  FF32                =1   139     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
+  0002                =1   116     FAR_SIZE             EQU        2         ;2 words per far address
+  1000                =1   117     Segment_Overlap      EQU    1000H         ;number of unique ways to map physical
+                      =1   118                                               ;address
+                           119 +1  $INCLUDE(MIRQ.INC)
+                      =1   120     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1   121     ;                                                                            ;
+                      =1   122     ;                                   MIRQ.INC                                 ;
+                      =1   123     ;                          MP3 Interrupt Include File                        ;
+                      =1   124     ;                                   EE/CS 52                                 ;
+                      =1   125     ;                                                                            ;
+                      =1   126     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1   127     
+                      =1   128     ; This file contains the definitions for initcs.asm.
+                      =1   129     ;
+                      =1   130     ; Revision History:
+                      =1   131     ;    4/4/16     Timothy Liu     created file and wrote definitions w/o values
+                      =1   132     ;    5/19/16    Timothy Liu     added INT0 interrupt definition
+                      =1   133     
+                      =1   134     
+                      =1   135     ;Interrupt Vector Table
+  0001                =1   136     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
+  0003                =1   137     LAST_RESERVED_VEC            EQU          3
+  0100                =1   138     NUM_IRQ_VECTORS              EQU      256    ;number of interrupt vectors
+  0004                =1   139     INTERRUPT_SIZE               EQU        4    ;each vector is 4 addresses large
                       =1   140     
-                      =1   141     ;ICON0Address                            ;address of ICON0 register
-                      =1   142     ;ICON1Address                            ;address of ICON1 register
-                      =1   143     
-                      =1   144     ; Register Values
-  0001                =1   145     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
-                      =1   146                                             ;000000000000----  reserved
-                      =1   147                                             ;------------0---  enable timer interrupt
-                      =1   148                                             ;-------------001  timer priority
-                      =1   149     
-                      =1   150     
-                      =1   151     ; End of Interrupt values
-  8000                =1   152     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
-  0008                =1   153     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
-                      =1   154     ;INT0EOI
-                      =1   155     ;INT1EOI
-                      =1   156     
-                      =1   157     ; Interrupt Vector
-  0008                =1   158     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
-  0012                =1   159     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
-                      =1   160     ;INT0Vec
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    4
+                      =1   141     ;Addresses
+  FF22                =1   142     INTCtrlrEOI     EQU     0FF22H          ;address of interrupt controller EOI register
+  FF32                =1   143     INTCtrlrCtrl    EQU     0FF32H          ;address of interrupt controller for timer
+                      =1   144     
+  FF38                =1   145     ICON0Address    EQU     0FF38H           ;address of ICON0 register
+                      =1   146     ;ICON1Address                            ;address of ICON1 register
+                      =1   147     
+                      =1   148     ; Register Values
+  0001                =1   149     INTCtrlrCVal    EQU     00001H          ;set priority for timers to 1 and enable
+                      =1   150                                             ;000000000000----  reserved
+                      =1   151                                             ;------------0---  enable timer interrupt
+                      =1   152                                             ;-------------001  timer priority
+                      =1   153     
+  0013                =1   154     ICON0ON        EQU      0013H           ;0000000000010011b
+                      =1   155                                             ;000000000-------b  ;reserved
+                      =1   156                                             ;---------0------b  ;no nesting
+                      =1   157                                             ;----------0-----b  ;no cascade mode
+                      =1   158                                             ;-----------1----b  ;level triggered
+                      =1   159                                             ;------------0---b  ;enable interrupts
+                      =1   160                                             ;--------------11b  ;set priority to 3
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                      =1   161     ;INT1VEc
-                           162     
-                           163     CGROUP    GROUP    CODE
-                           164     
-                           165     
-----                       166     CODE SEGMENT PUBLIC 'CODE'
-                           167     
-                           168             ASSUME  CS:CGROUP 
-                           169     
-                           170     ;external function declarations
-                           171     
-                           172             EXTRN    RefreshDRAM:NEAR         ;procedure to run motors
-                           173     
-                           174     
-                           175     ;Name:               InitTimer1
-                           176     ;
-                           177     ;Description:        Initialize the 80188 timer1.  The timer is initialized
-                           178     ;                    to generate interrupts every COUNTS_PER_QMS clock cycles.
-                           179     ;                    The interrupt controller is also initialized to allow the
-                           180     ;                    timer interrupts. This clock is used by the DC motors for
-                           181     ;                    pulsed width modulation.
-                           182     ; 
-                           183     ;Operation:          Timer1 is first reset. The appropriate values are written
-                           184     ;                    to the timer control registers in the PCB. Finally, the
-                           185     ;                    interrupt controller is setup to accept timer interrupts
-                           186     ;                    and any pending interrupts are cleared by sending 
-                           187     ;                    a TimerEOI to the interrupt controller.
-                           188     ;
-                           189     ;Arguments:          None
-                           190     ;
-                           191     ;Return Values:      None
-                           192     ;
-                           193     ;Local Variables:    None
-                           194     ;
-                           195     ;Shared Variables:   None
-                           196     ;
-                           197     ;Output:             None
-                           198     ;
-                           199     ;Error Handling:     None
-                           200     ;
-                           201     ;Algorithms:         None
-                           202     ;
-                           203     ;Registers Used:     AX, DX
-                           204     ;
-                           205     ;Known Bugs:         None
-                           206     ;
-                           207     ;Limitations:        None
-                           208     ;
-                           209     ;Author:             Timothy Liu
-                           210     ;Last Modified       5/6/16
-                           211     
-0000                       212     InitTimer1       PROC    NEAR
-                           213                      PUBLIC  InitTimer1
-                           214     
-                           215     
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    5
+                      =1   161     
+  001B                =1   162     ICON0OFF        EQU      001BH          ;0000000000011011b
+                      =1   163                                             ;000000000-------b  ;reserved
+                      =1   164                                             ;---------0------b  ;no nesting
+                      =1   165                                             ;----------0-----b  ;no cascade mode
+                      =1   166                                             ;-----------1----b  ;level triggered
+                      =1   167                                             ;------------1---b  ;disable interrupts
+                      =1   168                                             ;--------------11b  ;set priority to 3
+                      =1   169     
+                      =1   170     ; End of Interrupt values
+  8000                =1   171     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
+  0008                =1   172     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
+  000C                =1   173     INT0EOI         EQU     0000CH          ;INT0 EOI
+                      =1   174     ;INT1EOI
+                      =1   175     
+                      =1   176     ; Interrupt Vector
+  0008                =1   177     Tmr0Vec         EQU     8               ;interrupt vector for Timer 0
+  0012                =1   178     Tmr1Vec         EQU     18              ;interrupt vector for Timer 1
+  000C                =1   179     INT0Vec         EQU     12              ;interrupt vector for INT0
+                      =1   180     ;INT1VEc
+                           181     
+                           182     CGROUP    GROUP    CODE
+                           183     
+                           184     
+----                       185     CODE SEGMENT PUBLIC 'CODE'
+                           186     
+                           187             ASSUME  CS:CGROUP 
+                           188     
+                           189     ;external function declarations
+                           190     
+                           191             EXTRN    RefreshDRAM:NEAR         ;procedure to run motors
+                           192     
+                           193     
+                           194     ;Name:               InitTimer1
+                           195     ;
+                           196     ;Description:        Initialize the 80188 timer1.  The timer is initialized
+                           197     ;                    to generate interrupts every COUNTS_PER_QMS clock cycles.
+                           198     ;                    The interrupt controller is also initialized to allow the
+                           199     ;                    timer interrupts. This clock is used by the DC motors for
+                           200     ;                    pulsed width modulation.
+                           201     ; 
+                           202     ;Operation:          Timer1 is first reset. The appropriate values are written
+                           203     ;                    to the timer control registers in the PCB. Finally, the
+                           204     ;                    interrupt controller is setup to accept timer interrupts
+                           205     ;                    and any pending interrupts are cleared by sending 
+                           206     ;                    a TimerEOI to the interrupt controller.
+                           207     ;
+                           208     ;Arguments:          None
+                           209     ;
+                           210     ;Return Values:      None
+                           211     ;
+                           212     ;Local Variables:    None
+                           213     ;
+                           214     ;Shared Variables:   None
+                           215     ;
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
 
-0000 BA58FF                216             MOV     DX, Timer1Count      ;initialize the count register to 0
-0003 33C0                  217             XOR     AX, AX
-0005 EE                    218             OUT     DX, AL
-                           219     
-0006 BA5AFF                220             MOV     DX, Timer1MaxCntA    ;setup max count for 0.2 ms counts
-0009 B8DC05                221             MOV     AX, COUNTS_PER_FMS
-000C EE                    222             OUT     DX, AL
-                           223     
-000D BA5EFF                224             MOV     DX, Timer1Ctrl       ;setup the control register
-0010 B801E0                225             MOV     AX, Timer1CtrlVal
-0013 EE                    226             OUT     DX, AL
-                           227     
-                           228     
-                           229                                          ;initialize interrupt controller for timers
-0014 BA32FF                230             MOV     DX, INTCtrlrCtrl     ;setup the interrupt control register
-0017 B80100                231             MOV     AX, INTCtrlrCVal
-001A EE                    232             OUT     DX, AL
+                           216     ;Output:             None
+                           217     ;
+                           218     ;Error Handling:     None
+                           219     ;
+                           220     ;Algorithms:         None
+                           221     ;
+                           222     ;Registers Used:     AX, DX
+                           223     ;
+                           224     ;Known Bugs:         None
+                           225     ;
+                           226     ;Limitations:        None
+                           227     ;
+                           228     ;Author:             Timothy Liu
+                           229     ;Last Modified       5/6/16
+                           230     
+0000                       231     InitTimer1       PROC    NEAR
+                           232                      PUBLIC  InitTimer1
                            233     
-001B BA22FF                234             MOV     DX, INTCtrlrEOI      ;send timer EOI - clear out int. controller
-001E B80800                235             MOV     AX, TimerEOI
-0021 EE                    236             OUT     DX, AL
-                           237     
+                           234     
+0000 BA58FF                235             MOV     DX, Timer1Count      ;initialize the count register to 0
+0003 33C0                  236             XOR     AX, AX
+0005 EE                    237             OUT     DX, AL
                            238     
-0022 C3                    239             RET                     ;done so return
-                           240     
-                           241     
-                           242     InitTimer1       ENDP
-                           243     
-                           244     
-                           245     
-                           246     ;Name:               DRAMRefreshEH
-                           247     ;               
-                           248     ;Description:       This procedure handles interrupt events from timer1.
-                           249     ;                   The function saves  the registers and calls
-                           250     ;                   RefreshDRAM. Each time RefreshDRAM is
-                           251     ;                   called, an address in PCS4 is read, triggering a
-                           252     ;                   refresh. RefreshDRAM refreshes 8 rows each time it is
-                           253     ;                   called.
-                           254     ;
-                           255     ;Operation:         Save all the registers and call RefreshDRAM. Send an
-                           256     ;                   EOI and restore registers.
-                           257     ;
-                           258     ;Arguments:         None
-                           259     ;
-                           260     ;Return Values:     None
-                           261     ;
-                           262     ;Local Variables:   None
-                           263     ;
-                           264     ;Shared Variables:  None
-                           265     ;
-                           266     ;Output:            None
-                           267     ;
-                           268     ;Error Handling:    None
-                           269     ;
-                           270     ;Algorithms:        None
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  14:05:58  05/14/;6  PAGE    6
+0006 BA5AFF                239             MOV     DX, Timer1MaxCntA    ;setup max count for 0.2 ms counts
+0009 B8DC05                240             MOV     AX, COUNTS_PER_FMS
+000C EE                    241             OUT     DX, AL
+                           242     
+000D BA5EFF                243             MOV     DX, Timer1Ctrl       ;setup the control register
+0010 B801E0                244             MOV     AX, Timer1CtrlVal
+0013 EE                    245             OUT     DX, AL
+                           246     
+                           247     
+                           248                                          ;initialize interrupt controller for timers
+0014 BA32FF                249             MOV     DX, INTCtrlrCtrl     ;setup the interrupt control register
+0017 B80100                250             MOV     AX, INTCtrlrCVal
+001A EE                    251             OUT     DX, AL
+                           252     
+001B BA22FF                253             MOV     DX, INTCtrlrEOI      ;send timer EOI - clear out int. controller
+001E B80800                254             MOV     AX, TimerEOI
+0021 EE                    255             OUT     DX, AL
+                           256     
+                           257     
+0022 C3                    258             RET                     ;done so return
+                           259     
+                           260     
+                           261     InitTimer1       ENDP
+                           262     
+                           263     
+                           264     
+                           265     ;Name:               DRAMRefreshEH
+                           266     ;               
+                           267     ;Description:       This procedure handles interrupt events from timer1.
+                           268     ;                   The function saves  the registers and calls
+                           269     ;                   RefreshDRAM. Each time RefreshDRAM is
+                           270     ;                   called, an address in PCS4 is read, triggering a
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
 
-                           271     ;
-                           272     ;Registers Used:    None
+                           271     ;                   refresh. RefreshDRAM refreshes 8 rows each time it is
+                           272     ;                   called.
                            273     ;
-                           274     ;Known Bugs:        None
-                           275     ;
-                           276     ;Limitations:       None
-                           277     ;Author:            Timothy Liu
-                           278     ;Last Modified      5/6/16
-                           279     
-0023                       280     DRAMRefreshEH    PROC    NEAR
-                           281                      PUBLIC  DRAMRefreshEH
-                           282     
-0023                       283     DRAMRefreshEHStart:
-                           284                                                        
-0023 50                    285             PUSH    AX                      ;save the registers
-0024 53                    286             PUSH    BX
-0025 52                    287             PUSH    DX
-0026 E80000         E      288             CALL    RefreshDRAM             ;function to refresh DRAM
-                           289     
-                           290     
-0029                       291     DramRefreshEHDone:                      ;done taking care of the timer
-                           292     
-0029 BA22FF                293             MOV     DX, INTCtrlrEOI         ;send Timer EOI to the INT controller
-002C B80800                294             MOV     AX, TimerEOI
-002F EE                    295             OUT     DX, AL
-                           296     
-0030 5A                    297             POP      DX                     ;restore the registers
-0031 5B                    298             POP      BX
-0032 58                    299             POP      AX                            
-                           300     
+                           274     ;Operation:         Save all the registers and call RefreshDRAM. Send an
+                           275     ;                   EOI and restore registers.
+                           276     ;
+                           277     ;Arguments:         None
+                           278     ;
+                           279     ;Return Values:     None
+                           280     ;
+                           281     ;Local Variables:   None
+                           282     ;
+                           283     ;Shared Variables:  None
+                           284     ;
+                           285     ;Output:            None
+                           286     ;
+                           287     ;Error Handling:    None
+                           288     ;
+                           289     ;Algorithms:        None
+                           290     ;
+                           291     ;Registers Used:    None
+                           292     ;
+                           293     ;Known Bugs:        None
+                           294     ;
+                           295     ;Limitations:       None
+                           296     ;Author:            Timothy Liu
+                           297     ;Last Modified      5/6/16
+                           298     
+0023                       299     DRAMRefreshEH    PROC    NEAR
+                           300                      PUBLIC  DRAMRefreshEH
                            301     
-0033 CF                    302             IRET                            ;and return - IRET from event handler
-                           303                     
-                           304     DRAMRefreshEH    ENDP
-                           305     
-----                       306     CODE ENDS
-                           307     
-                           308            END
+0023                       302     DRAMRefreshEHStart:
+                           303                                                        
+0023 50                    304             PUSH    AX                      ;save the registers
+0024 53                    305             PUSH    BX
+0025 52                    306             PUSH    DX
+0026 E80000         E      307             CALL    RefreshDRAM             ;function to refresh DRAM
+                           308     
+                           309     
+0029                       310     DramRefreshEHDone:                      ;done taking care of the timer
+                           311     
+0029 BA22FF                312             MOV     DX, INTCtrlrEOI         ;send Timer EOI to the INT controller
+002C B80800                313             MOV     AX, TimerEOI
+002F EE                    314             OUT     DX, AL
+                           315     
+0030 5A                    316             POP      DX                     ;restore the registers
+0031 5B                    317             POP      BX
+0032 58                    318             POP      AX                            
+                           319     
+                           320     
+0033 CF                    321             IRET                            ;and return - IRET from event handler
+                           322                     
+                           323     DRAMRefreshEH    ENDP
+                           324     
+----                       325     CODE ENDS
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  19:48:27  05/28/;6  PAGE    7
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           326     
+                           327            END
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND

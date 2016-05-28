@@ -397,7 +397,7 @@ Get_Blocks        PROC    NEAR
 
 GetBlocksStart:                               ;starting label
     PUSH    BP                                ;save base pointer
-    MOV     SP, BP                            ;use BP to index into stack
+    MOV     BP, SP                            ;use BP to index into stack
     PUSH    BX                                ;save registers
     PUSH    CX
     PUSH    DX
@@ -466,7 +466,7 @@ GetBlocksRecalculate:                         ;recalculate LBA and destination p
     MOV   ES, AX
     MOV   SI, BP                              ;pointer to LBA start block
     ADD   SI, LBA07                           ;calculate address of LBA0:7 register
-    MOV   AX, NumTransfers                    ;amount to increment address by
+    MOV   AX, SecPerTran                      ;number of blocks read
     CALL  Add32Bit                            ;recalculate the LBA start block
     
     MOV   SI, BP                              ;pointer to destination pointer

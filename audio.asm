@@ -154,6 +154,11 @@ AudioEHStart:                            ;save the registers
     PUSH    CX
     CALL    AudioOutput                  ;call function to output audio data
 
+AudioEHSendEOI:
+    MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
+    MOV     AX, INT0EOI                   ;INT0 end of interrupt
+    OUT     DX, AX                        ;output to peripheral control block
+
 AudioEHDone:                             ;restore registers and return
     POP     CX
     POP     AX

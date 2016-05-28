@@ -130,3 +130,16 @@ U6 transceiver - everything still working
 R13, R18, R42, R47
 R19, R43, R44, R53
 R1, R40, R52, R54
+
+5/25/16
+Missed a few days of records oops
+Soldered compact flash card adapter end to end
+
+5/26/16
+VS1011
+Inserted U13
+X2
+J4
+R48, 49, 50, 51, 60
+R59
+All parts have been built

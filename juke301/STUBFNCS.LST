@@ -1,4 +1,4 @@
-iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   1
+iC-86  COMPILER   STUBFNCS                                                                   05/28/;6 00:44:00  PAGE   1
 
 
 DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE STUBFNCS
@@ -58,7 +58,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMA
    49             /* library include files */
    50               /* none */
    51             
-iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   2
+iC-86  COMPILER   STUBFNCS                                                                   05/28/;6 00:44:00  PAGE   2
 
 
    52             /* local include files */
@@ -89,7 +89,7 @@ COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMA
   133     1           return;
   134     1       }
   135             
-iC-86  COMPILER   STUBFNCS                                                                   05/14/;6 14:05:03  PAGE   3
+iC-86  COMPILER   STUBFNCS                                                                   05/28/;6 00:44:00  PAGE   3
                   ASSEMBLY LISTING OF OBJECT CODE
 
 

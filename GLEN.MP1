@@ -4,16 +4,16 @@ DOS 5.0 (038-N) 8086 LINKER, V2.7
 INPUT FILES: GLEN1.LNK, GLEN2.LNK, LIB188.OBJ, IC86.LIB
 OUTPUT FILE: GLEN.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  05/14/;6  TIME:  14:05:59
+DATE:  05/28/;6  TIME:  19:48:29
 
 
 LINK MAP OF MODULE FATUTIL
 
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
- 315BH ------    G    CODE            CODE                          
+ 288BH ------    G    CODE            CODE                          
  0A76H ------    W    DATA            DATA                          
- 02CCH ------    W    STACK           STACK                         
+ 02B4H ------    W    STACK           STACK                         
  0000H ------    G    ??SEG                                         
 
 INPUT MODULES INCLUDED:
@@ -26,6 +26,7 @@ IC86.LIB(LQ_SLONG_MULTIPLY)
 IC86.LIB(LQ_SLONG_DIVIDE)
 
 UNRESOLVED EXTERNAL NAMES
+  GET_BLOCKS IN GLEN1.LNK(FATUTIL)
   ELAPSED_TIME IN GLEN1.LNK(FATUTIL)
   DISPLAY_TIME IN GLEN1.LNK(FATUTIL)
   DISPLAY_TITLE IN GLEN1.LNK(FATUTIL)
