@@ -21,6 +21,7 @@
 ; Revision History:
 
 ;   5/28/16    Tim Liu    created file
+;   5/29/16    Tim Liu    fixed some bugs in AudioOutput
 ;
 ;
 ; local include files
@@ -305,7 +306,7 @@ AudioOutputSerial:                           ;serially send data to MP3 - MSB
 
 AudioOutputUpdateByte:
     DEC   CX                                 ;one fewer byte left to transfer
-    INC   SI                                 ;update pointer to next byte
+    ADD   SI, 1                              ;update pointer to next byte
     JNC   AudioOutputLoop                    ;SI didn’t overflow - same segment
                                              ;go back to loop
     ;JMP  AudioOutputUpdateSegment           ;SI overflowed - update the segment
