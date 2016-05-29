@@ -1,7 +1,7 @@
-    NAME    MIRQ
+    NAME    AMIRQ
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
-;                                MP3 Interrupts                              ;
+;                              AudioMP3 Interrupts                           ;
 ;                           MP3 Interrupt Functions                          ;
 ;                                   EE/CS 51                                 ;
 ;                                                                            ;
@@ -11,6 +11,8 @@
 ;               for the MP3 player. The functions clear the interrupt
 ;               vector table, installs the hardware and timer interrupts,
 ;               and installs a handler for illegal interrupts.
+;               This version of MIRQ is for the batch file that only tests
+;               the audio code (audio.bat).
 ;
 
 ; Table of Contents
@@ -18,8 +20,7 @@
 ;    ClrIRQVectors          -clear the interrupt vector table
 ;    IllegalEventHandler    -takes care of illegal events
 ;    InstallDreqHandler     -installs VS1011 data request IRQ handler
-;    InstallTimer0Handler   -installs the timer0 handler
-;    InstallTimer1Handler   -installs the timer1 handler
+;    InstallTimer1Handler   -installs DRAM refresh interrupt
 
 
 ;Revision History:
@@ -27,7 +28,7 @@
 ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
 ;    5/7/16     Tim Liu    wrote InstallTimer1Handler
 ;    5/19/16    Tim Liu    wrote InstallDreqHandler
-
+;    5/27/16    Tim Liu    removed Button EH installer
 $INCLUDE(MIRQ.INC)
 $INCLUDE(GENERAL.INC)
 
@@ -39,9 +40,9 @@ CODE SEGMENT PUBLIC 'CODE'
 
 ; external function declarations
 
-    ;EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
+    EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
     ;EXTRN    DemandEH           ;CON_MP3 data demand handler
-    EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
+    ;EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
     EXTRN    DRAMRefreshEH:NEAR  ;access PCS4 to refresh DRAM
 
 ; ClrIRQVectors
@@ -199,24 +200,24 @@ IllegalEventHandler     ENDP
 InstallDreqHandler    PROC    NEAR
                       PUBLIC  InstallDreqHandler
 
-    ;XOR    AX, AX        ;clear ES (irq vector in segment 0)
-    ;MOV    ES, AX
+    XOR    AX, AX        ;clear ES (irq vector in segment 0)
+    MOV    ES, AX
 
 
                                 ;store the vector - put location of INT2 event
                                 ;handler into ES
                                 ;serial interrupts go to INT2
 
-    ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
-    ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
 
-   ; MOV     DX, ICON0Address              ;address of INT0 interrupt controller
-   ; MOV     AX, ICON0On                   ;value to start int 0 interrupts
-   ; OUT     DX, AX
+    MOV     DX, ICON0Address              ;address of INT0 interrupt controller
+    MOV     AX, ICON0On                   ;value to start int 0 interrupts
+    OUT     DX, AX
 
-    ;MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
-    ;MOV     AX, INT0EOI                   ;INT0 end of interrupt
-    ;OUT     DX, AX                        ;output to peripheral control block
+    MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
+    MOV     AX, INT0EOI                   ;INT0 end of interrupt
+    OUT     DX, AX                        ;output to peripheral control block
 
     ;check that no EOI is sent and no write to the interrupt controller
     ;needs to be made by the function
@@ -224,50 +225,6 @@ InstallDreqHandler    PROC    NEAR
     RET
 
 InstallDreqHandler    ENDP
-
-
-; InstallTimer0Handler
-;
-; Description:       Install the event handler for the timer0 interrupt.
-;
-; Operation:         Writes the address of the timer event handler to the
-;                    appropriate interrupt vector.
-;
-; Arguments:         None.
-; Return Value:      None.
-;
-; Local Variables:   None.
-; Shared Variables:  None.
-;
-; Input:             None.
-; Output:            None.
-;
-; Error Handling:    None.
-;
-; Algorithms:        None.
-; Data Structures:   None.
-;
-;
-; Author:            Timothy Liu
-; Last Modified:     4/4/16
-
-InstallTimer0Handler  PROC    NEAR
-                      PUBLIC  InstallTimer0Handler
-
-
-        XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-        MOV     ES, AX
-                                ;store the vector - put location of timer event
-								;handler into ES
-        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
-        MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
-
-
-        RET                     ;all done, return
-
-
-InstallTimer0Handler  ENDP
-
 
 ; InstallTimer1Handler
 ;
@@ -310,7 +267,9 @@ InstallTimer1Handler  PROC    NEAR
 
 
 InstallTimer1Handler  ENDP
-    
+
+
+
 
 
 CODE ENDS

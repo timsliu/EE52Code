@@ -1,33 +1,23 @@
-        NAME    STARTUP
+        NAME    ASKEL
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                                                                            ;
 ;                                   C0SMROM                                  ;
-;                               Startup Template                             ;
+;                           Skeleton Startup Template                        ;
 ;                    Intel C Small Memory Model, ROM Option                  ;
 ;                                                                            ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; This file contains a template for the startup code used when interfacing to
-; C code compiled with the Intel C compiler using the small memory model and
-; ROM option.  It assumes nothing about the system hardware, it's main purpose
-; is to setup the groups and segments correctly.  Note that most segments are
-; empty, they are present only for the GROUP definitions.  The actual startup
-; code for a system would include definitions for the global variables and all
-; of the system initialization.  Note that the CONST segment does not exist
-; for ROMmable code (it is automatically made part of the CODE segment by the
-; compiler).
+; This file contains the skeleton startup code for the MP3 player. The code
+; Sets up the chip selects and then enters into an infinite loop. The purpose
+; of this file is to run the initialization code and then allow functions
+; and other code to be tested on its own.
 ;
 ;
-;    4/19/16  Tim Liu       Added initcs and created infinite loop
-;    4/19/16  Tim Liu       Changed name to STARTUP
-;    4/19/16  Tim Liu       Reordered assumes and group declarations
-;    4/19/16  Tim Liu       Added START and END START CS:IP init
-;    4/20/16  Tim Liu       Added write to LMCS before func calls
-;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
-;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
-;    5/7/16   Tim Liu       Added call to InitClock
-;    5/19/16  Tim Liu     Added commented out call to InstallDreqHandler
+; Revision History:
+;  5/14/16    Tim Liu    initial revision
+;  5/28/16    Tim Liu    skeleton startup for audio
+;    
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -48,19 +38,15 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
         ASSUME  CS:CGROUP, DS:DGROUP, ES:NOTHING, SS:DGROUP
 
 
-
-        EXTRN    main:NEAR              ;declare the main function
         EXTRN    InitCS:NEAR            ;initialize chip selects
         EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
-        EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
-        EXTRN    InitTimer0:NEAR        ;start up timer0
-        EXTRN    InitButtons:NEAR       ;initialize the buttons
-        EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
-        EXTRN    InitClock:NEAR         ;initialize MP3 clock
+        EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
+        EXTRN    AudioInit:NEAR
         EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
         EXTRN    InitTimer1:NEAR        ;start up timer 1
-        EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
-        ;EXTRN    AudioInit:NEAR
+
+
+
 
 START:
 
@@ -84,21 +70,14 @@ BEGIN:                                  ;start the program
 
         CALL    InitCS                  ;initialize chip selects
         CALL    ClrIRQVectors           ;clear interrupt vector table
-
-        CALL    InitButtons             ;initialize the buttons
-        CALL    InitDisplayLCD          ;initialize the LCD display
-        CALL    InitClock               ;initialize the MP3 clock
-
-        CALL    InstallTimer0Handler    ;install handler
-        CALL    InstallTimer1Handler    ;install timer1 handler
-        CALL    InitTimer0              ;initialize timer0 for button interrupt
-        CALL    InitTimer1              ;initialize timer1 for DRAM refresh
         CALL    InstallDreqHandler      ;install handler for audio data request
-        ;CALL    AudioInit               ;initialize audio fixed buffer
+        CALL    InstallTimer1Handler    ;install timer1 handler
+        CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+
+        CALL    AudioInit               ;initialize audio fixed buffer
 
         STI                             ;enable interrupts
 
-        CALL    main                    ;run the main function (no arguments)
 Infinite:
         JMP    Infinite
 

@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE MIRQ
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
   0001                =1    48     FIRST_RESERVED_VEC           EQU        1       ;reserve vectors 1-3
   0003                =1    49     LAST_RESERVED_VEC            EQU          3
   0100                =1    50     NUM_IRQ_VECTORS              EQU      256    ;number of interrupt vectors
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     ;
                       =1   104     ; Revision History:
                       =1   105     ;    11/3/15     Timothy Liu     initial revision
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -168,7 +168,7 @@ LOC  OBJ                  LINE     SOURCE
                            148     
                            149     ; external function declarations
                            150     
-                           151         EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
+                           151         ;EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
                            152         ;EXTRN    DemandEH           ;CON_MP3 data demand handler
                            153         EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
                            154         EXTRN    DRAMRefreshEH:NEAR  ;access PCS4 to refresh DRAM
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     ; Description:      This functions installs the IllegalEventHandler for all
                            159     ;                   interrupt vectors in the interrupt vector table.  Note
                            160     ;                   that all 256 vectors are initialized so the code must be
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
 001F 83C604                213             ADD     SI, INTERRUPT_SIZE           ;update pointer to next vector
                            214     
 0022 E2E6                  215             LOOP    ClrVectorLoop   ;loop until have cleared all vectors
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
 002F 5A                    268             POP     DX                      ;restore the registers
 0030 58                    269             POP     AX
                            270     
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -343,34 +343,34 @@ LOC  OBJ                  LINE     SOURCE
 0032                       308     InstallDreqHandler    PROC    NEAR
                            309                           PUBLIC  InstallDreqHandler
                            310     
-0032 33C0                  311         XOR    AX, AX        ;clear ES (irq vector in segment 0)
-0034 8EC0                  312         MOV    ES, AX
+                           311         ;XOR    AX, AX        ;clear ES (irq vector in segment 0)
+                           312         ;MOV    ES, AX
                            313     
                            314     
                            315                                     ;store the vector - put location of INT2 event
                            316                                     ;handler into ES
                            317                                     ;serial interrupts go to INT2
                            318     
-0036 26C70630000000 E      319         MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
-003D 26C7063200---- R      320         MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
+                           319         ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
+                           320         ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
                            321     
-0044 BA38FF                322         MOV     DX, ICON0Address              ;address of INT0 interrupt controller
-0047 B81300                323         MOV     AX, ICON0On                   ;value to start int 0 interrupts
-004A EF                    324         OUT     DX, AX
+                           322        ; MOV     DX, ICON0Address              ;address of INT0 interrupt controller
+                           323        ; MOV     AX, ICON0On                   ;value to start int 0 interrupts
+                           324        ; OUT     DX, AX
                            325     
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
 
-004B BA22FF                326         MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
-004E B80C00                327         MOV     AX, INT0EOI                   ;INT0 end of interrupt
-0051 EF                    328         OUT     DX, AX                        ;output to peripheral control block
+                           326         ;MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
+                           327         ;MOV     AX, INT0EOI                   ;INT0 end of interrupt
+                           328         ;OUT     DX, AX                        ;output to peripheral control block
                            329     
                            330         ;check that no EOI is sent and no write to the interrupt controller
                            331         ;needs to be made by the function
                            332     
-0052 C3                    333         RET
+0032 C3                    333         RET
                            334     
                            335     InstallDreqHandler    ENDP
                            336     
@@ -400,25 +400,25 @@ LOC  OBJ                  LINE     SOURCE
                            360     ; Author:            Timothy Liu
                            361     ; Last Modified:     4/4/16
                            362     
-0053                       363     InstallTimer0Handler  PROC    NEAR
+0033                       363     InstallTimer0Handler  PROC    NEAR
                            364                           PUBLIC  InstallTimer0Handler
                            365     
                            366     
-0053 33C0                  367             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-0055 8EC0                  368             MOV     ES, AX
+0033 33C0                  367             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+0035 8EC0                  368             MOV     ES, AX
                            369                                     ;store the vector - put location of timer event
                            370                                                                     ;handler into ES
-0057 26C70620000000 E      371             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
-005E 26C7062200---- R      372             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
+0037 26C70620000000 E      371             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec), OFFSET(ButtonEH)
+003E 26C7062200---- R      372             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr0Vec + 2), SEG(ButtonEH)
                            373     
                            374     
-0065 C3                    375             RET                     ;all done, return
+0045 C3                    375             RET                     ;all done, return
                            376     
                            377     
                            378     InstallTimer0Handler  ENDP
                            379     
                            380     
-8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     19:48:27  05/28/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    MIRQ                                                     00:01:53  05/29/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -448,19 +448,19 @@ LOC  OBJ                  LINE     SOURCE
                            403     ; Author:            Timothy Liu
                            404     ; Last Modified:     5/7/16
                            405     
-0066                       406     InstallTimer1Handler  PROC    NEAR
+0046                       406     InstallTimer1Handler  PROC    NEAR
                            407                           PUBLIC  InstallTimer1Handler
                            408     
                            409     
-0066 33C0                  410             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
-0068 8EC0                  411             MOV     ES, AX
+0046 33C0                  410             XOR     AX, AX          ;clear ES (interrupt vectors are in segment 0)
+0048 8EC0                  411             MOV     ES, AX
                            412                                     ;store the vector - put location of timer event
                            413                                                                     ;handler into ES
-006A 26C70648000000 E      414             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(DRAMRefreshEH)
-0071 26C7064A00---- R      415             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(DRAMRefreshEH)
+004A 26C70648000000 E      414             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec), OFFSET(DRAMRefreshEH)
+0051 26C7064A00---- R      415             MOV     ES: WORD PTR (INTERRUPT_SIZE * Tmr1Vec + 2), SEG(DRAMRefreshEH)
                            416     
                            417     
-0078 C3                    418             RET                     ;all done, return
+0058 C3                    418             RET                     ;all done, return
                            419     
                            420     
                            421     InstallTimer1Handler  ENDP

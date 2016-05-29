@@ -471,6 +471,7 @@ GetBlocksRecalculate:                         ;recalculate LBA and destination p
     
     MOV   SI, BP                              ;pointer to destination pointer
     ADD   SI, DestPointer                     ;calculate address of dest. pointer
+    MOV   AX, NumTransfers                    ;amount to increment destination pointer
     CALL  Add32Bit                            ;recalculate destination pointer
     DEC   SectorsRemaining                    ;one fewer sector to read
     JMP   GetBlocksCheckLeft                  ;jump to top of loop

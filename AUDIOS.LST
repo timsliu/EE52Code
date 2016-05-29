@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE AUDIOS
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
   0000                =1    48     AudioBufferOffset         EQU    0000H   ;offset of the fixed audio buffer
   A000                =1    49     AudioBufferSegment        EQU   0a000H   ;segment of the fixed audio buffer
                       =1    50     
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     ; End of Interrupt values
   8000                =1   104     NonSpecEOI      EQU     08000H          ;Non-specific EOI command
   0008                =1   105     TimerEOI        EQU     00008H          ;Timer EOI command (same for all timers)
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   158     
   0002                =1   159     WORD_SIZE            EQU        2         ;2 bytes per word
   0002                =1   160     FAR_SIZE             EQU        2         ;2 words per far address
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
 0004 A30000         R      213         MOV    CurrentBuffer[0], AX
                            214     
 0007 B800A0                215         MOV    AX, AudioBufferSegment
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
 0015                       268     AudioEHStart:                            ;save the registers
 0015 50                    269         PUSH    AX
 0016 51                    270         PUSH    CX
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     ;                    bytes. After the bytes are output, the function
                            324     ;                    decrements CurBuffLeft by BytesPerTransfer. The function
                            325     ;                    copies SI to CurrentBuffer[0] to update the offset of
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     
 0028                       379     AudioOutputCheckCur:                         ;check if current buffer is empty
 0028 833E040000     R      380         CMP    CurBuffLeft, 0                    ;no bytes left in buffer
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
 0072 D0C0                  433         ROL   AL, 1                              ;shift so DB1 is LSB
 0074 EF                    434         OUT   DX, AX                             ;output other bits to PCS2
                            435         
-8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   19:48:28  05/28/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    AUDIOS                                                   00:01:54  05/29/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE

@@ -1,10 +1,10 @@
 
 DOS 5.0 (038-N) 8086 LINKER, V2.7
 
-INPUT FILES: DRAM.OBJ, DRAMTST.OBJ, IDE.OBJ, AUDIOS.OBJ
+INPUT FILES: DRAM.OBJ, DRAMTST.OBJ, IDE.OBJ
 OUTPUT FILE: TIM3.LNK
 CONTROLS SPECIFIED IN INVOCATION COMMAND:
-DATE:  05/28/;6  TIME:  19:48:28
+DATE:  05/29/;6  TIME:  00:01:54
 
 
 LINK MAP OF MODULE DRAM
@@ -12,11 +12,10 @@ LINK MAP OF MODULE DRAM
 LOGICAL SEGMENTS INCLUDED:
 LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
  0000H ------    G    ??SEG                                         
- 0246H ------    G    CODE            CODE                          
- 0016H ------    G    DATA            DATA                          
+ 01A9H ------    G    CODE            CODE                          
+ 0004H ------    G    DATA            DATA                          
 
 INPUT MODULES INCLUDED:
 DRAM.OBJ(DRAM)
 DRAMTST.OBJ(DRAMTST)
 IDE.OBJ(IDE)
-AUDIOS.OBJ(AUDIOS)
