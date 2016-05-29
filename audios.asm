@@ -276,33 +276,32 @@ AudioOutputLoop:
 
 AudioOutputSerial:                           ;serially send data to MP3 - MSB
                                              ;first
-    XOR   AH, AH                             ;only low byte has valid data
     MOV   DX, PCS3Address                    ;address to output DB7 to
     ROL   AL, 1                              ;output MSB on DB0
-    OUT   DX, AX                             ;first bit goes to PCS3 to trigger
+    OUT   DX, AL                             ;first bit goes to PCS3 to trigger
                                              ;BSYNC
 
     MOV   DX, PCS2Address                    ;address to output bits 0-6
     ROL   AL, 1                              ;shift so DB6 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB5 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB4 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB3 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB2 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB1 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB0 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
 
 AudioOutputUpdateByte:
     DEC   CX                                 ;one fewer byte left to transfer

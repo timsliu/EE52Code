@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    20:25:40  05/28/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    14:07:37  05/29/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE ASKEL
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     
                       =1    49     ; Addresses
   FFA4                =1    50     PACSreg         EQU     0FFA4H          ;address of PACS register
-8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    20:25:40  05/28/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    14:07:37  05/29/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103     
                            104     ; setup code and data groups
                            105     CGROUP  GROUP   CODE
-8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    20:25:40  05/28/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    14:07:37  05/29/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -140,76 +140,81 @@ LOC  OBJ                  LINE     SOURCE
                            120             EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
                            121             EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
                            122             EXTRN    AudioInit:NEAR
-                           123     
-                           124     
+                           123             EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
+                           124             EXTRN    InitTimer1:NEAR        ;start up timer 1
                            125     
                            126     
-0000                       127     START:
+                           127     
                            128     
-                           129     
-0000                       130     BEGIN:                                  ;start the program
-0000 FA                    131             CLI                             ;disable interrupts
-0001 B8----         R      132             MOV     AX, DGROUP              ;initialize the stack pointer
-0004 8ED0                  133             MOV     SS, AX
-0006 BC800290       R      134             MOV     SP, OFFSET(DGROUP:TopOfStack)
-                           135     
-000A B8----         R      136             MOV     AX, DGROUP              ;initialize the data segment
-000D 8ED8                  137             MOV     DS, AX
-                           138     
-                           139             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           140             ; user initialization code goes here ;
+0000                       129     START:
+                           130     
+                           131     
+0000                       132     BEGIN:                                  ;start the program
+0000 FA                    133             CLI                             ;disable interrupts
+0001 B8----         R      134             MOV     AX, DGROUP              ;initialize the stack pointer
+0004 8ED0                  135             MOV     SS, AX
+0006 BC800290       R      136             MOV     SP, OFFSET(DGROUP:TopOfStack)
+                           137     
+000A B8----         R      138             MOV     AX, DGROUP              ;initialize the data segment
+000D 8ED8                  139             MOV     DS, AX
+                           140     
                            141             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                           142     
-000F BAA2FF                143             MOV     DX, LMCSreg             ;setup to write to MPCS register
-0012 B8C307                144             MOV     AX, LMCSval
-0015 EE                    145             OUT     DX, AL                  ;write MPCSval to MPCS
-                           146     
-0016 E80000         E      147             CALL    InitCS                  ;initialize chip selects
-0019 E80000         E      148             CALL    ClrIRQVectors           ;clear interrupt vector table
-001C E80000         E      149             CALL    InstallDreqHandler      ;install handler for audio data request
-001F E80000         E      150             CALL    AudioInit               ;initialize audio fixed buffer
-                           151     
-0022 FB                    152             STI                             ;enable interrupts
-                           153     
-0023                       154     Infinite:
-0023 EBFE                  155             JMP    Infinite
+                           142             ; user initialization code goes here ;
+                           143             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                           144     
+000F BAA2FF                145             MOV     DX, LMCSreg             ;setup to write to MPCS register
+0012 B8C307                146             MOV     AX, LMCSval
+0015 EE                    147             OUT     DX, AL                  ;write MPCSval to MPCS
+                           148     
+0016 E80000         E      149             CALL    InitCS                  ;initialize chip selects
+0019 E80000         E      150             CALL    ClrIRQVectors           ;clear interrupt vector table
+001C E80000         E      151             CALL    InstallDreqHandler      ;install handler for audio data request
+001F E80000         E      152             CALL    InstallTimer1Handler    ;install timer1 handler
+0022 E80000         E      153             CALL    InitTimer1              ;initialize timer1 for DRAM refresh
+                           154     
+0025 E80000         E      155             CALL    AudioInit               ;initialize audio fixed buffer
                            156     
-0025 EBD9                  157             JMP     Start                   ;if return - reinitialize and try again
+0028 FB                    157             STI                             ;enable interrupts
                            158     
-                           159     
-----                       160     CODE    ENDS
-8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    20:25:40  05/28/;6  PAGE    4
+0029                       159     Infinite:
+0029 EBFE                  160             JMP    Infinite
+8086/87/88/186 MACRO ASSEMBLER    ASKEL                                                    14:07:37  05/29/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
 
                            161     
-                           162     ; the stack segment - used for subroutine linkage, argument passing, and
-                           163     ; local variables
+002B EBD3                  162             JMP     Start                   ;if return - reinitialize and try again
+                           163     
                            164     
-----                       165     STACK   SEGMENT  WORD  STACK  'STACK'
+----                       165     CODE    ENDS
                            166     
-                           167     
-0000 (80                   168             DB      80 DUP ('Stack   ')             ;320 words
+                           167     ; the stack segment - used for subroutine linkage, argument passing, and
+                           168     ; local variables
+                           169     
+----                       170     STACK   SEGMENT  WORD  STACK  'STACK'
+                           171     
+                           172     
+0000 (80                   173             DB      80 DUP ('Stack   ')             ;320 words
      537461636B2020
      20
      )
-                           169     
-0280                       170     TopOfStack      LABEL   WORD
-                           171     
-                           172     
-----                       173     STACK   ENDS
                            174     
-                           175     ; the data segment - used for static and global variables
+0280                       175     TopOfStack      LABEL   WORD
                            176     
-----                       177     DATA    SEGMENT  WORD  PUBLIC  'DATA'
-                           178     
+                           177     
+----                       178     STACK   ENDS
                            179     
-----                       180     DATA    ENDS
+                           180     ; the data segment - used for static and global variables
                            181     
-                           182     
+----                       182     DATA    SEGMENT  WORD  PUBLIC  'DATA'
                            183     
                            184     
-                           185             END START
+----                       185     DATA    ENDS
+                           186     
+                           187     
+                           188     
+                           189     
+                           190             END START
 
 ASSEMBLY COMPLETE, NO ERRORS FOUND
