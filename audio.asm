@@ -29,6 +29,14 @@
 ;    5/21/16    Tim Liu    wrote Audio_Play
 ;    5/21/16    Tim Liu    wrote AudioIRQOn
 ;    5/21/16    Tim Liu    wrote Update
+;    5/29/16    Tim Liu    added EOI to audio event handler
+;    5/30/16    Tim Liu    bug fixes found in Audio Stub
+;    5/30/16    Tim Liu    changed buffer indices from [1] to [2]
+;                          to accommodate copying words
+;    5/30/16    Tim Liu    in AudioOutput, changed INC SI to add
+;                          1 to SI so that carry flag is set
+;    5/30/16    Tim Liu    in AudioOutput, changed outputting AX
+;                          to outputting AL
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
@@ -144,7 +152,7 @@ AudioIRQOn        ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/19/16
+;Last Modified       5/30/16
 
 AudioEH        PROC    NEAR
                PUBLIC  AudioEH
@@ -152,6 +160,7 @@ AudioEH        PROC    NEAR
 AudioEHStart:                            ;save the registers
     PUSH    AX
     PUSH    CX
+    PUSH    DX
     CALL    AudioOutput                  ;call function to output audio data
 
 AudioEHSendEOI:
@@ -159,7 +168,8 @@ AudioEHSendEOI:
     MOV     AX, INT0EOI                   ;INT0 end of interrupt
     OUT     DX, AX                        ;output to peripheral control block
 
-AudioEHDone:                             ;restore registers and return
+AudioEHDone:                              ;restore registers and return
+    POP     DX
     POP     CX
     POP     AX
     
@@ -243,7 +253,7 @@ AudioEH        ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/21/16
+;Last Modified       5/30/16
 
 
 ;Outline
@@ -291,8 +301,8 @@ AudioOutputSwap:                             ;read from NextBuffer
    MOV    AX, NextBuffer[0]                  ;copy segment of NextBuffer
    MOV    CurrentBuffer[0], AX               ;make NextBuffer CurrentBuffer
 
-   MOV    AX, NextBuffer[1]                  ;copy offset of NextBuffer
-   MOV    CurrentBuffer[1], AX
+   MOV    AX, NextBuffer[2]                  ;copy offset of NextBuffer
+   MOV    CurrentBuffer[2], AX
 
    MOV    AX, NextBuffLeft                   ;copy bytes left of NextBuffer
    MOV    CurBuffLeft, AX                    ;to CurBuffLeft
@@ -307,7 +317,7 @@ AudioOutputEmpty:                            ;both audio buffers are empty
 AudioOutputByteLoopPrep:                     ;prepare to output buffer data
     MOV   CX, Bytes_Per_Transfer             ;number bytes left to transfer
                                              ;for this interrupt
-    MOV   AX, CurrentBuffer[1]               ;copy buffer segment to ES
+    MOV   AX, CurrentBuffer[2]               ;copy buffer segment to ES
     MOV   ES, AX
 
     MOV   SI, CurrentBuffer[0]               ;copy buffer offset to SI
@@ -320,37 +330,36 @@ AudioOutputLoop:
 
 AudioOutputSerial:                           ;serially send data to MP3 - MSB
                                              ;first
-    XOR   AH, AH                             ;only low byte has valid data
     MOV   DX, PCS3Address                    ;address to output DB7 to
     ROL   AL, 1                              ;output MSB on DB0
-    OUT   DX, AX                             ;first bit goes to PCS3 to trigger
+    OUT   DX, AL                             ;first bit goes to PCS3 to trigger
                                              ;BSYNC
 
     MOV   DX, PCS2Address                    ;address to output bits 0-6
     ROL   AL, 1                              ;shift so DB6 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB5 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB4 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB3 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB2 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB1 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
     
     ROL   AL, 1                              ;shift so DB0 is LSB
-    OUT   DX, AX                             ;output other bits to PCS2
+    OUT   DX, AL                             ;output other bits to PCS2
 
 AudioOutputUpdateByte:
     DEC   CX                                 ;one fewer byte left to transfer
-    INC   SI                                 ;update pointer to next byte
+    ADD   SI, 1                              ;update pointer to next byte
     JNC   AudioOutputLoop                    ;SI didn’t overflow - same segment
                                              ;go back to loop
     ;JMP  AudioOutputUpdateSegment           ;SI overflowed - update the segment
@@ -366,7 +375,7 @@ AudioOutputDone:                             ;stub function for now
     MOV    CurrentBuffer[0], SI              ;store the buffer location to 
                                              ;start reading from
     MOV    AX, ES                            ;store the updated buffer segment
-    MOV    CurrentBuffer[1], AX
+    MOV    CurrentBuffer[2], AX
     SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
                                              ;the buffer
     POP    ES
@@ -423,7 +432,7 @@ AudioOutput    ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/21/16
+;Last Modified       5/30/16
 
 Audio_Play        PROC    NEAR
                   PUBLIC  Audio_Play
@@ -438,7 +447,7 @@ AudioPlayArgs:                           ;pull the arguments from the stack
     MOV     CurrentBuffer[0], AX         ;write offset to CurrentBuffer
 
     MOV     AX, SS:[BP+6]                ;buffer segment
-    MOV     CurrentBuffer[1], AX         ;write buffer segment to CurrentBuffer
+    MOV     CurrentBuffer[2], AX         ;write buffer segment to CurrentBuffer
 
     MOV     AX, SS:[BP+8]                ;length of the buffer in words
     SHL     AX, 1                        ;double to convert to number of bytes
@@ -566,7 +575,7 @@ Audio_Halt    ENDP
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/21/16
+;Last Modified       5/30/16
 
 Update            PROC    NEAR
                   PUBLIC  Update
@@ -585,7 +594,7 @@ UpdateNextEmpty:                        ;next buffer is empty
     MOV    NextBuffer[0], AX            ;load offset of the new buffer
 
     MOV    AX, SS:[BP+6]                ;segment of the new buffer
-    MOV    NextBuffer[1], AX            ;load the offset of the new buffer
+    MOV    NextBuffer[2], AX            ;load the offset of the new buffer
 
     MOV    AX, SS:[BP+8]                ;length of the new buffer in words
     SHL    AX, 1                        ;double to get length of buffer in bytes

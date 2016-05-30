@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    00:01:54  05/29/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    18:18:52  05/30/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE CLOCK
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                             48     ;Arguments:          None
                             49     ;
                             50     ;Return Values:      None
-8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    00:01:54  05/29/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    18:18:52  05/30/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                            103     ;Error Handling:     None
                            104     ;
                            105     ;Algorithms:         None
-8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    00:01:54  05/29/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    18:18:52  05/30/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     ;
                            159     ;Limitations:        None
                            160     ;
-8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    00:01:54  05/29/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    18:18:52  05/30/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE

@@ -27,7 +27,8 @@
 ;    4/21/16  Tim Liu       Added calls to set up timer0 and buttons
 ;    4/28/16  Tim Liu       Temporarily replaced main call with infinite loop
 ;    5/7/16   Tim Liu       Added call to InitClock
-;    5/19/16  Tim Liu     Added commented out call to InstallDreqHandler
+;    5/19/16  Tim Liu       Added commented out call to InstallDreqHandler
+;    5/30/16  Tim Liu       Removed commented out external function calls
 ; local include files
 
 $INCLUDE(INITREG.INC)
@@ -49,18 +50,17 @@ CODE    SEGMENT  WORD  PUBLIC  'CODE'
 
 
 
-        EXTRN    main:NEAR              ;declare the main function
-        EXTRN    InitCS:NEAR            ;initialize chip selects
-        EXTRN    ClrIRQVectors:NEAR     ;clear interrupt vector table
+        EXTRN    main:NEAR                  ;declare the main function
+        EXTRN    InitCS:NEAR                ;initialize chip selects
+        EXTRN    ClrIRQVectors:NEAR         ;clear interrupt vector table
         EXTRN    InstallTimer0Handler:NEAR  ;install timer 0 handler
-        EXTRN    InitTimer0:NEAR        ;start up timer0
-        EXTRN    InitButtons:NEAR       ;initialize the buttons
-        EXTRN    InitDisplayLCD:NEAR    ;initialize the LCD display
-        EXTRN    InitClock:NEAR         ;initialize MP3 clock
+        EXTRN    InitTimer0:NEAR            ;start up timer0
+        EXTRN    InitButtons:NEAR           ;initialize the buttons
+        EXTRN    InitDisplayLCD:NEAR        ;initialize the LCD display
+        EXTRN    InitClock:NEAR             ;initialize MP3 clock
         EXTRN    InstallTimer1Handler:NEAR  ;install timer 1 handler
-        EXTRN    InitTimer1:NEAR        ;start up timer 1
-        EXTRN    InstallDreqHandler:NEAR ;install audio data request handler
-        ;EXTRN    AudioInit:NEAR
+        EXTRN    InitTimer1:NEAR            ;start up timer 1
+        EXTRN    InstallDreqHandler:NEAR    ;install audio data request handler
 
 START:
 
@@ -94,13 +94,12 @@ BEGIN:                                  ;start the program
         CALL    InitTimer0              ;initialize timer0 for button interrupt
         CALL    InitTimer1              ;initialize timer1 for DRAM refresh
         CALL    InstallDreqHandler      ;install handler for audio data request
-        ;CALL    AudioInit               ;initialize audio fixed buffer
 
         STI                             ;enable interrupts
 
         CALL    main                    ;run the main function (no arguments)
-Infinite:
-        JMP    Infinite
+
+Infinite:                               ;should not reach label - means MAIN returned
 
         JMP     Start                   ;if return - reinitialize and try again
 

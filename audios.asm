@@ -22,6 +22,9 @@
 
 ;   5/28/16    Tim Liu    created file
 ;   5/29/16    Tim Liu    fixed some bugs in AudioOutput
+;   5/29/16    Tim Liu    changed outputting words to output bytes
+;   5/29/16    Tim Liu    changed incrementing SI to adding 1 to set carry
+;   5/29/16    Tim Liu    fixed AudioOutput buffer indexes
 ;
 ;
 ; local include files
@@ -82,7 +85,7 @@ AudioInitWrite:
     MOV    CurrentBuffer[0], AX
 
     MOV    AX, AudioBufferSegment
-    MOV    CurrentBuffer[1], AX
+    MOV    CurrentBuffer[2], AX
 
     MOV    CurBuffLeft, AudioBufferLength
 
@@ -256,7 +259,7 @@ AudioOutputResetLoop:
     MOV    CurrentBuffer[0], AX
 
     MOV    AX, AudioBufferSegment
-    MOV    CurrentBuffer[1], AX
+    MOV    CurrentBuffer[2], AX
 
     MOV    CurBuffLeft, AudioBufferLength    
 
@@ -264,7 +267,7 @@ AudioOutputResetLoop:
 AudioOutputByteLoopPrep:                     ;prepare to output buffer data
     MOV   CX, Bytes_Per_Transfer             ;number bytes left to transfer
                                              ;for this interrupt
-    MOV   AX, CurrentBuffer[1]               ;copy buffer segment to ES
+    MOV   AX, CurrentBuffer[2]               ;copy buffer segment to ES
     MOV   ES, AX
 
     MOV   SI, CurrentBuffer[0]               ;copy buffer offset to SI
@@ -322,7 +325,7 @@ AudioOutputDone:                             ;stub function for now
     MOV    CurrentBuffer[0], SI              ;store the buffer location to 
                                              ;start reading from
     MOV    AX, ES                            ;store the updated buffer segment
-    MOV    CurrentBuffer[1], AX
+    MOV    CurrentBuffer[2], AX
     SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
                                              ;the buffer
     POP    ES
