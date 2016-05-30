@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE IDE
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;
                       =1    49     ; Revision History:
                       =1    50     ;    5/9/16    Tim Liu    created file
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     ; Constant Register DMA values
   B426                =1   104     D0ConVal        EQU     0B426H      ; value to write to DxCON to initiate DMA
                       =1   105                                         ;1011010000100110b
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   158     ;                                  General.INC                               ;
                       =1   159     ;                               General include file                         ;
                       =1   160     ;                                   EE/CS 51                                 ;
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;external function declarations
                            214     
                            215     ;Name:               Add32Bit
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;                    the segment and the offset. The segment and offset
                            269     ;                    are passed to the function through ES:SI. The
                            270     ;                    function writes the 20 bit physical address to
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
 0016 C1E90C                323         SHR     CX, 3*BitsPerNibble          ;high order of seg in lowest nibble
 0019 C1E204                324         SHL     DX, BitsPerNibble            ;shift copy of segment by one
                            325                                              ;nibble to prepare for add
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     ;
                            379     ;Author:             Timothy Liu
                            380     ;
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
                            433     ;
                            434     ;Algorithms:         None
                            435     ;
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -538,7 +538,7 @@ LOC  OBJ                  LINE     SOURCE
 0075 5B                    488         POP    BX
 0076 58                    489         POP    AX
 0077 C3                    490         RET
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE   10
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -598,7 +598,7 @@ LOC  OBJ                  LINE     SOURCE
                            543     ;Output:             None
                            544     ;
                            545     ;Error Handling:     None
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE   11
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -658,7 +658,7 @@ LOC  OBJ                  LINE     SOURCE
                            597     
 00BD                       598     GetBlocksStackArg:                            ;argument is on the stack
 00BD 55                    599         PUSH   BP                                 ;save base pointer
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE   12
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -718,7 +718,7 @@ LOC  OBJ                  LINE     SOURCE
 0115 59                    647         POP    CX
 0116 5B                    648         POP    BX
 0117 5D                    649         POP    BP
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE   13
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE   13
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -778,7 +778,7 @@ LOC  OBJ                  LINE     SOURCE
 013A 00
 013B 000C
 013D 0700
-8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:18:53  05/30/;6  PAGE   14
+8086/87/88/186 MACRO ASSEMBLER    IDE                                                      18:31:39  05/30/;6  PAGE   14
 
 
 LOC  OBJ                  LINE     SOURCE

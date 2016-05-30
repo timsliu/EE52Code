@@ -127,8 +127,8 @@ AudioIRQOn        ENDP
 ;Operation:          The function first saves the registers that will be
 ;                    modified by AudioOutput. The function calls AudioOutput,
 ;                    which checks if the data buffers have data and serially
-;                    outputs data to the MP3 decoder. The function then restores
-;                    the registers and IRET.
+;                    outputs data to the MP3 decoder. The function then
+;                    sends an INT0 EOI and restores the registers and IRET.
 ;
 ;Arguments:          None
 ;
@@ -182,7 +182,7 @@ AudioEH        ENDP
 ;
 ;Description:        This function sends data serially to the MP3 decoder.
 ;                    The function copies bytes from CurrentBuffer and performs
-;                    bit banging to output the bytes. The function transfer
+;                    bit banging to output the bytes. The function transfers
 ;                    Bytes_Per_Transfer each time the function is called. If
 ;                    CurBuffLeft is equal to zero, then the function swaps
 ;                    the NextBuffer into CurrentBuffer and continues playing
@@ -201,12 +201,11 @@ AudioEH        ENDP
 ;                    NeedData to indicate that a new buffer is needed. If
 ;                    the next buffer is also empty, then the function 
 ;                    calls Audio_Halt to turns off ICON0 interrupts and returns.
-;                    If there is
-;                    data in the current buffer, then the function outputs
-;                    BytesPerTransfer bytes starting at CurrentBuffer.
-;                    The address pointed to by CurrentBuffer is copied to ES:SI.
-;                    AudioOutput copies the byte ES:SI points to
-;                    and outputs the bits serially. The first bit (MSB) 
+;                    If there is data in the current buffer, then the
+;                    function outputs BytesPerTransfer bytes starting at
+;                    CurrentBuffer. The address pointed to by CurrentBuffer 
+;                    is copied to ES:SI. AudioOutput copies the byte ES:SI
+;                    points to to AL and outputs the bits serially.  The MSB
 ;                    is output to PCS3. After the first bit is output, the
 ;                    other bits are shifted to DB0 and output to PCS2
 ;                    until the byte is fully output. The function increments
@@ -214,8 +213,8 @@ AudioEH        ENDP
 ;                    bytes. After the bytes are output, the function
 ;                    decrements CurBuffLeft by BytesPerTransfer. The function
 ;                    copies SI to CurrentBuffer[0] to update the offset of
-;                    the buffer. The function copies ES to CurrentBuffer[1] to
-;                    update the segment. CurrentBuffer points to the next byte
+;                    the buffer. The function copies ES to CurrentBuffer[2] to
+;                    update the segment. CurrentBuffer always points to the next byte
 ;                    to output The size of the passed buffers MUST be
 ;                    a multiple of BytesPerTransfer. 
 ;                    
@@ -287,8 +286,8 @@ AudioOutputStart:                            ;starting label - save registers
     PUSH    ES
 
 AudioOutputCheckCur:                         ;check if current buffer is empty
-    CMP    CurBuffLeft, 0                    ;no bytes left in buffer
-    JE     AudioOutputCheckNext              ;check if next buffer is empty
+    CMP    CurBuffLeft, 0                    ;check no bytes left in buffer
+    JE     AudioOutputCheckNext              ;go check if next buffer empty
     JMP    AudioOutputByteLoopPrep           ;Current buffer not empty - 
                                              ;output data
 
@@ -371,7 +370,7 @@ AudioOutputUpdateSegment:
     MOV   ES, AX                             ;write new segment back to ES
     JMP   AudioOutputLoop                    ;go back to loop
 
-AudioOutputDone:                             ;stub function for now 
+AudioOutputDone:                             ;function finished
     MOV    CurrentBuffer[0], SI              ;store the buffer location to 
                                              ;start reading from
     MOV    AX, ES                            ;store the updated buffer segment
