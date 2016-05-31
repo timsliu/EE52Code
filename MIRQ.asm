@@ -27,6 +27,7 @@
 ;    4/20/16    Tim Liu    uncommented InstallTimer0Handler
 ;    5/7/16     Tim Liu    wrote InstallTimer1Handler
 ;    5/19/16    Tim Liu    wrote InstallDreqHandler
+;    5/30/16    Tim Liu    uncommented InstallDreqHanlder
 
 $INCLUDE(MIRQ.INC)
 $INCLUDE(GENERAL.INC)
@@ -39,8 +40,7 @@ CODE SEGMENT PUBLIC 'CODE'
 
 ; external function declarations
 
-    ;EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
-    ;EXTRN    DemandEH           ;CON_MP3 data demand handler
+    EXTRN    AudioEH:NEAR        ;VS1011 data request IRQ handler
     EXTRN    ButtonEH:NEAR       ;checks if a button is pressed
     EXTRN    DRAMRefreshEH:NEAR  ;access PCS4 to refresh DRAM
 
@@ -199,27 +199,17 @@ IllegalEventHandler     ENDP
 InstallDreqHandler    PROC    NEAR
                       PUBLIC  InstallDreqHandler
 
-    ;XOR    AX, AX        ;clear ES (irq vector in segment 0)
-    ;MOV    ES, AX
+    XOR    AX, AX        ;clear ES (irq vector in segment 0)
+    MOV    ES, AX
 
 
                                 ;store the vector - put location of INT2 event
                                 ;handler into ES
                                 ;serial interrupts go to INT2
 
-    ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
-    ;MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec), OFFSET(AudioEH)
+    MOV     ES: WORD PTR (INTERRUPT_SIZE * INT0Vec + 2), SEG(AudioEH)
 
-   ; MOV     DX, ICON0Address              ;address of INT0 interrupt controller
-   ; MOV     AX, ICON0On                   ;value to start int 0 interrupts
-   ; OUT     DX, AX
-
-    ;MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
-    ;MOV     AX, INT0EOI                   ;INT0 end of interrupt
-    ;OUT     DX, AX                        ;output to peripheral control block
-
-    ;check that no EOI is sent and no write to the interrupt controller
-    ;needs to be made by the function
 
     RET
 

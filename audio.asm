@@ -37,6 +37,7 @@
 ;                          1 to SI so that carry flag is set
 ;    5/30/16    Tim Liu    in AudioOutput, changed outputting AX
 ;                          to outputting AL
+;    5/30/16    Tim Liu    NextBuffLeft set to 0 after swapping buffers
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
@@ -307,6 +308,7 @@ AudioOutputSwap:                             ;read from NextBuffer
    MOV    CurBuffLeft, AX                    ;to CurBuffLeft
 
    MOV    NeedData, TRUE                     ;indicate more data is needed
+   MOV    NextBuffLeft, 0                      ;the next buffer is now empty
    JMP    AudioOutputByteLoopPrep            ;prepare to output data
 
 AudioOutputEmpty:                            ;both audio buffers are empty
@@ -453,7 +455,8 @@ AudioPlayArgs:                           ;pull the arguments from the stack
     MOV     CurBuffLeft, AX              ;load number of bytes left
 
 AudioPlayNeedData:                       ;indicate that the next buffer is empty
-    MOV     NeedData, TRUE               ;next buffer is empty
+    MOV     NextBuffLeft, 0              ;next buffer is empty
+    MOV     NeedData, TRUE               ;more data is needed
 
 AudioPlayIRQON:
     CALL    AudioIRQOn                   ;turn audio data request interrupts on
