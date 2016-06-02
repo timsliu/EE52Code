@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE DISPLCD
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;    11/3/15     Timothy Liu     initial revision
                       =1    49     ;    11/5/15     Timothy Liu     fixed formatting
                       =1    50     ;    11/5/15     Timothy Liu     update for HW6 - added timer1vec
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
   000F                =1   103     LCDInitVal      EQU    0fh         ;00001--- display on/off control
                       =1   104                                        ;-----1-- display on
                       =1   105                                        ;------1- cursor on
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     ;
                            159     ;Description:        This function initializes the shared variables for
                            160     ;                    the display functions. The function also writes 
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     
 0013                       214     InitDisplayLCDDone:            ;done with function
 0013 58                    215         POP   AX                   ;restore register
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;Registers Used:     None
                            269     ;
                            270     ;Known Bugs:         None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     ;                    amount of time remaining exceeds MAX_TIME, or if
                            324     ;                    the time to be displayed is TIME_NONE, then the function
                            325     ;                    displays blank segment patterns where the time should
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     ;        Dec2String(TimeBuffer + SecondStart, Seconds)
                            379     ;                                    ;write seconds to time buffer
                            380     ;        TimeBuffer[TimeColon] = ASCII_Colon  ;write colon between mm:ss
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
 007D 43                    433         INC    BX                            ;move index to next element
 007E EBF2                  434         JMP    SecToTimeBlankLoop            ;go back to loop
                            435     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -538,7 +538,7 @@ LOC  OBJ                  LINE     SOURCE
                            488     ;Registers Used:     None
                            489     ;
                            490     ;Known Bugs:         None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   10
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -598,7 +598,7 @@ LOC  OBJ                  LINE     SOURCE
                            543     ;                    offset of the corresponding status string. The
                            544     ;                    function copies CS to ES and passes the address of the
                            545     ;                    status string to DisplayLCD. The function also
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   11
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -658,7 +658,7 @@ LOC  OBJ                  LINE     SOURCE
 00BE                       598     DisplayStatusLoop:                           ;loop and write to StatusBuffer
 00BE 83F900                599         CMP    CX, 0                             ;check if no more characters
 00C1 740E                  600         JE     DisplayStatusCall                 ;no more char - done
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   12
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -718,7 +718,7 @@ LOC  OBJ                  LINE     SOURCE
                            653     ;Return Values:      None
                            654     ;
                            655     ;Local Variables:    None
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   13
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   13
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -778,7 +778,7 @@ LOC  OBJ                  LINE     SOURCE
 010E 5D                    708         POP    BP
 010F C3                    709         RET
                            710     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   14
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   14
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -838,7 +838,7 @@ LOC  OBJ                  LINE     SOURCE
                            763                           PUBLIC  Display_Artist
                            764     
 0110                       765     DisplayArtistStart:                        ;starting label
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   15
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   15
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -898,7 +898,7 @@ LOC  OBJ                  LINE     SOURCE
                            818     ;                    BX - address of buffer to copy
                            819     ;                    CX - number of elements in string buffer
                            820     ;
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   16
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   16
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -958,7 +958,7 @@ LOC  OBJ                  LINE     SOURCE
                            873     
 0160                       874     DisplayStringNull:                     ;write null termination character
 0160 C60700                875         MOV    BYTE PTR DS:[BX], ASCII_NULL         ;write character
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   17
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   17
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -1018,7 +1018,7 @@ LOC  OBJ                  LINE     SOURCE
 0173 00                    928              DB      ASCII_NULL          ;reverse char 3
 0174 00                    929              DB      ASCII_NULL          ;stop char 3
                            930     
-8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  00:55:22  06/02/;6  PAGE   18
+8086/87/88/186 MACRO ASSEMBLER    DISPLCD                                                  17:17:24  06/02/;6  PAGE   18
 
 
 LOC  OBJ                  LINE     SOURCE

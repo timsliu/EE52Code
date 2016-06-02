@@ -40,6 +40,9 @@
 ;    5/30/16    Tim Liu    NextBuffLeft set to 0 after swapping buffers
 ;    6/1/16     Tim Liu    Changed AudioOutput to no longer assume
 ;                          anything about passed buffer lengths
+;    6/2/16     Tim Liu    Fixed critical code bug in Update
+;    6/2/16     Tim Liu    ChangedAudioIRQOn to turn off interrupts during
+;                          function call
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
@@ -91,7 +94,7 @@ CODE SEGMENT PUBLIC 'CODE'
 ;
 ;Author:             Timothy Liu
 ;
-;Last Modified       5/21/16
+;Last Modified       6/2/16
 
 AudioIRQOn            PROC    NEAR
                       PUBLIC  AudioIRQOn
@@ -99,18 +102,21 @@ AudioIRQOn            PROC    NEAR
 AudioIRQOnStart:                          ;save registers
     PUSH    AX
     PUSH    DX
+    PUSHF                                 ;save flag register
+    CLI                                   ;shut off interrupts
 
 AudioIRQOnOutput:                         ;turn on INT0 data request interrupts
                                           ;and send an EOI
     MOV     DX, ICON0Address              ;address of INT0 interrupt controller
     MOV     AX, ICON0On                   ;value to start int 0 interrupts
     OUT     DX, AX
-
+                                          ;clear out EOI register
     MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
     MOV     AX, INT0EOI                   ;INT0 end of interrupt
     OUT     DX, AX                        ;output to peripheral control block
 
 AudioIRQOnDone:                           ;restore registers and return
+    POPF                                  ;restore the flag register
     POP     DX
     POP     AX
     RET
@@ -170,6 +176,7 @@ AudioEHSendEOI:
     MOV     DX, INTCtrlrEOI               ;address of interrupt EOI register
     MOV     AX, INT0EOI                   ;INT0 end of interrupt
     OUT     DX, AX                        ;output to peripheral control block
+    
 
 AudioEHDone:                              ;restore registers and return
     POP     DX
@@ -308,7 +315,7 @@ AudioOutputSwap:                             ;read from NextBuffer
    MOV    CurBuffLeft, AX                    ;to CurBuffLeft
 
    MOV    NeedData, TRUE                     ;indicate more data is needed
-   MOV    NextBuffLeft, 0                      ;the next buffer is now empty
+   MOV    NextBuffLeft, 0                    ;the next buffer is now empty
    JMP    AudioOutputByteLoopPrep            ;prepare to output data
 
 AudioOutputEmpty:                            ;both audio buffers are empty
@@ -617,9 +624,9 @@ UpdateNextEmpty:                        ;next buffer is empty
     SHL    AX, 1                        ;double to get length of buffer in bytes
     MOV    NextBuffLeft, AX             ;store the length in bytes
 
+    MOV    NeedData, False              ;NextBuffer is filled - no need for data
     CALL   AudioIRQOn                   ;turn on data request interrupts
     MOV    AX, TRUE                     ;passed buffer was used
-    MOV    NeedData, False              ;NextBuffer is filled - no need for data
     JMP    UpdateDone
 
 UpdateNoNeed:
