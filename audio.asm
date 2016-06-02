@@ -38,6 +38,8 @@
 ;    5/30/16    Tim Liu    in AudioOutput, changed outputting AX
 ;                          to outputting AL
 ;    5/30/16    Tim Liu    NextBuffLeft set to 0 after swapping buffers
+;    6/1/16     Tim Liu    Changed AudioOutput to no longer assume
+;                          anything about passed buffer lengths
 ;
 ; local include files
 $INCLUDE(AUDIO.INC)
