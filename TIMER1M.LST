@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE TIMER1M
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     
                       =1    49     ;Control Register Values
                       =1    50     
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
   0050                =1   103     ASCII_P              EQU       80         ;P character
   0052                =1   104     ASCII_R              EQU       82         ;R character
   0053                =1   105     ASCII_S              EQU       83         ;S character
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   158                                             ;-----------1----b  ;level triggered
                       =1   159                                             ;------------0---b  ;enable interrupts
                       =1   160                                             ;--------------11b  ;set priority to 3
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;
                            214     ;Shared Variables:   None
                            215     ;
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;                   The function saves  the registers and calls
                            269     ;                   RefreshDRAM. Each time RefreshDRAM is
                            270     ;                   called, an address in PCS4 is read, triggering a
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     DRAMRefreshEH    ENDP
                            324     
 ----                       325     CODE ENDS
-8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  01:10:25  05/31/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    TIMER1M                                                  00:55:22  06/02/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE

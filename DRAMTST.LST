@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  01:10:25  05/31/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  00:55:22  06/02/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE DRAMTST
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                             48     
 0020                        49     WriteLoop:
 0020 268907                 50         MOV     ES:[BX], AX
-8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  01:10:25  05/31/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    DRAMTST                                                  00:55:22  06/02/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE

@@ -247,9 +247,7 @@ AudioEH        ENDP
 ;
 ;Known Bugs:         None
 ;
-;Limitations:        Size of audio data buffers is assumed to be a multiple
-;                    of BYTES_PER_TRANSFER
-;                    Data buffers are assumed to be entirely in a single segment
+;Limitations:        None
 ;
 ;Author:             Timothy Liu
 ;
@@ -316,7 +314,16 @@ AudioOutputEmpty:                            ;both audio buffers are empty
    JMP    AudioOutputDone                    ;can’t output any data
 
 AudioOutputByteLoopPrep:                     ;prepare to output buffer data
-    MOV   CX, Bytes_Per_Transfer             ;number bytes left to transfer
+    MOV   CX, CurBuffLeft                    ;number of bytes left in buffer
+    CMP   CX, Bytes_Per_Transfer             ;see if less bytes than full transfer left
+    JBE   AudioOutputAddress                 ;if fewer bytes than full transfer,
+                                             ;go and output MP3 data
+
+AudioOutputFullT:
+    MOV   CX, Bytes_Per_Transfer             ;enough bytes for full transfer - 
+                                             ;overwrite number of bytes left
+
+AudioOutputAddress:                          ;setup address to output from
                                              ;for this interrupt
     MOV   AX, CurrentBuffer[2]               ;copy buffer segment to ES
     MOV   ES, AX
@@ -326,7 +333,7 @@ AudioOutputByteLoopPrep:                     ;prepare to output buffer data
 
 AudioOutputLoop:
     CMP   CX, 0                              ;check if no bytes left
-    JE    AudioOutputDone                    ;no bytes left - function done
+    JE    AudioOutputUpdateShared            ;no bytes left to output
     MOV   AL, ES:[SI]                        ;copy byte to be transferred
 
 AudioOutputSerial:                           ;serially send data to MP3 - MSB
@@ -372,13 +379,19 @@ AudioOutputUpdateSegment:
     MOV   ES, AX                             ;write new segment back to ES
     JMP   AudioOutputLoop                    ;go back to loop
 
-AudioOutputDone:                             ;function finished
+AudioOutputUpdateShared:                     ;update shared variables
     MOV    CurrentBuffer[0], SI              ;store the buffer location to 
                                              ;start reading from
     MOV    AX, ES                            ;store the updated buffer segment
     MOV    CurrentBuffer[2], AX
     SUB    CurBuffLeft, Bytes_Per_Transfer   ;update number of bytes left in
                                              ;the buffer
+    JNC    AudioOutputDone                   ;more than Bytes_Per_Transfer bytes
+                                             ;left in current buffer
+    MOV    CurBuffLeft, 0                    ;fewer than Bytes_Per_Transfer
+                                             ;bytes left - CurBuff empty
+
+AudioOutputDone:                             ;function finished
     POP    ES
     POP    SI
     RET
