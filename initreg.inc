@@ -19,6 +19,8 @@
 ;    4/5/16      Timothy Liu     NOTE: control reg vals/address not added yet
 ;    4/19/16     Timothy Liu     wrote register addresses and control reg vals
 ;    5/9/16      Timothy Liu     changed MMCSval start address
+;    6/3/16      Timothy Liu     changed LMCS value to 1 wait state
+;    6/3/16      Timothy Liu     changed UMCS value to 1 wait state
 
 
 ; Chip Select Unit Definitions
@@ -50,19 +52,19 @@ MMCSval        EQU     08003H           ;MMCS base 80000H, 3 wait states
                                         ;-------------0--  enable bus ready
                                         ;--------------11  3 wait states
 
-LMCSval        EQU     007C3H           ;LCS end at 07FFFFH, 3 wait states
+LMCSval        EQU     007C1H           ;LCS end at 07FFFFH, 3 wait states
                                         ;00--------------  reserved
                                         ;--00011111------  end address
                                         ;----------000---  reserved
                                         ;-------------0--  enable bus ready
-                                        ;--------------11  3 wait states
+                                        ;--------------01  1 wait state
 
-UMCSval        EQU     03003H           ;UCS base at F0000H, 3 wait states
+UMCSval        EQU     03001H           ;UCS base at F0000H, 3 wait states
                                         ;00--------------  reserved
                                         ;--11000000------  start address F0000
                                         ;----------000---  reserved
                                         ;-------------0--  enable bus ready
-                                        ;--------------11  3 wait states
+                                        ;--------------01  1 wait state
 
 
 

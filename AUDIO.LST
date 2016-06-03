@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE AUDIO
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                             48 +1  $INCLUDE(AUDIO.INC)
                       =1    49     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                       =1    50     ;                                                                            ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103                                             ;000000000-------b  ;reserved
                       =1   104                                             ;---------0------b  ;no nesting
                       =1   105                                             ;----------0-----b  ;no cascade mode
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
   0046                =1   158     ASCII_F              EQU       70         ;F character for fire (laser on)
   0049                =1   159     ASCII_I              EQU       73         ;I character
   004C                =1   160     ASCII_L              EQU       76         ;L character
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     ;
                            214     ;Algorithms:         None
                            215     ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;
                            269     ;Arguments:          None
                            270     ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
                            323     ;                    Bytes_Per_Transfer each time the function is called. If
                            324     ;                    CurBuffLeft is equal to zero, then the function swaps
                            325     ;                    the NextBuffer into CurrentBuffer and continues playing
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     ;
                            379     ;Algorithms:         None
                            380     ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
                            433     
 003A                       434     AudioOutputSwap:                             ;read from NextBuffer
 003A A10400         R      435        MOV    AX, NextBuffer[0]                  ;copy segment of NextBuffer
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -538,7 +538,7 @@ LOC  OBJ                  LINE     SOURCE
 008C EE                    487         OUT   DX, AL                             ;output other bits to PCS2
                            488         
 008D D0C0                  489         ROL   AL, 1                              ;shift so DB4 is LSB
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   10
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -598,7 +598,7 @@ LOC  OBJ                  LINE     SOURCE
                            542     ;                    data buffer. The address is stored in CurrentBuffer.
                            543     ;                    The function multiplies the second argument, the length
                            544     ;                    of the buffer in words, by WORD_SIZE and moves the 
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   11
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -658,7 +658,7 @@ LOC  OBJ                  LINE     SOURCE
 00CB A30000         R      597         MOV     CurrentBuffer[0], AX         ;write offset to CurrentBuffer
                            598     
 00CE 8B4606                599         MOV     AX, SS:[BP+6]                ;buffer segment
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   12
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -718,7 +718,7 @@ LOC  OBJ                  LINE     SOURCE
                            652     ;
                            653     ;Last Modified       5/21/16
                            654     
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   13
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   13
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -778,7 +778,7 @@ LOC  OBJ                  LINE     SOURCE
                            706     ;
                            707     ;Return Values:      TRUE if more data was needed; FALSE otherwise
                            708     ;
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   14
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   14
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -838,7 +838,7 @@ LOC  OBJ                  LINE     SOURCE
                            761     
 012A                       762     UpdateDone:
 012A 5D                    763         POP    BP
-8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    23:12:39  06/02/;6  PAGE   15
+8086/87/88/186 MACRO ASSEMBLER    AUDIO                                                    17:05:45  06/03/;6  PAGE   15
 
 
 LOC  OBJ                  LINE     SOURCE

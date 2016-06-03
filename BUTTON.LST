@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE BUTTON
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;    4/26/16     Timothy Liu     added KeyCodeOffset
                       =1    49     
   0032                =1    50     DebounceTime         EQU        50      ;miliseconds to debounce the keypad
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     ;                                   EE/CS 51                                 ;
                       =1   104     ;                                                                            ;
                       =1   105     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158         EXTRN    QueueInit:NEAR                 ;initializes a queue
                            159         EXTRN    QueueFull:NEAR                 ;check if queue is full
                            160         EXTRN    Enqueue:NEAR                   ;add event to queue
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -238,7 +238,7 @@ LOC  OBJ                  LINE     SOURCE
                            213     
 000C                       214     InitButtonsQueue:                        ;label for initializing queue
 000C 56                    215         PUSH   SI                            ;save registers
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    5
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    5
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -298,7 +298,7 @@ LOC  OBJ                  LINE     SOURCE
                            268     ;
                            269     ;Input:              8 possible button presses from 8 different buttons
                            270     ;
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    6
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    6
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -358,7 +358,7 @@ LOC  OBJ                  LINE     SOURCE
 002A EB1490                323         JMP    HaveButton                      ;otherwise take care of button
                            324     
 002D                       325     ResetPress:
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    7
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    7
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -418,7 +418,7 @@ LOC  OBJ                  LINE     SOURCE
                            378     ;                    then the function returns TRUE and if there is no
                            379     ;                    button press ready the function returns FALSE.
                            380     ;
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    8
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    8
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -478,7 +478,7 @@ LOC  OBJ                  LINE     SOURCE
 0088                       433     Key_AvailableYes:                               ;label if key is available
 0088 B80100                434         MOV    AX, TRUE                             ;load return value
 008B EB0790                435         JMP    Key_AvailableDone                    ;finish function
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE    9
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE    9
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -538,7 +538,7 @@ LOC  OBJ                  LINE     SOURCE
 0096                       488     GetKeyStart:                               ;starting label
 0096 56                    489         PUSH    SI                             ;save the registers
 0097 53                    490         PUSH    BX                             
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE   10
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE   10
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -598,7 +598,7 @@ LOC  OBJ                  LINE     SOURCE
 00BD 07                    543              DB        7        ;Invalid key - 25    
 00BE 07                    544              DB        7        ;Invalid key - 26    
 00BF 07                    545              DB        7        ;Invalid key - 27    
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE   11
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE   11
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -658,7 +658,7 @@ LOC  OBJ                  LINE     SOURCE
 0008 ????
 000A (256
      ??
-8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   23:12:38  06/02/;6  PAGE   12
+8086/87/88/186 MACRO ASSEMBLER    BUTTON                                                   17:05:44  06/03/;6  PAGE   12
 
 
 LOC  OBJ                  LINE     SOURCE
