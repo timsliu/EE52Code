@@ -1,4 +1,4 @@
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  17:17:23  06/02/;6  PAGE    1
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  23:12:38  06/02/;6  PAGE    1
 
 
 DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE STARTUP
@@ -58,7 +58,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1    48     ;    11/17/15    Timothy Liu     changed to only have values for initcs.asm
                       =1    49     ;    4/4/16      Timothy Liu     changed name to InitCSM to signify file
                       =1    50     ;                                is for 80188 MP3 player
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  17:17:23  06/02/;6  PAGE    2
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  23:12:38  06/02/;6  PAGE    2
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -118,7 +118,7 @@ LOC  OBJ                  LINE     SOURCE
                       =1   103     
                       =1   104     
                       =1   105     
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  17:17:23  06/02/;6  PAGE    3
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  23:12:38  06/02/;6  PAGE    3
 
 
 LOC  OBJ                  LINE     SOURCE
@@ -178,7 +178,7 @@ LOC  OBJ                  LINE     SOURCE
                            158     
 000F BAA2FF                159             MOV     DX, LMCSreg             ;setup to write to MPCS register
 0012 B8C307                160             MOV     AX, LMCSval
-8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  17:17:23  06/02/;6  PAGE    4
+8086/87/88/186 MACRO ASSEMBLER    STARTUP                                                  23:12:38  06/02/;6  PAGE    4
 
 
 LOC  OBJ                  LINE     SOURCE
