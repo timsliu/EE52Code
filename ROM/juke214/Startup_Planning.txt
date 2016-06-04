@@ -1,0 +1,55 @@
+Startup Code Planning
+
+-------------------------
+
+File:            MIRQ.asm
+Description:     Holds functions for interrupts
+
+Functions:       
+ClrIRQVectors          -clear the interrupt vector table
+IllegalEventHandler    -takes care of illegal events
+InstallDreqHandler     -installs VS1011 data request IRQ handler
+InstallDemandHandler   -installs CON_MP3 data demand IRQ handler
+InstallTimer0Handler   -installs the timer0 handler
+
+-------------------------
+
+File:            initreg.asm
+Description:     Functions to initialize registers
+
+Functions:
+InitCS                 -writes the chip select values
+InitCon                -writes the control register values
+
+-------------------------
+
+File:            timer0.asm
+Description:     Functions relating to timer0
+
+Functions:
+InitTimer0              -start timer0
+ButtonEH                -calls functions to MUX and scan keypad
+
+-------------------------
+
+Startup Order of Operations
+
+Clear interrupt flag
+Set up the stack pointer
+Initialize the data segment
+
+MainLoopRestart
+
+CALL InitReg
+CALL ClrIRQVectors
+
+CALL InitDisplay
+CALL InitButtons
+
+CALL InstallDemandHandler
+CALL InstallDreqHandler
+CALL InstallTimer0Handler
+
+CALL InitTimer0
+
+STI

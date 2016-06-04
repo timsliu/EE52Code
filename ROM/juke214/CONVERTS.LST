@@ -1,0 +1,348 @@
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE CONVERTS
+OBJECT MODULE PLACED IN CONVERTS.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE CONVERTS.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1             NAME    CONVERTS
+                             2     
+                             3     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             4     ;                                                                            ;
+                             5     ;                                   CONVERTS                                 ;
+                             6     ;                             Conversion Functions                           ;
+                             7     ;                                   EE/CS 51                                 ;
+                             8     ;                                                                            ;
+                             9     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                            10     
+                            11     
+                            12     ; file description including table of contents
+                            13     ;
+                            14     ; Revision History:
+                            15     ;   10/12/15    Tim Liu Wrote functional spec for dec2string
+                            16     ;   10/13/15    Tim Liu Finished writing dec2string
+                            17     ;   10/13/15    Tim Liu Pseudo-code dec2sting & hex2string
+                            18     ;   10/13/15    Tim Liu Wrote functional spec for hex2string
+                            19     ;   10/13/15    Tim Liu Wrote hex2string
+                            20     ;   10/13/15    Tim Liu Changed instructions for push/pop registers
+                            21     ;   10/14/15    Tim Liu Corrected syntax errors, removed error handling
+                            22     ;   10/14/15    Tim Liu Changed jump instructions
+                            23     ;   10/15/15    Tim Liu Removed bug that checked if hex negative
+                            24     
+                            25     ; local include files
+                            26 +1  $INCLUDE (converts.inc)
+                      =1    27     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    28     ;                                                                            ;
+                      =1    29     ;                                 CONVERTS.INC                               ;
+                      =1    30     ;                             Conversion Functions                           ;
+                      =1    31     ;                                   EE/CS 51                                   ;
+                      =1    32     ;                                   Include File                              ;
+                      =1    33     ;                                                                            ;
+                      =1    34     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      =1    35     
+                      =1    36     
+                      =1    37     ; This file contains the definitions for the conversion file.
+                      =1    38     ;
+                      =1    39     ; Revision History:
+                      =1    40     ;       10/13/15        Timothy Liu     Wrote .inc file 
+                      =1    41     
+                      =1    42     
+                      =1    43     ; ASCII definitions
+                      =1    44     
+  0000                =1    45     NULLchar        EQU     0       ;an ASCII <NULL> - the end of string character
+  002D                =1    46     NEGchar         EQU     45      ;an ASCII <negative> symbol
+  0030                =1    47     DIGIToffset     EQU     48      ;ASCII representation = 48 + digit(0-9)
+  0037                =1    48     AFoffset        EQU     55      ;ASCII representation = 55 + digit(A-F)
+                            49     
+                            50     CGROUP  GROUP   CODE
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                            51     
+                            52     
+----                        53     CODE    SEGMENT PUBLIC 'CODE'
+                            54     
+                            55     
+                            56             ASSUME  CS:CGROUP
+                            57     
+                            58     
+                            59     
+                            60     ; Dec2String
+                            61     ;
+                            62     ; Description:      This function takes a 16 bit signed binary value
+                            63     ;                   as an argument and converts it to decimal. It then
+                            64     ;                   stores a null terminated decimal ASCII representation
+                            65     ;                   as a string starting at a specified address.
+                            66     ;
+                            67     ;
+                            68     ; Operation:        The function begins with the largest power of 10
+                            69     ;                   possible (10000) and divides the argument. The
+                            70     ;                   quotient is a digit, and the remainder is then
+                            71     ;                   divided by the next largest power of ten.
+                            72     ;                   This process is repeated
+                            73     ;                   until the the power of 10 is zero. Each loop iteration
+                            74     ;                   yields the next digit. The digit is converted to ASCII
+                            75     ;                  and stored starting at the specified address.
+                            76     ;
+                            77     ;
+                            78     ; Arguments:        AX - signed 16 bit value to covert to ASCII string
+                            79     ;                   SI - address to start writing ASCII string
+                            80     ;
+                            81     ; Return Value:     SI - string written starting at address DS:SI
+                            82     ;
+                            83     ; Local Variables:  arg(AX) - copy of passed binary value to convert
+                            84     ;                   digit(AX) - computed digit
+                            85     ;                   pwr10(CX) - current power of 10 being computed
+                            86     ;                   address(SI) - address to store string
+                            87     ;           
+                            88     ; Shared Variables: None
+                            89     ; Global Variables: None
+                            90     ;
+                            91     ; Input:        None
+                            92     ; Output:       None
+                            93     ;
+                            94     ; Error Handling:   None
+                            95     ;
+                            96     ; Algorithms:       Repeatedly divide by powers of 10 and get the remainders
+                            97     ;                   Convert to ASCII characters and store
+                            98     ;
+                            99     ; Data Structures:  None
+                           100     ;
+                           101     ; Registers Changed:    flags, AX, BX, CX, DX, SI
+                           102     ; Stack Depth:          16 bytes
+                           103     ;
+                           104     ; Author:       Timothy Liu
+                           105     ; Last Modified:    10/15/15
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           106     ;
+                           107     ; Pseudo Code
+                           108     ;
+                           109     ;dec_2_string(arg, address)
+                           110     ;   pwr10 = 10000                 # largest possible power of ten
+                           111     ;
+                           112     ;   IF arg < 0:                   # Check if argument is negative
+                           113     ;       *address = '-'            # write a negative sign
+                           114     ;       address ++                # increment address pointer
+                           115     ;       arg *= -1                 # negate the argument
+                           116     ;
+                           117     ;   WHILE (pwr10 > 0):          # loop to get every digit
+                           118     ;       digit = arg/pwr10       # divide to find digit
+                           119     ;       asc = 48 + digit        # ASCII representation
+                           120     ;       *address = asc          # store asc at the address
+                           121     ;       address ++              # increment address pointer
+                           122     ;       arg = arg MOD pwr10     # set next digit
+                           123     ;       pwr10 = pwr10/10        # decrement power of ten
+                           124     ;
+                           125     ;   *address = NULL             # write null character
+                           126     ;   RETURN error, address
+                           127         
+                           128     
+0000                       129     Dec2String      PROC        NEAR
+                           130                     PUBLIC      Dec2String
+                           131     
+0000                       132     Dec2StringInit:             ;initialization
+0000 60                    133         PUSHA                   ;push registers to stack
+0001 B91027                134         MOV CX, 10000           ;pwr10 starts at 10^4 (10000's digit)
+0004 3D0000                135         CMP AX, 0               ;check if argument is negative
+0007 7C03                  136         JL  DecIfNegative       ;write negative sign if negative
+0009 EB0990                137         JMP DecEndIfNegative    ;otherwise skip if body
+                           138     
+000C                       139     DecIfNegative:              ;write a negative sign
+000C BB2D00                140         MOV BX, NEGchar         ;prepare to store negative sign
+000F 891C                  141         MOV [SI], BX            ;store a negative sign at address
+0011 46                    142         INC SI                  ;increment SI
+0012 F7D8                  143         NEG AX                  ;negate the argument
+                           144         ;JMP    DecEndIfNegative    ;
+                           145     
+0014                       146     DecEndIfNegative:
+                           147         ;JMP    Dec2StringLoop
+                           148     
+0014                       149     Dec2StringLoop:             ;loop getting the digits
+0014 83F900                150         CMP CX, 0               ;check if pwr10 > 0
+0017 761E                  151         JBE EndDec2StringLoop   ;exit if pwr10 is not > 0
+                           152         ;JMP    Dec2StringLoopBody  ;otherwise get the next digit
+                           153     
+0019                       154     Dec2StringLoopBody:         ;get a digit
+0019 33D2                  155         XOR DX, DX              ;DX is high order dividend - set to 0
+001B F7F1                  156         DIV CX                  ;divide by pwr10; result stored in AX
+001D 053000                157         ADD AX, DIGITOffset     ;convert digit in AX to ASCII
+0020 8804                  158         MOV [SI], AL            ;store ASCII rep of digit at address
+0022 46                    159         INC SI                  ;increment address pointer
+                           160         ;JMP DecPrepareNext
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    4
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           161     
+0023                       162     DecPrepareNext:             ;update pwr10 and prepare next iteration
+0023 8BDA                  163         MOV BX, DX              ;save mod16 to BX
+0025 8BC1                  164         MOV AX, CX              ;load current pwr10 to AX
+0027 B90A00                165         MOV CX, 10              ;load divisor into CX
+002A 33D2                  166         XOR DX, DX              ;clear DX register
+002C F7F1                  167         DIV CX                  ;divide by 10 - value stored in AX
+002E 8BC8                  168         MOV CX, AX              ;load new power of 10 back to CX
+0030 8BC3                  169         MOV AX, BX              ;move arg = arg MOD pwr10 into AX
+0032 EB0190                170         JMP EndDec2StringLoopBody
+                           171     
+0035                       172     EndDec2StringLoopBody:
+0035 EBDD                  173         JMP Dec2StringLoop      ;keep looping (end check is at the top)
+                           174     
+                           175     
+0037                       176     EndDec2StringLoop:
+0037 BB0000                177         MOV BX, NULLchar        ;prepare to write null character
+003A 881C                  178         MOV [SI], BL            ;write a null terminated character
+003C 61                    179         POPA                    ;restore registers
+003D C3                    180         RET
+                           181     
+                           182     Dec2String  ENDP
+                           183     
+                           184     
+                           185     
+                           186     
+                           187     ; Hex2String
+                           188     ;
+                           189     ; Description:      This function takes a 16 bit unsigned binary value as an
+                           190     ;                   argument and converts it to hexadecimal. It then stores
+                           191     ;                   a null terminated decimal ASCII representation as a
+                           192     ;                   string starting at a specified address.
+                           193     ;
+                           194     ;
+                           195     ; Operation:        The function begins with the largest power of 16
+                           196     ;                   possible (4096) and divides the argument. The quotient
+                           197     ;                   is a digit, and the remainder is then divided by the
+                           198     ;                   next largest power of ten. This process is repeated
+                           199     ;                   until the the power of 16 is zero. Each loop iteration
+                           200     ;                   yields the next digit. The digit is converted to ASCII
+                           201     ;                   and stored starting at the specified address.
+                           202     ;
+                           203     ;
+                           204     ; Arguments:        AX - signed 16 bit value to covert to ASCII string
+                           205     ;                   SI - address to start writing ASCII string
+                           206     
+                           207     ; Return Value:     SI - string written starting at address specified
+                           208     ;
+                           209     ;
+                           210     ; Local Variables:  arg(AX) - copy of passed binary value to convert
+                           211     ;                   dig(AX) - single digit to be converted
+                           212     ;                   asc(BX) - ASCII character
+                           213     ;                   address(SI) - address to store string
+                           214     ;                   pwr16(CX) - current power of 16 being computed
+                           215          
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    5
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           216     ; Shared Variables: None
+                           217     ; Global Variables: None
+                           218     ;
+                           219     ; Input:        None
+                           220     ; Output:       None
+                           221     ;
+                           222     ; Error Handling:   None
+                           223     ;
+                           224     ; Algorithms:       Repeatedly divide by powers of sixteen and convert
+                           225     ;                   to ASCII
+                           226     ; Data Structures:  none
+                           227     ;
+                           228     ; Registers Changed:    flags, AX, BX, CX, DX, SI
+                           229     ; Stack Depth:          16 bytes
+                           230     ;
+                           231     ; Author:       Timothy Liu
+                           232     ; Last Modified:    10/15/15
+                           233     ;
+                           234     ;def hex_2_string(arg, address):
+                           235     ;   pwr16 = 4096                    # largest power of 16
+                           236     ;
+                           237     ;
+                           238     ;   WHILE (pwr16 > 0):              # loop to get each digit
+                           239     ;       digit = arg/pwr16           # divide to find digit
+                           240     ;       IF digit < 16:
+                           241     ;           IF digit < 10:
+                           242     ;               asc = 48 + digit    # ASCII 0-9
+                           243     ;           ELSE:
+                           244     ;               asc = 55 + digit    # ASCII A-F
+                           245     ;       *address = asc              # store asc at address
+                           246     ;       address ++                  # increment  pointer
+                           247     ;       arg = arg MOD pwr16         # remainder becomes arg
+                           248     ;       pwr16 = pwr16/16            # decrement power of 16
+                           249     ;   *address = 'NULL'               # write null character
+                           250     ;   RETURN address
+                           251     
+003E                       252     Hex2String      PROC        NEAR
+                           253                     PUBLIC      Hex2String
+                           254     
+003E                       255     Hex2StringInit:             ;initialization
+003E 60                    256         PUSHA                   ;push all the registers to stack
+003F B90010                257         MOV CX, 4096            ;start with 16^3 (4096)
+                           258         ;JMP Hex2StringLoop     ;
+                           259     
+0042                       260     Hex2StringLoop:             ;loop getting the digits
+0042 83F900                261         CMP CX, 0               ;check if pwr16 > 0
+0045 762C                  262         JBE EndHex2StringLoop   ;exit if pwr16 is not > 0
+                           263         ;JMP    Hex2StringLoopBody  ;otherwise get the next digit
+                           264     
+0047                       265     Hex2StringLoopBody:         ;get a digit
+0047 33D2                  266         XOR DX, DX              ;DX is high order dividend - set to 0
+0049 F7F1                  267         DIV CX                  ;divide by power of 16; result in AX
+004B 3D0900                268         CMP AX, 9               ;check if digit is <= 9
+004E 7603                  269         JBE Digit09             ;go to 0-9 if digit <=9
+0050 EB0790                270         JMP DigitAF             ;otherwise go to DigitAF
+8086/87/88/186 MACRO ASSEMBLER    CONVERTS                                                 18:25:52  05/06/;6  PAGE    6
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           271     
+0053                       272     Digit09:                    ;convert digit to ASCII 0-9
+0053 053000                273         ADD AX, DIGITOffset     ;convert digit at AX to ASCII
+0056 EB0490                274         JMP StoreAndPrepare
+                           275     
+0059                       276     DigitAF:                    ;convert digit to ASCII A-F
+0059 053700                277         ADD AX, AFoffset        ;convert character at AX to ASCII
+                           278         ;JMP    StoreAndPrepare     ;
+                           279     
+005C                       280     StoreAndPrepare:            ;store ASCII char
+005C 8804                  281         MOV [SI], AL            ;store character in AL at address
+005E 46                    282         INC SI                  ;increment address pointer
+005F 8BDA                  283         MOV BX, DX              ;save mod 16 to BX
+0061 8BC1                  284         MOV AX, CX              ;load current pwr16 to AX
+0063 B91000                285         MOV CX, 16              ;load divisor into CX
+0066 33D2                  286         XOR DX, DX              ;clear DX
+0068 F7F1                  287         DIV CX                  ;divide by 16 - value stored in AX
+006A 8BC8                  288         MOV CX, AX              ;load new power of 16 back to CX
+006C 8BC3                  289         MOV AX, BX              ;move arg = arg MOD pwr16 into AX
+006E EB0190                290         JMP EndHex2StringLoopBody
+                           291     
+0071                       292     EndHex2StringLoopBody:
+0071 EBCF                  293         JMP Hex2StringLoop      ;keep looping (end check is at the top)
+                           294     
+                           295     
+0073                       296     EndHex2StringLoop:
+0073 BB0000                297         MOV BX, NULLchar        ;prepare to write null character
+0076 881C                  298         MOV [SI], BL            ;write a null terminated character,
+0078 61                    299         POPA                    ;restore all registers
+0079 C3                    300         RET
+                           301     
+                           302     
+                           303     Hex2String  ENDP
+                           304     
+                           305     
+                           306     
+----                       307     CODE    ENDS
+                           308     
+                           309     
+                           310     
+                           311             END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

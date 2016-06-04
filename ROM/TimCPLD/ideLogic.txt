@@ -1,0 +1,9 @@
+
+OE1 active during write
+*always write to even addresses
+
+DIR1 = DTR
+OE1 = MCS2 & !AB0 & !ALE
+OE2 = MCS2 & AB0 &!ALE
+CLKBA2 = (DIOR.PIN);
+DIOR = MCS2 & DTR & !(AB0)

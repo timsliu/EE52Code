@@ -1,0 +1,2734 @@
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE FATUTIL
+OBJECT MODULE PLACED IN FATUTIL.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE FATUTIL.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                 FATUTIL                                  */
+    4             /*              Utility Functions for Reading a FAT16 Hard Drive            */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS 52                                  */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains utility functions for reading a FAT16 hard drive.  The
+   12                current directory information and the path are kept locally in this file.
+   13                The functions included are:
+   14                   cur_isDir              - is the current file a directory
+   15                   cur_isParentDir        - is the current file the parent directory (..)
+   16                   get_cur_file_attr      - get the attributes of the current file
+   17                   get_cur_file_name      - get the name of the current file
+   18                   get_cur_file_sector    - get the starting sector of the current file
+   19                   get_cur_file_size      - get the size in bytes of the current file
+   20                   get_cur_file_time      - get the time of the current file
+   21                   get_first_dir_entry    - get the first file in the current directory
+   22                   get_next_dir_entry     - get next file in the current directory
+   23                   get_partition_start    - get the start of the current partition
+   24                   get_previous_dir_entry - get previous file in the current directory
+   25                   init_FAT_system        - initialize the FAT file system
+   26             
+   27                The local functions included are:
+   28                   init_dir_stack         - initialize the directory name stack
+   29                   new_directory          - entering a new directory, update the stack
+   30                   get_dir_tos_name       - get name on the top of the stack
+   31                   get_dir_tos_sector     - get starting sector of directory at tos
+   32             
+   33                The locally global variable definitions included are:
+   34                   cur_dir                - current file entry in dir_sector[]
+   35                   cur_sector             - starting sector of current directory entry
+   36                   dir_offset             - current sector offset in the current directory
+   37                   dir_sector             - array of directory entries in a sector
+   38                   dirname                - name of current directory
+   39                   dirnames               - names of directories on stack as a char []
+   40                   dirnamestack           - stack of name positions in dirnames[]
+   41                   dirsectorstack         - stack of starting directory sector numbers
+   42                   dirstack_ptr           - the stack pointer into directory info stacks
+   43                   filename               - filename of current directory entry
+   44                   first_file_sector      - sector of the first file on the hard drive
+   45                   partition_start        - starting sector of the first partition
+   46                   sectors_per_cluster    - number of sectors per cluster
+   47                   start_sector           - starting sector of current directory
+   48             
+   49             
+   50                Revision History
+   51                   6/5/03   Glen George       Initial revision.
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   2
+
+
+   52                   6/10/03  Glen George       Updated get_cur_file_time() to use macros
+   53                                              to extract the hours/minutes/seconds from a
+   54                                              word in the directory entry, rather than bit
+   55                                              fields which aren't convenient in Intel C.
+   56                   6/10/03  Glen George       Changed code to not display volume label
+   57                                              entries and instead use them as the name of
+   58                                              the root directory.
+   59                   6/10/03  Glen George       Updated comments.
+   60                   6/11/03  Glen George       Changed code to use new packed int time and
+   61                                              date structure for directory entries.
+   62                   6/11/03  Glen George       Fixed minor problem with unterminated
+   63                                              comment.
+   64                   4/29/06  Glen George       Removed inclusion of string.h, that's handled
+   65                                              by mp3defs.h now.
+   66                   4/29/06  Glen George       Changed all calls to get_blocks to use words
+   67                                              (short int) instead of bytes (char).
+   68                   4/29/06  Glen George       Switched to using unions and macros for
+   69                                              accessing hard drive data for portability.
+   70                   5/3/06   Glen George       Updated to use the modified macros in vfat.h
+   71                                              for portability.
+   72                   5/3/06   Glen George       Updated to use the modified macros in vfat.h
+   73                                              for portability.
+   74                   5/3/06   Glen George       Updated to use the modified macros in vfat.h
+   75                                              for portability.
+   76                   5/3/06   Glen George       Updated to use the modified macros in vfat.h
+   77                                              for portability.
+   78                   6/5/08   Glen George       Modified to also read the partition table to
+   79                                              get the start of the first partition.  Mainly
+   80                                              adds the shared variable partition_start
+   81                              which is added to all hard drive sector
+   82                              numbers.
+   83                   6/12/08  Glen George       Fixed calculation of start of the partition -
+   84                                              there was a parenthesis error and a
+   85                                              portability problem.
+   86                   6/19/08  Glen George       Added accessor method get_partition_start()
+   87                                              for getting the start of the partition.
+   88             */
+   89             
+   90             
+   91             
+   92             
+   93             /* library include files */
+   94               /* none */
+   95             
+   96             /* local include files */
+   97             #include  "mp3defs.h"
+   98             #include  "interfac.h"
+   99             #include  "vfat.h"
+  100             #include  "fatutil.h"
+  101             
+  102             
+  103             
+  104             
+  105             /* local definitions */
+  106               /* none */
+  107             
+  108             
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   3
+
+
+  109             
+  110             
+  111             /* local function declarations */
+  112             void                init_dir_stack(void);       /* initialize stack of directory names */
+  113             void                new_directory(void);        /* entering a new directory, update stack */
+  114             const char         *get_dir_tos_name(void);     /* get name of directory at top of stack */
+  115             unsigned long int   get_dir_tos_sector(void);   /* get starting sector of directory at top of stack */
+  116             
+  117             
+  118             
+  119             
+  120             /* locally global variables */
+  121             
+  122             /* local variables shared by directory functions */
+  123             static  union  VFAT_dir_entry  dir_sector[ENTRIES_PER_SECTOR];  /* directory entries in a sector */
+  124             static  int                    cur_dir;             /* current entry in dir_sector[] */
+  125             
+  126             static  unsigned long int      partition_start;     /* starting sector number of the first partition *
+                -/
+  127             
+  128             static  long int               sectors_per_cluster; /* number of sectors per cluster */
+  129             static  unsigned long int      first_file_sector;   /* sector of the first file on the hard drive */
+  130             
+  131             static  unsigned long int      start_sector;        /* starting sector of directory */
+  132             static  int                    dir_offset;          /* sector offset in directory */
+  133             
+  134             static  unsigned long int      cur_sector;          /* starting sector of current entry */
+  135             
+  136             static  char  dirname[MAX_LFN_LEN];                 /* name of current directory */
+  137             static  char  filename[MAX_LFN_LEN];                /* filename of current entry */
+  138             
+  139             
+  140             
+  141             
+  142             /*
+  143                init_FAT_system()
+  144             
+  145                Description:      This function initializes FAT file system.
+  146                    
+  147                Operation:        The function reads the partition table and boot record to
+  148                              set up the directory parameters: the starting sector
+  149                                  number for files on the drive, and the number of sectors
+  150                                  per cluster.  It also initializes the directory stack and
+  151                                  the directory name and filename.
+  152             
+  153                Arguments:        None.
+  154                Return Value:     (long int) - starting sector of the root directory, zero
+  155                                  if there is an error.
+  156             
+  157                Inputs:           None.
+  158                Outputs:          None.
+  159             
+  160                Error Handling:   If there is an error reading the drive or interpretting
+  161                                  the data, zero (0) is returned.
+  162             
+  163                Algorithms:       None.
+  164                Data Structures:  None.
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   4
+
+
+  165             
+  166                Shared Variables: first_file_sector   - set to the computed sector number.
+  167                              partition_start     - starting sector number of the
+  168                                            partition.
+  169                                  sectors_per_cluster - set to the read sectors per
+  170                                                        cluster.
+  171             
+  172                Author:           Glen George
+  173                Last Modified:    June 12, 2008
+  174             
+  175             */
+  176             
+  177             long int  init_FAT_system()
+  178             {
+  179     1           /* variables */
+  180     1           union  first_sector    s;               /* the boot sector */
+  181     1       
+  182     1           long int               root_dir_start;  /* start of the root directory */
+  183     1       
+  184     1           char                   error;           /* drive reading error flag */
+  185     1       
+  186     1       
+  187     1       
+  188     1           /* read the first sector from the harddrive to get the partition table */
+  189     1           error = (get_blocks(0, 1, (unsigned short int far *) &s) != 1);
+  190     1       
+  191     1           /* compute and store the starting sector of the partition */
+  192     1           partition_start = ((unsigned long int) s.words[PARTITION_START_LO] & 0xFFFFUL) +
+  193     1                             (((unsigned long int) s.words[PARTITION_START_HI] & 0xFFFFUL) << 16);
+  194     1       
+  195     1       
+  196     1           /* now read the first sector of the partition from the harddrive */
+  197     1           /* retrieves the BIOS Parameter Block (assuming no errors) */
+  198     1           error = error || (get_blocks(partition_start, 1, (unsigned short int far *) &s) != 1);
+  199     1       
+  200     1       
+  201     1           /* compute the start of the root directory (in sectors) */
+  202     1           root_dir_start = RESERVED_SECTORS(s) + (NUMFATS(s) * FAT_SECTORS(s));
+  203     1       
+  204     1       
+  205     1           /* set the drive variables */
+  206     1           if (!error)  {
+  207     2               /* if no error set the parameters from the boot sector value */
+  208     2               first_file_sector = root_dir_start + (ROOT_ENTRIES(s) / ENTRIES_PER_SECTOR);
+  209     2               sectors_per_cluster = ALLOC_SECTORS(s);
+  210     2           }
+  211     1           else  {
+  212     2               /* there was an error - set the parameters to default values */
+  213     2               first_file_sector = 1;
+  214     2               sectors_per_cluster = 64;
+  215     2           }
+  216     1       
+  217     1       
+  218     1           /* initialize the directory name stack */
+  219     1           init_dir_stack();
+  220     1       
+  221     1       
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   5
+
+
+  222     1           /* initialize the directory and file names */
+  223     1           dirname[0] = '\0';
+  224     1           filename[0] = '\0';
+  225     1       
+  226     1       
+  227     1           /* and return the start of the root directory or an error indicator */
+  228     1           if (error)
+  229     1               /* error - return 0 */
+  230     1               return  0;
+  231     1           else
+  232     1               /* no error - return the start of the root directory */
+  233     1               return  root_dir_start;
+  234     1       
+  235     1       }
+  236             
+  237             
+  238             
+  239             
+  240             /*
+  241                get_partition_start
+  242             
+  243                Description:      This function returns the starting sector number of the
+  244                                  current partition.
+  245             
+  246                Arguments:        None.
+  247                Return Value:     (unsigned long int) - starting sector number of the
+  248                                  current partition.
+  249             
+  250                Inputs:           None.
+  251                Outputs:          None.
+  252             
+  253                Error Handling:   None.
+  254             
+  255                Algorithms:       None.
+  256                Data Structures:  None.
+  257             
+  258                Shared Variables: partition_start - accessed by this function.
+  259             
+  260                Author:           Glen George
+  261                Last Modified:    June 19, 2008
+  262             
+  263             */
+  264             
+  265             unsigned long int  get_partition_start()
+  266             {
+  267     1           /* variables */
+  268     1             /* none */
+  269     1       
+  270     1       
+  271     1       
+  272     1           /* just return the current start of the parition */
+  273     1           return  partition_start;
+  274     1       
+  275     1       }
+  276             
+  277             
+  278             
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   6
+
+
+  279             
+  280             /*
+  281                get_cur_file_name
+  282             
+  283                Description:      This function returns a pointer to the name of the
+  284                                  current directory entry (a filename).
+  285             
+  286                Arguments:        None.
+  287                Return Value:     (const char *) - pointer to the name of the current
+  288                                  directory entry.  If the entry has a long filename that
+  289                                  filename is returned, otherwise the 8.3 filename is
+  290                                  returned.  If there is no current directory, due to an
+  291                                  error, and empty string is returned.
+  292             
+  293                Inputs:           None.
+  294                Outputs:          None.
+  295             
+  296                Error Handling:   None.
+  297             
+  298                Algorithms:       None.
+  299                Data Structures:  None.
+  300             
+  301                Shared Variables: filename - accessed by this function.
+  302             
+  303                Author:           Glen George
+  304                Last Modified:    June 1, 2003
+  305             
+  306             */
+  307             
+  308             const char  *get_cur_file_name()
+  309             {
+  310     1           /* variables */
+  311     1             /* none */
+  312     1       
+  313     1       
+  314     1       
+  315     1           /* just return a pointer to the current filename */
+  316     1           return  filename;
+  317     1       
+  318     1       }
+  319             
+  320             
+  321             
+  322             
+  323             /*
+  324                get_cur_file_attr
+  325             
+  326                Description:      This function returns the attribute byte of the current
+  327                                  directory entry.
+  328             
+  329                Arguments:        None.
+  330                Return Value:     (unsigned char) - attribute byte of the current directory
+  331                                  entry (a file).  If there is no current directory entry
+  332                                  due to an error, zero is returned.
+  333             
+  334                Inputs:           None.
+  335                Outputs:          None.
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   7
+
+
+  336             
+  337                Error Handling:   None.
+  338             
+  339                Algorithms:       None.
+  340                Data Structures:  None.
+  341             
+  342                Shared Variables: dir_sector - accessed to determine attribute.
+  343                                  cur_dir    - accessed to determine current attribute.
+  344             
+  345                Author:           Glen George
+  346                Last Modified:    April 29, 2006
+  347             
+  348             */
+  349             
+  350             unsigned char  get_cur_file_attr()
+  351             {
+  352     1           /* variables */
+  353     1             /* none */
+  354     1       
+  355     1       
+  356     1       
+  357     1           /* just return the attribute of the current directory entry */
+  358     1           return  ATTR(dir_sector[cur_dir]);
+  359     1       
+  360     1       }
+  361             
+  362             
+  363             
+  364             
+  365             /*
+  366                cur_isDir
+  367             
+  368                Description:      This function returns whether or not the current file
+  369                                  entry is a subdirectory.
+  370             
+  371                Arguments:        None.
+  372                Return Value:     (char) - TRUE if the current entry is a subdirectory,
+  373                                  FALSE if it is not.
+  374             
+  375                Inputs:           None.
+  376                Outputs:          None.
+  377             
+  378                Error Handling:   None.
+  379             
+  380                Algorithms:       None.
+  381                Data Structures:  None.
+  382             
+  383                Shared Variables: dir_sector - accessed to determine directory status.
+  384                                  cur_dir    - accessed to determine directory status.
+  385             
+  386                Author:           Glen George
+  387                Last Modified:    June 27, 2002
+  388             
+  389             */
+  390             
+  391             char  cur_isDir()
+  392             {
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   8
+
+
+  393     1           /* variables */
+  394     1             /* none */
+  395     1       
+  396     1       
+  397     1       
+  398     1           /* just return whether or not current entry is a directory */
+  399     1           return  ((get_cur_file_attr() & ATTRIB_DIR) != 0);
+  400     1       
+  401     1       }
+  402             
+  403             
+  404             
+  405             
+  406             /*
+  407                cur_isParentDir
+  408             
+  409                Description:      This function returns whether or not the current file
+  410                                  entry is the parent directory.
+  411             
+  412                Arguments:        None.
+  413                Return Value:     (char) - TRUE if the current entry is the parent
+  414                                  directory (".."), FALSE if it is not.
+  415             
+  416                Inputs:           None.
+  417                Outputs:          None.
+  418             
+  419                Error Handling:   None.
+  420             
+  421                Algorithms:       None.
+  422                Data Structures:  None.
+  423             
+  424                Shared Variables: dir_sector - accessed to determine directory status.
+  425                                  cur_dir    - accessed to determine directory status.
+  426             
+  427                Author:           Glen George
+  428                Last Modified:    April 29, 2006
+  429             
+  430             */
+  431             
+  432             char  cur_isParentDir()
+  433             {
+  434     1           /* variables */
+  435     1             /* none */
+  436     1       
+  437     1       
+  438     1       
+  439     1           /* just return whether or not current entry is the parent directory */
+  440     1           /* it's the parent if the name starts with '.' */
+  441     1           return  (cur_isDir() && (FILENAME(dir_sector[cur_dir], 0) == '.'));
+  442     1       
+  443     1       }
+  444             
+  445             
+  446             
+  447             
+  448             /*
+  449                get_cur_file_time
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE   9
+
+
+  450             
+  451                Description:      This function returns the time (in seconds) of the
+  452                                  current directory entry (a file).
+  453             
+  454                Arguments:        None.
+  455                Return Value:     (unsigned int) - the time stamp for the current
+  456                                  directory entry in seconds.  If there is no current
+  457                                  directory entry due to an error, zero is returned.
+  458             
+  459                Inputs:           None.
+  460                Outputs:          None.
+  461             
+  462                Error Handling:   None.
+  463             
+  464                Algorithms:       None.
+  465                Data Structures:  None.
+  466             
+  467                Shared Variables: cur_sector - accessed by this function.
+  468             
+  469                Author:           Glen George
+  470                Last Modified:    April 29, 2006
+  471             
+  472             */
+  473             
+  474             unsigned int  get_cur_file_time()
+  475             {
+  476     1           /* variables */
+  477     1           unsigned int  t;            /* the file time (in seconds) */
+  478     1       
+  479     1       
+  480     1       
+  481     1           /* first get the seconds (kept in units of 2 seconds) */
+  482     1           t = 2 * DIR_SECONDS(FTIME(dir_sector[cur_dir]));
+  483     1           /* then add in the minutes and hours */
+  484     1           t += 60 * DIR_MINUTES(FTIME(dir_sector[cur_dir]));
+  485     1           t += 60 * 60 * DIR_HOURS(FTIME(dir_sector[cur_dir]));
+  486     1       
+  487     1       
+  488     1           /* and return the resulting time in seconds */
+  489     1           return  t;
+  490     1       
+  491     1       }
+  492             
+  493             
+  494             
+  495             
+  496             /*
+  497                get_cur_file_size
+  498             
+  499                Description:      This function returns the size of the current directory
+  500                                  entry (a file) in bytes.
+  501             
+  502                Arguments:        None.
+  503                Return Value:     (unsigned long int) - size (in bytes) of the current
+  504                                  directory entry.  If there is no current directory entry
+  505                                  due to an error, zero is returned.
+  506             
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  10
+
+
+  507                Inputs:           None.
+  508                Outputs:          None.
+  509             
+  510                Error Handling:   None.
+  511             
+  512                Algorithms:       None.
+  513                Data Structures:  None.
+  514             
+  515                Shared Variables: cur_sector - accessed by this function.
+  516             
+  517                Author:           Glen George
+  518                Last Modified:    April 29, 2006
+  519             
+  520             */
+  521             
+  522             long int  get_cur_file_size()
+  523             {
+  524     1           /* variables */
+  525     1             /* none */
+  526     1       
+  527     1       
+  528     1       
+  529     1           /* return the length in bytes of the current directory entry */
+  530     1           return  FSIZE(dir_sector[cur_dir]);
+  531     1       
+  532     1       }
+  533             
+  534             
+  535             
+  536             
+  537             /*
+  538                get_cur_file_sector
+  539             
+  540                Description:      This function returns the starting sector of the current
+  541                                  directory entry (a file).
+  542             
+  543                Arguments:        None.
+  544                Return Value:     (unsigned long int) - starting sector of the current
+  545                                  directory entry.  If there is no current directory entry
+  546                                  due to an error, zero is returned.
+  547             
+  548                Inputs:           None.
+  549                Outputs:          None.
+  550             
+  551                Error Handling:   None.
+  552             
+  553                Algorithms:       None.
+  554                Data Structures:  None.
+  555             
+  556                Shared Variables: cur_sector - accessed by this function.
+  557             
+  558                Author:           Glen George
+  559                Last Modified:    June 1, 2003
+  560             
+  561             */
+  562             
+  563             unsigned long int  get_cur_file_sector()
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  11
+
+
+  564             {
+  565     1           /* variables */
+  566     1             /* none */
+  567     1       
+  568     1       
+  569     1       
+  570     1           /* return the starting sector of the current directory entry */
+  571     1           return  cur_sector;
+  572     1       
+  573     1       }
+  574             
+  575             
+  576             
+  577             
+  578             /*
+  579                get_first_dir_entry
+  580             
+  581                Description:      This function gets the first valid directory entry in
+  582                                  the directory whose starting sector number is passed.
+  583                                  The long filename of this directory entry is also read
+  584                                  and the filename variable is set to this long filename
+  585                                  if it exists or the 8.3 filename if there is no long
+  586                                  filename.  Finally the starting sector number of this
+  587                                  entry is also saved.  If there is an error reading the
+  588                                  directory entry the filename is set to the empty string,
+  589                                  the starting sector number is set to 0, the directory
+  590                                  information is properly initialized, and TRUE is
+  591                                  returned.  The function get_next_dir_entry is used to
+  592                                  actually get the first directory entry.
+  593             
+  594                Arguments:        first_sector (unsigned long int) - starting sector number
+  595                                                                     of the directory.
+  596                Return Value:     (char) - TRUE if there is an error reading the directory
+  597                                  information, FALSE otherwise.
+  598             
+  599                Inputs:           Data is read from the disk drive.
+  600                Outputs:          None.
+  601             
+  602                Error Handling:   If there is an error reading the directory, the saved
+  603                                  information is set to reasonable values and TRUE is
+  604                                  returned.
+  605             
+  606                Algorithms:       None.
+  607                Data Structures:  None.
+  608             
+  609                Shared Variables: dir_sector   - filled with a sector of directory entries.
+  610                                  dir_offset   - set to zero (0), 1st sector of directory.
+  611                                  start_sector - set to the passed sector number.
+  612                                  dirname      - set to the old value of filename.
+  613                                  filename     - set to the filename of the current entry.
+  614                                  cur_dir      - set to the current file entry.
+  615                                  cur_sector   - set to the starting sector of the entry.
+  616             
+  617                Author:           Glen George
+  618                Last Modified:    June 1, 2003
+  619             
+  620             */
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  12
+
+
+  621             
+  622             char  get_first_dir_entry(unsigned long int first_sector)
+  623             {
+  624     1           /* variables */
+  625     1           char  error = FALSE;        /* read error flag */
+  626     1       
+  627     1       
+  628     1       
+  629     1           /* first save the current directory information */
+  630     1           new_directory();
+  631     1       
+  632     1           /* now entering a directory, so save it as the directory name */
+  633     1           strcpy(dirname, filename);
+  634     1       
+  635     1           /* and set the starting sector for the directory */
+  636     1           start_sector = first_sector;
+  637     1       
+  638     1       
+  639     1           /* setup the file variables for the get_next_dir_entry function */
+  640     1           /* have to point at entry "before" first entry */
+  641     1           cur_dir = ENTRIES_PER_SECTOR - 1;   /* think at end of previous sector */
+  642     1           dir_offset = -1;                    /* will be updated to 0 */
+  643     1       
+  644     1       
+  645     1           /* now can just use the get_next_dir_entry function to get first file */
+  646     1           error = get_next_dir_entry();
+  647     1       
+  648     1       
+  649     1           /* done, return with the error status */
+  650     1           return  error;
+  651     1       
+  652     1       }
+  653             
+  654             
+  655             
+  656             
+  657             /*
+  658                get_next_dir_entry
+  659             
+  660                Description:      This function gets the next valid directory entry in
+  661                                  the directory.  As necessary it reads sectors of 
+  662                                  directory entries from the hard drive.  The long filename
+  663                                  of the next directory entry is also read and the filename
+  664                                  variable is set to this long filename if it exists or the
+  665                                  8.3 filename if it does not exist.  The current sector
+  666                                  number and directory entry number are also updated.  If
+  667                                  there is an error reading the directory entry the
+  668                                  filename is set to the empty string, the starting sector
+  669                                  number is set to 0, the directory information is properly
+  670                                  initialized, and TRUE is returned.
+  671             
+  672                Arguments:        None.
+  673                Return Value:     (char) - TRUE if there is an error reading the directory
+  674                                  information, FALSE otherwise.
+  675             
+  676                Inputs:           Data is read from the disk drive.
+  677                Outputs:          None.
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  13
+
+
+  678             
+  679                Error Handling:   If there is an error reading the directory, the saved
+  680                                  information is set to reasonable values and TRUE is
+  681                                  returned.
+  682             
+  683                Algorithms:       None.
+  684                Data Structures:  None.
+  685             
+  686                Shared Variables: dir_sector          - accessed and possibly filled with a
+  687                                                        sector of directory entries.
+  688                                  dir_offset          - accessed and possibly updated to
+  689                                                        the sector offset of the directory
+  690                                                        entries.
+  691                                  start_sector        - accessed to get the starting sector
+  692                                                        of the current directory.
+  693                                  sectors_per_cluster - accessed to compute starting sector
+  694                                                        of an entry.
+  695                                  first_file_sector   - accessed to compute starting sector
+  696                                                        of an entry.
+  697                                  filename            - set to the filename of the current
+  698                                                        entry.
+  699                                  cur_dir             - accessed and updated to the current
+  700                                                        entry.
+  701                                  cur_sector          - set to the starting sector of the
+  702                                                        entry.
+  703             
+  704                Author:           Glen George
+  705                Last Modified:    April 29, 2006
+  706             
+  707             */
+  708             
+  709             char  get_next_dir_entry()
+  710             {
+  711     1           /* variables */
+  712     1           char  longfilename[MAX_LFN_LEN];    /* long filename of current entry */
+  713     1           int   lfn_seq;                      /* sequence number for LFN */
+  714     1           int   chksum;                       /* long filename checksum */
+  715     1       
+  716     1           int   old_dir_offset;               /* previous directory offset */
+  717     1           int   old_cur_dir;                  /* old file entry in directory */
+  718     1       
+  719     1           char  error = FALSE;                /* read error flag */
+  720     1           char  done = FALSE;                 /* done reading the directory info */
+  721     1       
+  722     1           int   i;                            /* general loop indices */
+  723     1           int   k;
+  724     1       
+  725     1       
+  726     1       
+  727     1           /* reset the filename to setup for this file */
+  728     1           longfilename[0] = '\0';
+  729     1       
+  730     1           /* keep track of the old values (in case can't find a next entry */
+  731     1           old_dir_offset = dir_offset;
+  732     1           old_cur_dir = cur_dir;
+  733     1       
+  734     1       
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  14
+
+
+  735     1           /* now find the next entry in this directory */
+  736     1           while (!error && !done)  {
+  737     2       
+  738     2               /* check if need to read a new sector's worth of entries */
+  739     2               if (cur_dir >= (ENTRIES_PER_SECTOR - 1))  {
+  740     3       
+  741     3                   /* need to read in a new sector of directory entries */
+  742     3                   /* update the directory sector number */
+  743     3                   dir_offset++;
+  744     3                   /* read a sector of directory entries, watching for an error */
+  745     3                   error = (get_blocks((start_sector + dir_offset + partition_start),
+  746     3                                       1, (unsigned short int far *) dir_sector) != 1);
+  747     3                   /* reset the pointer into the sector of entries */
+  748     3                   /* set to -1 so will be properly incremented in a couple lines */
+  749     3                   cur_dir = -1;
+  750     3               }
+  751     2       
+  752     2       
+  753     2               /* is this the first entry or the end of the directory */
+  754     2               if ((cur_dir == -1) || (FILENAME(dir_sector[cur_dir], 0) != '\0'))
+  755     2                   /* not end of the directory - update the entry number */
+  756     2                   cur_dir++;
+  757     2       
+  758     2       
+  759     2               /* try to find the next directory entry */
+  760     2               while (!error && !done && (cur_dir < ENTRIES_PER_SECTOR))  {
+  761     3       
+  762     3                   /* check if this is a long filename or a normal entry */
+  763     3                   if (ATTR(dir_sector[cur_dir]) == ATTRIB_LFN)  {
+  764     4       
+  765     4                       /* this is a long filename - collect characters */
+  766     4                       /* assume ASCII instead of Unicode */
+  767     4       
+  768     4                       /* get the sequence number for this part of the filename */
+  769     4                       /* make it zero-based */
+  770     4                       lfn_seq = (L_SEQ_NUM(dir_sector[cur_dir]) & LFN_SEQ_MASK) - 1;
+  771     4       
+  772     4                       /* collect the pieces of the long filename */
+  773     4                       for (k = 0; k < LFN_CHARS; k++)  {
+  774     5                           /* figure out where the LFN characters are */
+  775     5                           if (k < LFN1_CHARS)
+  776     5                               longfilename[LFN_CHARS * lfn_seq + k] = L_LFN1(dir_sector[cur_dir], 2 * k);
+  777     5                           else if (k < (LFN1_CHARS + LFN2_CHARS))
+  778     5                               longfilename[LFN_CHARS * lfn_seq + k] = L_LFN2(dir_sector[cur_dir], 2 * (k - L
+                -FN1_CHARS));
+  779     5                           else
+  780     5                               longfilename[LFN_CHARS * lfn_seq + k] = L_LFN3(dir_sector[cur_dir], 2 * (k - L
+                -FN1_CHARS - LFN2_CHARS));
+  781     5                       }
+  782     4       
+  783     4                       /* check if this is the last entry */
+  784     4                       if ((L_SEQ_NUM(dir_sector[cur_dir]) & LAST_LFN_ENTRY) != 0)  {
+  785     5                           /* last entry so remember the checksum */
+  786     5                           chksum = CHECKSUM(dir_sector[cur_dir]);
+  787     5                           /* also terminate the filename */
+  788     5                           longfilename[LFN_CHARS * (lfn_seq + 1)] = '\0';
+  789     5                       }
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  15
+
+
+  790     4                       
+  791     4                       /* go to the next directory entry */
+  792     4                       cur_dir++;
+  793     4                   }
+  794     3                   else  {
+  795     4       
+  796     4                       /* this is a normal entry */
+  797     4                       /* first check if this entry really exists */
+  798     4                       if (FILENAME(dir_sector[cur_dir], 0) == '\xE5')  {
+  799     5       
+  800     5                           /* deleted entry */
+  801     5                           /* not a valid file, clear the long filename */
+  802     5                           longfilename[0] = '\0';
+  803     5                           /* and move to the next entry */
+  804     5                           cur_dir++;
+  805     5                       }
+  806     4       
+  807     4                       /* is it the end of directory marker */
+  808     4                       else if (FILENAME(dir_sector[cur_dir], 0) == '\0')  {
+  809     5       
+  810     5                           /* end of directory marker */
+  811     5                           /* not a valid file, clear the filename */
+  812     5                           longfilename[0] = '\0';
+  813     5                           /* need to restore the old file state (on last file) */
+  814     5                           cur_dir = old_cur_dir;
+  815     5                           /* check if need to restore the directory sector */
+  816     5                           if (dir_offset != old_dir_offset)  {
+  817     6                               /* need to restore the old directory sector */
+  818     6                               error = (get_blocks((start_sector + old_dir_offset + partition_start),
+  819     6                                                   1, (unsigned short int far *) dir_sector) != 1);
+  820     6                               /* also restore the actual offset */
+  821     6                               dir_offset = old_dir_offset;
+  822     6                           }
+  823     5                           /* restored state, now we're done */
+  824     5                           done = TRUE;
+  825     5                       }
+  826     4       
+  827     4                       /* is it . or .. */
+  828     4                       else if (FILENAME(dir_sector[cur_dir], 0) == '.')  {
+  829     5       
+  830     5                           /* is it pointer to this directory or parent directory */
+  831     5                           if (FILENAME(dir_sector[cur_dir], 1) == '.')  {
+  832     6       
+  833     6                               /* pointer to parent directory */
+  834     6                               /* so get sector number and parent name */
+  835     6                               cur_sector = get_dir_tos_sector();
+  836     6                               strcpy(filename, get_dir_tos_name());
+  837     6                               /* and we are done */
+  838     6                               done = TRUE;
+  839     6                           }
+  840     5                           else  {
+  841     6       
+  842     6                               /* pointer to current directory - skip it */
+  843     6                               /* not a valid file, clear the long filename */
+  844     6                               longfilename[0] = '\0';
+  845     6                               /* and move to the next entry */
+  846     6                               cur_dir++;
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  16
+
+
+  847     6                           }
+  848     5                       }
+  849     4       
+  850     4                       /* is it a volume label */
+  851     4                       else if ((ATTR(dir_sector[cur_dir]) & ATTRIB_VOLUME) != 0)  {
+  852     5       
+  853     5                           /* it is a volume label, see if already have a directory name */
+  854     5                           if (dirname[0] == '\0')  {
+  855     6       
+  856     6                               /* no directory name currently, use volume label */
+  857     6                               /* now check if there is a long filename (shouldn't be) */
+  858     6                               /* first compute the checksum for this entry */
+  859     6                               /* if checksum OK and there is a filename - keep it */
+  860     6                               if (longfilename[0] == '\0')  {
+  861     7       
+  862     7                                   /* no long filename, set the directory name from 8.3 name */
+  863     7                                   /* copy the filename and extension (but no .) */
+  864     7                                   /* start at first character of filename */
+  865     7                                   k = 0;
+  866     7                                   /* copy the full filename */
+  867     7                                   for (i = 0; (i < DOS_FILENAME_LEN); i++)
+  868     7                                       dirname[k++] = FILENAME(dir_sector[cur_dir], i);
+  869     7       
+  870     7                                   /* now append the extension */
+  871     7                                   for (i = 0; (i < DOS_EXTENSION_LEN); i++)
+  872     7                                       dirname[k++] = EXTENSION(dir_sector[cur_dir], i);
+  873     7       
+  874     7                                   /* finally, null terminate the string */
+  875     7                                   dirname[k] = '\0';
+  876     7                               }
+  877     6                               else  {
+  878     7       
+  879     7                                   /* have a long filename - save it as the  directory name */
+  880     7                                   strcpy(dirname, longfilename);
+  881     7                               }
+  882     6                           }
+  883     5                           else  {
+  884     6       
+  885     6                               /* already have a directory name so ignore volume label */
+  886     6                               /* means we cursored back up to the directory */
+  887     6                               ;
+  888     6                           }
+  889     5       
+  890     5                           /* in any case, erase any long file name */
+  891     5                           longfilename[0] = '\0';
+  892     5                           /* and move to the next entry (ignore volume label) */
+  893     5                           cur_dir++;
+  894     5                       }
+  895     4       
+  896     4                       /* none of the above, so must actually be a file */
+  897     4                       else  {
+  898     5       
+  899     5                           /* need to set the starting sector and filename */
+  900     5                           cur_sector = (START_CLUSTER(dir_sector[cur_dir]) - 2) * sectors_per_cluster + firs
+                -t_file_sector;
+  901     5       
+  902     5                           /* now check if there is a long filename */
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  17
+
+
+  903     5                           /* first compute the checksum for this entry */
+  904     5                           /* if checksum OK and there is a filename - keep it */
+  905     5                           if (longfilename[0] == '\0')  {
+  906     6       
+  907     6                               /* no long filename, set the filename from 8.3 name */
+  908     6                               /* copy the filename and extension */
+  909     6                               /* start at first character of filename */
+  910     6                               k = 0;
+  911     6                               /* copy the filename without the trailing spaces */
+  912     6                               for (i = 0; ((i < DOS_FILENAME_LEN) && (FILENAME(dir_sector[cur_dir], i) != ' 
+                -')); i++)
+  913     6                                   filename[k++] = FILENAME(dir_sector[cur_dir], i);
+  914     6       
+  915     6                               /* add the '.' separating name and extension */
+  916     6                               filename[k++] = '.';
+  917     6       
+  918     6                               /* now add the extension, skipping trailing spaces */
+  919     6                               for (i = 0; ((i < DOS_EXTENSION_LEN) && (EXTENSION(dir_sector[cur_dir], i) != 
+                -' ')); i++)
+  920     6                                   filename[k++] = EXTENSION(dir_sector[cur_dir], i);
+  921     6       
+  922     6                               /* finally, null terminate the string */
+  923     6                               filename[k] = '\0';
+  924     6                           }
+  925     5                           else  {
+  926     6       
+  927     6                               /* have a long filename - save it as the filename */
+  928     6                               strcpy(filename, longfilename);
+  929     6                           }
+  930     5       
+  931     5                           /* got to the next entry so set the done flag */
+  932     5                           done = TRUE;
+  933     5                       }
+  934     4                   }
+  935     3               }
+  936     2           }
+  937     1       
+  938     1       
+  939     1           /* check if there was an error */
+  940     1           if (error)  {
+  941     2               /* had an error - clear out the data */
+  942     2               /* clear the filename */
+  943     2               filename[0] = '\0';
+  944     2               /* set the sector to 0 */
+  945     2               cur_sector = 0;
+  946     2           }
+  947     1       
+  948     1       
+  949     1           /* finally done, return with the error status */
+  950     1           return  error;
+  951     1       
+  952     1       }
+  953             
+  954             
+  955             
+  956             
+  957             /*
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  18
+
+
+  958                get_previous_dir_entry
+  959             
+  960                Description:      This function gets the previous valid directory entry in
+  961                                  the directory.  As necessary it reads sectors of 
+  962                                  directory entries from the hard drive.  The function
+  963                                  backs up through the directory to the first standard
+  964                                  directory entry prior the current one and then back
+  965                                  before any long filename for that entry.  The long
+  966                                  filename of the previous directory entry is also read and
+  967                                  the filename variable is set to this long filename if it
+  968                                  exists or the 8.3 filename if there is no long filename.
+  969                                  The current sector number and directory entry number are
+  970                                  also updated.  If there is an error reading the directory
+  971                                  entry the filename is set to the empty string, the
+  972                                  starting sector number is set to 0, the directory
+  973                                  information is properly initialized, and TRUE is
+  974                                  returned.
+  975             
+  976                Arguments:        None.
+  977                Return Value:     (char) - TRUE if there is an error reading the directory
+  978                                  information, FALSE otherwise.
+  979             
+  980                Inputs:           Data is read from the disk drive.
+  981                Outputs:          None.
+  982             
+  983                Error Handling:   If there is an error reading the directory, the saved
+  984                                  information is set to reasonable values and TRUE is
+  985                                  returned.
+  986             
+  987                Algorithms:       None.
+  988                Data Structures:  None.
+  989             
+  990                Shared Variables: dir_sector   - accessed and possibly filled with a sector
+  991                                                 of directory entries.
+  992                                  dir_offset   - accessed and possibly updated to the
+  993                                                 sector offset of the directory entries.
+  994                                  start_sector - accessed to get the starting sector of the
+  995                                                 current directory.
+  996                                  filename     - set to the filename of the current entry.
+  997                                  cur_dir      - accessed and updated to the current entry.
+  998                                  cur_sector   - set to the starting sector of the entry.
+  999             
+ 1000                Author:           Glen George
+ 1001                Last Modified:    April 29, 2006
+ 1002             
+ 1003             */
+ 1004             
+ 1005             char  get_previous_dir_entry()
+ 1006             {
+ 1007     1           /* variables */
+ 1008     1           char  error = FALSE;        /* read error flag */
+ 1009     1           char  done = FALSE;         /* done getting the previous directory info */
+ 1010     1           char  have_entry = FALSE;   /* have the entry (but maybe not the filename) */
+ 1011     1       
+ 1012     1       
+ 1013     1       
+ 1014     1           /* find the previous entry in this directory */
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  19
+
+
+ 1015     1           /* loop until find the entry or get an error */
+ 1016     1           while (!error && !done)  {
+ 1017     2       
+ 1018     2               /* check if need to read a new sector's worth of entries */
+ 1019     2               if (cur_dir == 0)  {
+ 1020     3       
+ 1021     3                   /* need to read in the previous sector of directory entries */
+ 1022     3                   dir_offset--;
+ 1023     3                   /* check if out of directory entries */
+ 1024     3                   if (dir_offset < 0)  {
+ 1025     4                       /* out of directory entries - reset to the start */
+ 1026     4                       dir_offset = 0;
+ 1027     4                       /* need to be sure "next" operation finds first entry */
+ 1028     4                       cur_dir = -1;
+ 1029     4                       /* and done */
+ 1030     4                       done = TRUE;
+ 1031     4                   }
+ 1032     3                   else  {
+ 1033     4                       /* have a directory entry to check, read the sector of */
+ 1034     4                       /*    directory entries, watching for an error */
+ 1035     4                       error = (get_blocks((start_sector + dir_offset + partition_start),
+ 1036     4                                           1, (unsigned short int far *) dir_sector) != 1);
+ 1037     4                       /* and reset to the last file entry in the directory */
+ 1038     4                       cur_dir = ENTRIES_PER_SECTOR - 1;
+ 1039     4                   }
+ 1040     3               }
+ 1041     2               else  {
+ 1042     3       
+ 1043     3                   /* still more files in this directory, just check the previous entry */
+ 1044     3                   cur_dir--;
+ 1045     3               }
+ 1046     2       
+ 1047     2       
+ 1048     2               /* if not an error or done, keep processing */
+ 1049     2               if (!done && !error)  {
+ 1050     3       
+ 1051     3                   /* if don't have the entry yet, check if this is it */
+ 1052     3                   if (!have_entry)  {
+ 1053     4       
+ 1054     4                       /* check if this is a file entry in the directory */
+ 1055     4                       have_entry = ((FILENAME(dir_sector[cur_dir], 0) != '\0')  &&
+ 1056     4                                     (FILENAME(dir_sector[cur_dir], 0) != '\xE5')  &&
+ 1057     4                                     (ATTR(dir_sector[cur_dir]) != ATTRIB_LFN));
+ 1058     4                   }
+ 1059     3                   else  {
+ 1060     4       
+ 1061     4                       /* already have an entry, but need to skip its */
+ 1062     4                       /* potentional long filename too */
+ 1063     4                       if (ATTR(dir_sector[cur_dir]) != ATTRIB_LFN)  {
+ 1064     5                           /* not a long filename, must be done */
+ 1065     5                           done = TRUE;
+ 1066     5                       }
+ 1067     4                       else  {
+ 1068     5                           /* still part of a long filename for the entry */
+ 1069     5                           /* nothing to do, just keep going */
+ 1070     5                           ;
+ 1071     5                       }
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  20
+
+
+ 1072     4                   }
+ 1073     3               }
+ 1074     2           }
+ 1075     1       
+ 1076     1       
+ 1077     1           /* if finished without an error then get the actual previous filename */
+ 1078     1           if (done & !error)  {
+ 1079     2       
+ 1080     2               /* get the entry watching for errors */
+ 1081     2               /* since we've backed up past the previous entry, this will now */
+ 1082     2               /*    find the previous entry */
+ 1083     2               error = get_next_dir_entry();
+ 1084     2           }
+ 1085     1       
+ 1086     1       
+ 1087     1           /* check if there was an error */
+ 1088     1           if (error)  {
+ 1089     2               /* had an error - clear out the data */
+ 1090     2               /* clear the filename */
+ 1091     2               filename[0] = '\0';
+ 1092     2               /* set the sector to 0 */
+ 1093     2               cur_sector = 0;
+ 1094     2           }
+ 1095     1       
+ 1096     1       
+ 1097     1           /* finally done, return with the error status */
+ 1098     1           return  error;
+ 1099     1       
+ 1100     1       }
+ 1101             
+ 1102             
+ 1103             
+ 1104             
+ 1105             /* locally global variables for the stack routines */
+ 1106             
+ 1107             /* stack of directory information */
+ 1108             static  char               dirnames[MAX_PATH_CHARS];            /* names */
+ 1109             static  unsigned long int  dirsectorstack[MAX_NUM_SUBDIRS];     /* starting sectors */
+ 1110             static  int                dirnamestack[MAX_NUM_SUBDIRS];       /* name positions in dirnames */
+ 1111             static  int                dirstack_ptr;                        /* the stack pointer */
+ 1112             
+ 1113             
+ 1114             
+ 1115             
+ 1116             /*
+ 1117                init_dir_stack()
+ 1118             
+ 1119                Description:      This function initializes the directory stack.  It clears
+ 1120                                  the directory names, zeros the first stack elements, and
+ 1121                                  initializes the stack pointer.
+ 1122             
+ 1123                Arguments:        None.
+ 1124                Return Value:     None.
+ 1125             
+ 1126                Input:            None.
+ 1127                Output:           None.
+ 1128             
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  21
+
+
+ 1129                Error Handling:   None.
+ 1130             
+ 1131                Algorithms:       None.
+ 1132                Data Structures:  None.
+ 1133             
+ 1134                Shared Variables: dirnames       - first character is set to '\0'.
+ 1135                                  dirsectorstack - first element is set to 0.
+ 1136                                  dirnamestack   - first element is set to 0.
+ 1137                                  dirstack_ptr   - initialized to -1.
+ 1138             
+ 1139                Author:           Glen George
+ 1140                Last Modified:    June 27, 2002
+ 1141             
+ 1142             */
+ 1143             
+ 1144             static  void  init_dir_stack()
+ 1145             {
+ 1146     1           /* variables */
+ 1147     1             /* none */
+ 1148     1       
+ 1149     1       
+ 1150     1       
+ 1151     1           /* set the string of names to the empty string */
+ 1152     1           dirnames[0] = '\0';
+ 1153     1       
+ 1154     1           /* initialize the first directory entries to 0 */
+ 1155     1           dirsectorstack[0] = 0;
+ 1156     1           dirnamestack[0] = 0;
+ 1157     1       
+ 1158     1           /* finally, set the stack pointer to empty stack */
+ 1159     1           dirstack_ptr = -1;
+ 1160     1       
+ 1161     1       
+ 1162     1           /* all done with the initialization - return */
+ 1163     1           return;
+ 1164     1       
+ 1165     1       }
+ 1166             
+ 1167             
+ 1168             
+ 1169             
+ 1170             /*
+ 1171                new_directory()
+ 1172             
+ 1173                Description:      This function handles a new directory.  It may be either
+ 1174                                  a subdirectory or a parent directory.  If a subdirectory
+ 1175                                  the directory information (name and starting sector) is
+ 1176                                  added to the directory stack.  If a parent directory, it
+ 1177                                  is removed from the directory stack.  It is assumed that
+ 1178                                  the directory in question is the current entry.
+ 1179             
+ 1180                Arguments:        None.
+ 1181                Return Value:     None.
+ 1182             
+ 1183                Input:            None.
+ 1184                Output:           None.
+ 1185             
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  22
+
+
+ 1186                Error Handling:   None.
+ 1187             
+ 1188                Algorithms:       None.
+ 1189                Data Structures:  None.
+ 1190             
+ 1191                Shared Variables: dirnames       - update to add or remove directory names.
+ 1192                                  dirsectorstack - may be updated to add a directory
+ 1193                                                   starting sector location.
+ 1194                                  dirnamestack   - may be updated to add the starting
+ 1195                                                   character number in dirnames[] for this
+ 1196                                                   directory name.
+ 1197                                  dirstack_ptr   - updated to adjust the stack.
+ 1198                                  dirname        - accessed for the current directory name.
+ 1199                                  start_sector   - accessed for the directory starting
+ 1200                                                   sector number.
+ 1201             
+ 1202                Author:           Glen George
+ 1203                Last Modified:    June 1, 2003
+ 1204             
+ 1205             */
+ 1206             
+ 1207             static  void  new_directory()
+ 1208             {
+ 1209     1           /* variables */
+ 1210     1             /* none */
+ 1211     1       
+ 1212     1       
+ 1213     1       
+ 1214     1           /* check if the current entry matches the top of the stack */
+ 1215     1           if ((dirstack_ptr >= 0) && (dirsectorstack[dirstack_ptr] == cur_sector))  {
+ 1216     2       
+ 1217     2               /* new directory is on stack - need to pop it off of the stack */
+ 1218     2               /* first get rid of the name */
+ 1219     2               dirnames[dirnamestack[dirstack_ptr]] = '\0';
+ 1220     2               /* now just decrement the stack pointer */
+ 1221     2               dirstack_ptr--;
+ 1222     2           }
+ 1223     1           else  {
+ 1224     2       
+ 1225     2               /* does not match top of the stack, need to push new value */
+ 1226     2               /* note - push the info for the current directory, not entry */
+ 1227     2               /* make sure not out of space */
+ 1228     2               if ((dirstack_ptr < (MAX_NUM_SUBDIRS - 1)) &&
+ 1229     2                   ((strlen(dirnames) + strlen(dirname)) < MAX_PATH_CHARS))  {
+ 1230     3       
+ 1231     3                   /* there is room - update the stack pointer */
+ 1232     3                   dirstack_ptr++;
+ 1233     3                   /* save the sector */
+ 1234     3                   dirsectorstack[dirstack_ptr] = start_sector;
+ 1235     3                   /* save the name pointer and the name */
+ 1236     3                   dirnamestack[dirstack_ptr] = strlen(dirnames);
+ 1237     3                   strcat(dirnames, dirname);
+ 1238     3               }
+ 1239     2               else  {
+ 1240     3       
+ 1241     3                   /* out of room in the stack - this shouldn't happen */
+ 1242     3                   ;
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  23
+
+
+ 1243     3               }
+ 1244     2           }
+ 1245     1       
+ 1246     1       
+ 1247     1           /* all done - return */
+ 1248     1           return;
+ 1249     1       
+ 1250     1       }
+ 1251             
+ 1252             
+ 1253             
+ 1254             
+ 1255             /*
+ 1256                get_dir_tos_name()
+ 1257             
+ 1258                Description:      This function returns the name of the directory on the
+ 1259                                  top of the directory stack.  If the stack is empty, the
+ 1260                                  empty string is returned.
+ 1261             
+ 1262                Arguments:        None.
+ 1263                Return Value:     (const char *) - pointer to the name of the directory on
+ 1264                                  the top of the directory stack or the pointer to an empty
+ 1265                                  string if there is nothing on the stack.
+ 1266             
+ 1267                Input:            None.
+ 1268                Output:           None.
+ 1269             
+ 1270                Error Handling:   If nothing is on the stack an empty string is returned.
+ 1271             
+ 1272                Algorithms:       None.
+ 1273                Data Structures:  None.
+ 1274             
+ 1275                Shared Variables: dirnames     - accessed to get the directory name.
+ 1276                                  dirnamestack - accessed to find position of name.
+ 1277                                  dirstack_ptr - accessed to find stack entry.
+ 1278             
+ 1279                Author:           Glen George
+ 1280                Last Modified:    June 27, 2002
+ 1281             
+ 1282             */
+ 1283             
+ 1284             static  const char  *get_dir_tos_name()
+ 1285             {
+ 1286     1           /* variables */
+ 1287     1           const char  *name;
+ 1288     1       
+ 1289     1       
+ 1290     1       
+ 1291     1           /* check if there is something in the directory stack */
+ 1292     1           if (dirstack_ptr >= 0)  {
+ 1293     2       
+ 1294     2               /* there is something on the stack, get the pointer to the name */
+ 1295     2               name = &(dirnames[dirnamestack[dirstack_ptr]]);
+ 1296     2           }
+ 1297     1           else  {
+ 1298     2       
+ 1299     2               /* nothing on the stack */
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  24
+
+
+ 1300     2               /* make sure the directory names list is empty */
+ 1301     2               dirnames[0] = '\0';
+ 1302     2               /* and return a pointer to that empty string */
+ 1303     2               name = dirnames;
+ 1304     2           }
+ 1305     1       
+ 1306     1       
+ 1307     1           /* all done - return with the name pointer */
+ 1308     1           return  name;
+ 1309     1       
+ 1310     1       }
+ 1311             
+ 1312             
+ 1313             
+ 1314             
+ 1315             /*
+ 1316                get_dir_tos_sector()
+ 1317             
+ 1318                Description:      This function returns the starting sector of the
+ 1319                                  directory on the top of the directory stack.  If the
+ 1320                                  stack is empty, zero (0) is returned.
+ 1321             
+ 1322                Arguments:        None.
+ 1323                Return Value:     (unsigned long int) - the starting sector of the
+ 1324                                  directory on the top of the directory stack or zero (0)
+ 1325                                  if there is nothing on the stack.
+ 1326             
+ 1327                Input:            None.
+ 1328                Output:           None.
+ 1329             
+ 1330                Error Handling:   If nothing is on the stack, zero (0) is returned.
+ 1331             
+ 1332                Algorithms:       None.
+ 1333                Data Structures:  None.
+ 1334             
+ 1335                Shared Variables: dirsectorstack - accessed to get sector number.
+ 1336                                  dirstack_ptr   - accessed to get sector number.
+ 1337             
+ 1338                Author:           Glen George
+ 1339                Last Modified:    June 27, 2002
+ 1340             
+ 1341             */
+ 1342             
+ 1343             static  unsigned long int  get_dir_tos_sector()
+ 1344             {
+ 1345     1           /* variables */
+ 1346     1           unsigned long int  sect;
+ 1347     1       
+ 1348     1       
+ 1349     1       
+ 1350     1           /* check if there is something in the directory stack */
+ 1351     1           if (dirstack_ptr >= 0)  {
+ 1352     2       
+ 1353     2               /* there is something on the stack, return the sector */
+ 1354     2               sect = dirsectorstack[dirstack_ptr];
+ 1355     2           }
+ 1356     1           else  {
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  25
+
+
+ 1357     2       
+ 1358     2               /* nothing on the stack, return 0 */
+ 1359     2               sect = 0;
+ 1360     2           }
+ 1361     1       
+ 1362     1       
+ 1363     1           /* all done - return with the starting sector */
+ 1364     1           return  sect;
+ 1365     1       
+ 1366     1       }
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  26
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 178
+                           init_FAT_system      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  C8060200        ENTER   206H,0H
+                           @1:
+                                                   ; STATEMENT # 189
+             0006  8D8600FE        LEA     AX,[BP].s
+             000A  1E              PUSH    DS      ; 1
+             000B  50              PUSH    AX      ; 2
+             000C  680100          PUSH    1H
+             000F  680000          PUSH    0H
+             0012  680000          PUSH    0H
+             0015  E80000          CALL    get_blocks
+             0018  81C40A00        ADD     SP,0AH
+             001C  81F80100        CMP     AX,1H
+             0020  B80100          MOV     AX,1H
+             0023  7501            JNZ     $+3H
+             0025  48              DEC     AX
+             0026  8886FBFD        MOV     [BP].error,AL
+                                                   ; STATEMENT # 193
+             002A  8B4EC6          MOV     CX,[BP].s+1C6H
+             002D  BA0000          MOV     DX,0H
+             0030  81E1FFFF        AND     CX,0FFFFH
+             0034  81E20000        AND     DX,0H
+             0038  8B5EC8          MOV     BX,[BP].s+1C8H
+             003B  BF0000          MOV     DI,0H
+             003E  81E3FFFF        AND     BX,0FFFFH
+             0042  81E70000        AND     DI,0H
+             0046  51              PUSH    CX      ; 1
+             0047  B91000          MOV     CX,10H
+             004A  D1E3            SHL     BX,1
+             004C  D1D7            RCL     DI,1
+             004E  E2FA            LOOP    $-4H
+             0050  59              POP     CX      ; 1
+             0051  03D9            ADD     BX,CX
+             0053  13FA            ADC     DI,DX
+             0055  891E0202        MOV     partition_start,BX
+             0059  893E0402        MOV     partition_start+2H,DI
+                                                   ; STATEMENT # 198
+             005D  0AC0            OR      AL,AL
+             005F  7403            JZ      $+5H
+             0061  E92900          JMP     @2
+             0064  8D8600FE        LEA     AX,[BP].s
+             0068  1E              PUSH    DS      ; 1
+             0069  50              PUSH    AX      ; 2
+             006A  680100          PUSH    1H
+             006D  FF360402        PUSH    partition_start+2H; 4
+             0071  FF360202        PUSH    partition_start; 5
+             0075  E80000          CALL    get_blocks
+             0078  81C40A00        ADD     SP,0AH
+             007C  81F80100        CMP     AX,1H
+             0080  B80100          MOV     AX,1H
+             0083  7501            JNZ     $+3H
+             0085  48              DEC     AX
+             0086  0BC0            OR      AX,AX
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  27
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0088  7503            JNZ     $+5H
+             008A  E90600          JMP     @93
+                           @2:
+             008D  B80100          MOV     AX,1H
+             0090  E90200          JMP     @92
+                           @93:
+             0093  2BC0            SUB     AX,AX
+                           @92:
+             0095  8886FBFD        MOV     [BP].error,AL
+                                                   ; STATEMENT # 202
+             0099  8A8610FE        MOV     AL,[BP].s+10H
+             009D  B400            MOV     AH,0H
+             009F  F7AE16FE        IMUL    [BP].s+16H
+             00A3  03860EFE        ADD     AX,[BP].s+0EH
+             00A7  99              CWD
+             00A8  8986FCFD        MOV     [BP].root_dir_start,AX
+             00AC  8996FEFD        MOV     [BP].root_dir_start+2H,DX
+                                                   ; STATEMENT # 206
+             00B0  82BEFBFD00      CMP     [BP].error,0H
+             00B5  7403            JZ      $+5H
+             00B7  E92D00          JMP     @3
+                                                   ; STATEMENT # 208
+             00BA  8B8611FE        MOV     AX,[BP].s+11H
+             00BE  B91000          MOV     CX,10H
+             00C1  99              CWD
+             00C2  F7F9            IDIV    CX
+             00C4  99              CWD
+             00C5  0386FCFD        ADD     AX,[BP].root_dir_start
+             00C9  1396FEFD        ADC     DX,[BP].root_dir_start+2H
+             00CD  89060A02        MOV     first_file_sector,AX
+             00D1  89160C02        MOV     first_file_sector+2H,DX
+                                                   ; STATEMENT # 209
+             00D5  8A860DFE        MOV     AL,[BP].s+0DH
+             00D9  B400            MOV     AH,0H
+             00DB  99              CWD
+             00DC  89060602        MOV     sectors_per_cluster,AX
+             00E0  89160802        MOV     sectors_per_cluster+2H,DX
+                                                   ; STATEMENT # 211
+             00E4  E91800          JMP     @4
+                           @3:
+                                                   ; STATEMENT # 213
+             00E7  C7060A020100    MOV     first_file_sector,1H
+             00ED  C7060C020000    MOV     first_file_sector+2H,0H
+                                                   ; STATEMENT # 214
+             00F3  C70606024000    MOV     sectors_per_cluster,40H
+             00F9  C70608020000    MOV     sectors_per_cluster+2H,0H
+                                                   ; STATEMENT # 215
+                           @4:
+                                                   ; STATEMENT # 219
+             00FF  E8FC06          CALL    init_dir_stack
+                                                   ; STATEMENT # 223
+             0102  C6069E0500      MOV     dirname,0H
+                                                   ; STATEMENT # 224
+             0107  C6069E0600      MOV     filename,0H
+                                                   ; STATEMENT # 228
+             010C  82BEFBFD00      CMP     [BP].error,0H
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  28
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0111  7503            JNZ     $+5H
+             0113  E90900          JMP     @5
+                                                   ; STATEMENT # 230
+             0116  B80000          MOV     AX,0H
+             0119  8BD0            MOV     DX,AX
+             011B  C9              LEAVE
+             011C  5F              POP     DI
+             011D  5E              POP     SI
+             011E  C3              RET
+                                                   ; STATEMENT # 231
+                           @5:
+                                                   ; STATEMENT # 233
+             011F  8B96FEFD        MOV     DX,[BP].root_dir_start+2H
+             0123  8B86FCFD        MOV     AX,[BP].root_dir_start
+             0127  C9              LEAVE
+             0128  5F              POP     DI
+             0129  5E              POP     SI
+             012A  C3              RET
+                                                   ; STATEMENT # 235
+                           init_FAT_system      ENDP
+                                                   ; STATEMENT # 266
+                           get_partition_start      PROC NEAR
+             012C  56              PUSH    SI
+             012D  57              PUSH    DI
+             012E  55              PUSH    BP
+             012F  8BEC            MOV     BP,SP
+                           @6:
+                                                   ; STATEMENT # 273
+             0131  8B160402        MOV     DX,partition_start+2H
+             0135  8B060202        MOV     AX,partition_start
+             0139  5D              POP     BP
+             013A  5F              POP     DI
+             013B  5E              POP     SI
+             013C  C3              RET
+                                                   ; STATEMENT # 275
+                           get_partition_start      ENDP
+                                                   ; STATEMENT # 309
+                           get_cur_file_name      PROC NEAR
+             013E  56              PUSH    SI
+             013F  57              PUSH    DI
+             0140  55              PUSH    BP
+             0141  8BEC            MOV     BP,SP
+                           @7:
+                                                   ; STATEMENT # 316
+             0143  B89E06          MOV     AX,OFFSET(filename)
+             0146  8CDA            MOV     DX,DS
+             0148  5D              POP     BP
+             0149  5F              POP     DI
+             014A  5E              POP     SI
+             014B  C3              RET
+                                                   ; STATEMENT # 318
+                           get_cur_file_name      ENDP
+                                                   ; STATEMENT # 351
+                           get_cur_file_attr      PROC NEAR
+             014C  56              PUSH    SI
+             014D  57              PUSH    DI
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  29
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             014E  55              PUSH    BP
+             014F  8BEC            MOV     BP,SP
+                           @8:
+                                                   ; STATEMENT # 358
+             0151  6B1E000220      IMUL    BX,cur_dir,20H
+             0156  8A870B00        MOV     AL,dir_sector[BX+0BH]
+             015A  5D              POP     BP
+             015B  5F              POP     DI
+             015C  5E              POP     SI
+             015D  C3              RET
+                                                   ; STATEMENT # 360
+                           get_cur_file_attr      ENDP
+                                                   ; STATEMENT # 392
+                           cur_isDir      PROC NEAR
+             015E  56              PUSH    SI
+             015F  57              PUSH    DI
+             0160  55              PUSH    BP
+             0161  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 399
+             0163  E8E6FF          CALL    get_cur_file_attr
+             0166  B400            MOV     AH,0H
+             0168  F7C01000        TEST    AX,10H
+             016C  B80100          MOV     AX,1H
+             016F  7501            JNZ     $+3H
+             0171  48              DEC     AX
+             0172  B400            MOV     AH,0H
+             0174  5D              POP     BP
+             0175  5F              POP     DI
+             0176  5E              POP     SI
+             0177  C3              RET
+                                                   ; STATEMENT # 401
+                           cur_isDir      ENDP
+                                                   ; STATEMENT # 433
+                           cur_isParentDir      PROC NEAR
+             0178  56              PUSH    SI
+             0179  57              PUSH    DI
+             017A  55              PUSH    BP
+             017B  8BEC            MOV     BP,SP
+                           @10:
+                                                   ; STATEMENT # 441
+             017D  E8DEFF          CALL    cur_isDir
+             0180  0AC0            OR      AL,AL
+             0182  7503            JNZ     $+5H
+             0184  E92100          JMP     @11
+             0187  6B1E000220      IMUL    BX,cur_dir,20H
+             018C  8A870000        MOV     AL,dir_sector[BX]
+             0190  98              CBW
+             0191  81F82E00        CMP     AX,2EH
+             0195  B80100          MOV     AX,1H
+             0198  7401            JZ      $+3H
+             019A  48              DEC     AX
+             019B  0BC0            OR      AX,AX
+             019D  7503            JNZ     $+5H
+             019F  E90600          JMP     @11
+             01A2  B80100          MOV     AX,1H
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  30
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             01A5  E90200          JMP     @94
+                           @11:
+             01A8  2BC0            SUB     AX,AX
+                           @94:
+             01AA  5D              POP     BP
+             01AB  5F              POP     DI
+             01AC  5E              POP     SI
+             01AD  C3              RET
+                                                   ; STATEMENT # 443
+                           cur_isParentDir      ENDP
+                                                   ; STATEMENT # 475
+                           get_cur_file_time      PROC NEAR
+             01AE  56              PUSH    SI
+             01AF  57              PUSH    DI
+             01B0  C8020000        ENTER   2H,0H
+                           @12:
+                                                   ; STATEMENT # 482
+             01B4  6B1E000220      IMUL    BX,cur_dir,20H
+             01B9  8B871600        MOV     AX,dir_sector[BX+16H]
+             01BD  50              PUSH    AX      ; 1
+             01BE  81E01F00        AND     AX,1FH
+             01C2  D1E0            SHL     AX,1
+             01C4  8946FE          MOV     [BP].t,AX
+                                                   ; STATEMENT # 484
+             01C7  5B              POP     BX      ; 1
+             01C8  53              PUSH    BX      ; 1
+             01C9  C1EB05          SHR     BX,5H
+             01CC  81E33F00        AND     BX,3FH
+             01D0  6BDB3C          IMUL    BX,BX,3CH
+             01D3  03D8            ADD     BX,AX
+             01D5  895EFE          MOV     [BP].t,BX
+                                                   ; STATEMENT # 485
+             01D8  58              POP     AX      ; 1
+             01D9  C1E80B          SHR     AX,0BH
+             01DC  81E01F00        AND     AX,1FH
+             01E0  69C0100E        IMUL    AX,AX,0E10H
+             01E4  03C3            ADD     AX,BX
+             01E6  8946FE          MOV     [BP].t,AX
+                                                   ; STATEMENT # 489
+             01E9  C9              LEAVE
+             01EA  5F              POP     DI
+             01EB  5E              POP     SI
+             01EC  C3              RET
+                                                   ; STATEMENT # 491
+                           get_cur_file_time      ENDP
+                                                   ; STATEMENT # 523
+                           get_cur_file_size      PROC NEAR
+             01EE  56              PUSH    SI
+             01EF  57              PUSH    DI
+             01F0  55              PUSH    BP
+             01F1  8BEC            MOV     BP,SP
+                           @13:
+                                                   ; STATEMENT # 530
+             01F3  6B1E000220      IMUL    BX,cur_dir,20H
+             01F8  8B971E00        MOV     DX,dir_sector[BX+1EH]
+             01FC  8B871C00        MOV     AX,dir_sector[BX+1CH]
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  31
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0200  5D              POP     BP
+             0201  5F              POP     DI
+             0202  5E              POP     SI
+             0203  C3              RET
+                                                   ; STATEMENT # 532
+                           get_cur_file_size      ENDP
+                                                   ; STATEMENT # 564
+                           get_cur_file_sector      PROC NEAR
+             0204  56              PUSH    SI
+             0205  57              PUSH    DI
+             0206  55              PUSH    BP
+             0207  8BEC            MOV     BP,SP
+                           @14:
+                                                   ; STATEMENT # 571
+             0209  8B161602        MOV     DX,cur_sector+2H
+             020D  8B061402        MOV     AX,cur_sector
+             0211  5D              POP     BP
+             0212  5F              POP     DI
+             0213  5E              POP     SI
+             0214  C3              RET
+                                                   ; STATEMENT # 573
+                           get_cur_file_sector      ENDP
+                                                   ; STATEMENT # 623
+                           get_first_dir_entry      PROC NEAR
+             0216  56              PUSH    SI
+             0217  57              PUSH    DI
+             0218  C8020000        ENTER   2H,0H
+                           @15:
+                                                   ; STATEMENT # 625
+             021C  C646FF00        MOV     [BP].error,0H
+                                                   ; STATEMENT # 630
+             0220  E80106          CALL    new_directory
+                                                   ; STATEMENT # 633
+             0223  B89E06          MOV     AX,OFFSET(filename)
+             0226  1E              PUSH    DS      ; 1
+             0227  50              PUSH    AX      ; 2
+             0228  B89E05          MOV     AX,OFFSET(dirname)
+             022B  1E              PUSH    DS      ; 3
+             022C  50              PUSH    AX      ; 4
+             022D  E80000          CALL    strcpy_
+             0230  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 636
+             0234  8B560A          MOV     DX,[BP].first_sector+2H
+             0237  8B4608          MOV     AX,[BP].first_sector
+             023A  89060E02        MOV     start_sector,AX
+             023E  89161002        MOV     start_sector+2H,DX
+                                                   ; STATEMENT # 641
+             0242  C70600020F00    MOV     cur_dir,0FH
+                                                   ; STATEMENT # 642
+             0248  C7061202FFFF    MOV     dir_offset,0FFFFH
+                                                   ; STATEMENT # 646
+             024E  E80700          CALL    get_next_dir_entry
+             0251  8846FF          MOV     [BP].error,AL
+                                                   ; STATEMENT # 650
+             0254  C9              LEAVE
+             0255  5F              POP     DI
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  32
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0256  5E              POP     SI
+             0257  C3              RET
+                                                   ; STATEMENT # 652
+                           get_first_dir_entry      ENDP
+                                                   ; STATEMENT # 710
+                           get_next_dir_entry      PROC NEAR
+             0258  56              PUSH    SI
+             0259  57              PUSH    DI
+             025A  C80E0100        ENTER   10EH,0H
+                           @16:
+                                                   ; STATEMENT # 719
+             025E  C686F3FE00      MOV     [BP].error,0H
+                                                   ; STATEMENT # 720
+             0263  C686F2FE00      MOV     [BP].done,0H
+                                                   ; STATEMENT # 728
+             0268  C686F4FE00      MOV     [BP].longfilename,0H
+                                                   ; STATEMENT # 731
+             026D  8B061202        MOV     AX,dir_offset
+             0271  8946FA          MOV     [BP].old_dir_offset,AX
+                                                   ; STATEMENT # 732
+             0274  8B060002        MOV     AX,cur_dir
+             0278  8946F8          MOV     [BP].old_cur_dir,AX
+                                                   ; STATEMENT # 736
+                           @18:
+             027B  82BEF3FE00      CMP     [BP].error,0H
+             0280  7403            JZ      $+5H
+             0282  E9E903          JMP     @17
+             0285  82BEF2FE00      CMP     [BP].done,0H
+             028A  7403            JZ      $+5H
+             028C  E9DF03          JMP     @17
+                                                   ; STATEMENT # 739
+             028F  813E00020F00    CMP     cur_dir,0FH
+             0295  7D03            JGE     $+5H
+             0297  E93F00          JMP     @19
+                                                   ; STATEMENT # 743
+             029A  8B061202        MOV     AX,dir_offset
+             029E  40              INC     AX
+             029F  89061202        MOV     dir_offset,AX
+                                                   ; STATEMENT # 746
+             02A3  B90000          MOV     CX,OFFSET(dir_sector)
+             02A6  1E              PUSH    DS      ; 1
+             02A7  51              PUSH    CX      ; 2
+             02A8  680100          PUSH    1H
+             02AB  99              CWD
+             02AC  03060E02        ADD     AX,start_sector
+             02B0  13161002        ADC     DX,start_sector+2H
+             02B4  03060202        ADD     AX,partition_start
+             02B8  13160402        ADC     DX,partition_start+2H
+             02BC  52              PUSH    DX      ; 4
+             02BD  50              PUSH    AX      ; 5
+             02BE  E80000          CALL    get_blocks
+             02C1  81C40A00        ADD     SP,0AH
+             02C5  81F80100        CMP     AX,1H
+             02C9  B80100          MOV     AX,1H
+             02CC  7501            JNZ     $+3H
+             02CE  48              DEC     AX
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  33
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             02CF  8886F3FE        MOV     [BP].error,AL
+                                                   ; STATEMENT # 749
+             02D3  C7060002FFFF    MOV     cur_dir,0FFFFH
+                                                   ; STATEMENT # 754
+                           @19:
+             02D9  8B1E0002        MOV     BX,cur_dir
+             02DD  81FBFFFF        CMP     BX,0FFFFH
+             02E1  7503            JNZ     $+5H
+             02E3  E90D00          JMP     @21
+             02E6  6BDB20          IMUL    BX,BX,20H
+             02E9  82BF000000      CMP     dir_sector[BX],0H
+             02EE  7503            JNZ     $+5H
+             02F0  E90400          JMP     @20
+                           @21:
+                                                   ; STATEMENT # 756
+             02F3  FF060002        INC     cur_dir
+                                                   ; STATEMENT # 760
+                           @20:
+                           @23:
+             02F7  82BEF3FE00      CMP     [BP].error,0H
+             02FC  7403            JZ      $+5H
+             02FE  E96A03          JMP     @22
+             0301  82BEF2FE00      CMP     [BP].done,0H
+             0306  7403            JZ      $+5H
+             0308  E96003          JMP     @22
+             030B  8B1E0002        MOV     BX,cur_dir
+             030F  81FB1000        CMP     BX,10H
+             0313  7C03            JL      $+5H
+             0315  E95303          JMP     @22
+                                                   ; STATEMENT # 763
+             0318  6BF320          IMUL    SI,BX,20H
+             031B  8A840B00        MOV     AL,dir_sector[SI+0BH]
+             031F  B400            MOV     AH,0H
+             0321  81F80F00        CMP     AX,0FH
+             0325  7403            JZ      $+5H
+             0327  E9C600          JMP     @24
+                                                   ; STATEMENT # 770
+             032A  8A840000        MOV     AL,dir_sector[SI]
+             032E  B400            MOV     AH,0H
+             0330  81E01F00        AND     AX,1FH
+             0334  48              DEC     AX
+             0335  8946FE          MOV     [BP].lfn_seq,AX
+                                                   ; STATEMENT # 773
+             0338  C746F40000      MOV     [BP].k,0H
+             033D  E90300          JMP     @27
+                           @25:
+             0340  FF46F4          INC     [BP].k
+                           @27:
+             0343  8B5EF4          MOV     BX,[BP].k
+             0346  81FB0D00        CMP     BX,0DH
+             034A  7C03            JL      $+5H
+             034C  E96F00          JMP     @26
+                                                   ; STATEMENT # 775
+             034F  81FB0500        CMP     BX,5H
+             0353  7C03            JL      $+5H
+             0355  E91900          JMP     @28
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  34
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 776
+             0358  6B36000220      IMUL    SI,cur_dir,20H
+             035D  D1E3            SAL     BX,1
+             035F  6B7EFE0D        IMUL    DI,[BP].lfn_seq,0DH
+             0363  037EF4          ADD     DI,[BP].k
+             0366  8A800100        MOV     AL,[BX].dir_sector[SI+1H]
+             036A  8883F4FE        MOV     [BP].longfilename[DI],AL
+                                                   ; STATEMENT # 777
+             036E  E94A00          JMP     @29
+                           @28:
+             0371  8B5EF4          MOV     BX,[BP].k
+             0374  81FB0B00        CMP     BX,0BH
+             0378  7C03            JL      $+5H
+             037A  E91D00          JMP     @30
+                                                   ; STATEMENT # 778
+             037D  6B36000220      IMUL    SI,cur_dir,20H
+             0382  81EB0500        SUB     BX,5H
+             0386  D1E3            SAL     BX,1
+             0388  6B7EFE0D        IMUL    DI,[BP].lfn_seq,0DH
+             038C  037EF4          ADD     DI,[BP].k
+             038F  8A800E00        MOV     AL,[BX].dir_sector[SI+0EH]
+             0393  8883F4FE        MOV     [BP].longfilename[DI],AL
+                                                   ; STATEMENT # 779
+             0397  E92100          JMP     @31
+                           @30:
+                                                   ; STATEMENT # 780
+             039A  6B1E000220      IMUL    BX,cur_dir,20H
+             039F  8B76F4          MOV     SI,[BP].k
+             03A2  81EE0500        SUB     SI,5H
+             03A6  81EE0600        SUB     SI,6H
+             03AA  D1E6            SAL     SI,1
+             03AC  6B7EFE0D        IMUL    DI,[BP].lfn_seq,0DH
+             03B0  037EF4          ADD     DI,[BP].k
+             03B3  8A801C00        MOV     AL,[BX].dir_sector[SI+1CH]
+             03B7  8883F4FE        MOV     [BP].longfilename[DI],AL
+                           @31:
+                           @29:
+                                                   ; STATEMENT # 781
+             03BB  E982FF          JMP     @25
+                           @26:
+                                                   ; STATEMENT # 784
+             03BE  8B1E0002        MOV     BX,cur_dir
+             03C2  6BF320          IMUL    SI,BX,20H
+             03C5  8A840000        MOV     AL,dir_sector[SI]
+             03C9  B400            MOV     AH,0H
+             03CB  F7C04000        TEST    AX,40H
+             03CF  7503            JNZ     $+5H
+             03D1  E91500          JMP     @32
+                                                   ; STATEMENT # 786
+             03D4  8A840D00        MOV     AL,dir_sector[SI+0DH]
+             03D8  B400            MOV     AH,0H
+             03DA  8946FC          MOV     [BP].chksum,AX
+                                                   ; STATEMENT # 788
+             03DD  8B76FE          MOV     SI,[BP].lfn_seq
+             03E0  46              INC     SI
+             03E1  6BF60D          IMUL    SI,SI,0DH
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  35
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             03E4  C682F4FE00      MOV     [BP].longfilename[SI],0H
+                                                   ; STATEMENT # 792
+                           @32:
+             03E9  FF060002        INC     cur_dir
+                                                   ; STATEMENT # 794
+             03ED  E97802          JMP     @33
+                           @24:
+                                                   ; STATEMENT # 798
+             03F0  6B1E000220      IMUL    BX,cur_dir,20H
+             03F5  8A870000        MOV     AL,dir_sector[BX]
+             03F9  98              CBW
+             03FA  81F8E5FF        CMP     AX,0FFE5H
+             03FE  7403            JZ      $+5H
+             0400  E90C00          JMP     @34
+                                                   ; STATEMENT # 802
+             0403  C686F4FE00      MOV     [BP].longfilename,0H
+                                                   ; STATEMENT # 804
+             0408  FF060002        INC     cur_dir
+                                                   ; STATEMENT # 808
+             040C  E95902          JMP     @35
+                           @34:
+             040F  6B1E000220      IMUL    BX,cur_dir,20H
+             0414  82BF000000      CMP     dir_sector[BX],0H
+             0419  7403            JZ      $+5H
+             041B  E95700          JMP     @36
+                                                   ; STATEMENT # 812
+             041E  C686F4FE00      MOV     [BP].longfilename,0H
+                                                   ; STATEMENT # 814
+             0423  8B46F8          MOV     AX,[BP].old_cur_dir
+             0426  89060002        MOV     cur_dir,AX
+                                                   ; STATEMENT # 816
+             042A  8B46FA          MOV     AX,[BP].old_dir_offset
+             042D  3B061202        CMP     AX,dir_offset
+             0431  7503            JNZ     $+5H
+             0433  E93700          JMP     @37
+                                                   ; STATEMENT # 819
+             0436  B90000          MOV     CX,OFFSET(dir_sector)
+             0439  1E              PUSH    DS      ; 1
+             043A  51              PUSH    CX      ; 2
+             043B  680100          PUSH    1H
+             043E  99              CWD
+             043F  03060E02        ADD     AX,start_sector
+             0443  13161002        ADC     DX,start_sector+2H
+             0447  03060202        ADD     AX,partition_start
+             044B  13160402        ADC     DX,partition_start+2H
+             044F  52              PUSH    DX      ; 4
+             0450  50              PUSH    AX      ; 5
+             0451  E80000          CALL    get_blocks
+             0454  81C40A00        ADD     SP,0AH
+             0458  81F80100        CMP     AX,1H
+             045C  B80100          MOV     AX,1H
+             045F  7501            JNZ     $+3H
+             0461  48              DEC     AX
+             0462  8886F3FE        MOV     [BP].error,AL
+                                                   ; STATEMENT # 821
+             0466  8B46FA          MOV     AX,[BP].old_dir_offset
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  36
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0469  89061202        MOV     dir_offset,AX
+                                                   ; STATEMENT # 824
+                           @37:
+             046D  C686F2FE01      MOV     [BP].done,1H
+                                                   ; STATEMENT # 828
+             0472  E9F301          JMP     @38
+                           @36:
+             0475  8B1E0002        MOV     BX,cur_dir
+             0479  6BF320          IMUL    SI,BX,20H
+             047C  8A840000        MOV     AL,dir_sector[SI]
+             0480  98              CBW
+             0481  81F82E00        CMP     AX,2EH
+             0485  7403            JZ      $+5H
+             0487  E93E00          JMP     @39
+                                                   ; STATEMENT # 831
+             048A  8A840100        MOV     AL,dir_sector[SI+1H]
+             048E  98              CBW
+             048F  81F82E00        CMP     AX,2EH
+             0493  7403            JZ      $+5H
+             0495  E92400          JMP     @40
+                                                   ; STATEMENT # 835
+             0498  E87B04          CALL    get_dir_tos_sector
+             049B  89061402        MOV     cur_sector,AX
+             049F  89161602        MOV     cur_sector+2H,DX
+                                                   ; STATEMENT # 836
+             04A3  E83404          CALL    get_dir_tos_name
+             04A6  52              PUSH    DX      ; 1
+             04A7  50              PUSH    AX      ; 2
+             04A8  B89E06          MOV     AX,OFFSET(filename)
+             04AB  1E              PUSH    DS      ; 3
+             04AC  50              PUSH    AX      ; 4
+             04AD  E80000          CALL    strcpy_
+             04B0  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 838
+             04B4  C686F2FE01      MOV     [BP].done,1H
+                                                   ; STATEMENT # 840
+             04B9  E90900          JMP     @41
+                           @40:
+                                                   ; STATEMENT # 844
+             04BC  C686F4FE00      MOV     [BP].longfilename,0H
+                                                   ; STATEMENT # 846
+             04C1  FF060002        INC     cur_dir
+                                                   ; STATEMENT # 847
+                           @41:
+                                                   ; STATEMENT # 851
+             04C5  E9A001          JMP     @42
+                           @39:
+             04C8  6B1E000220      IMUL    BX,cur_dir,20H
+             04CD  8A870B00        MOV     AL,dir_sector[BX+0BH]
+             04D1  B400            MOV     AH,0H
+             04D3  F7C00800        TEST    AX,8H
+             04D7  7503            JNZ     $+5H
+             04D9  E9A300          JMP     @43
+                                                   ; STATEMENT # 854
+             04DC  823E9E0500      CMP     dirname,0H
+             04E1  7403            JZ      $+5H
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  37
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             04E3  E98D00          JMP     @44
+                                                   ; STATEMENT # 860
+             04E6  82BEF4FE00      CMP     [BP].longfilename,0H
+             04EB  7403            JZ      $+5H
+             04ED  E96E00          JMP     @45
+                                                   ; STATEMENT # 865
+             04F0  C746F40000      MOV     [BP].k,0H
+                                                   ; STATEMENT # 867
+             04F5  C746F60000      MOV     [BP].i,0H
+             04FA  E90300          JMP     @48
+                           @46:
+             04FD  FF46F6          INC     [BP].i
+                           @48:
+             0500  8B5EF6          MOV     BX,[BP].i
+             0503  81FB0800        CMP     BX,8H
+             0507  7C03            JL      $+5H
+             0509  E91800          JMP     @47
+                                                   ; STATEMENT # 868
+             050C  6B36000220      IMUL    SI,cur_dir,20H
+             0511  8B46F4          MOV     AX,[BP].k
+             0514  FF46F4          INC     [BP].k
+             0517  8A880000        MOV     CL,[BX].dir_sector[SI]
+             051B  8BD8            MOV     BX,AX
+             051D  888F9E05        MOV     dirname[BX],CL
+             0521  E9D9FF          JMP     @46
+                           @47:
+                                                   ; STATEMENT # 871
+             0524  C746F60000      MOV     [BP].i,0H
+             0529  E90300          JMP     @51
+                           @49:
+             052C  FF46F6          INC     [BP].i
+                           @51:
+             052F  8B5EF6          MOV     BX,[BP].i
+             0532  81FB0300        CMP     BX,3H
+             0536  7C03            JL      $+5H
+             0538  E91800          JMP     @50
+                                                   ; STATEMENT # 872
+             053B  6B36000220      IMUL    SI,cur_dir,20H
+             0540  8B46F4          MOV     AX,[BP].k
+             0543  FF46F4          INC     [BP].k
+             0546  8A880800        MOV     CL,[BX].dir_sector[SI+8H]
+             054A  8BD8            MOV     BX,AX
+             054C  888F9E05        MOV     dirname[BX],CL
+             0550  E9D9FF          JMP     @49
+                           @50:
+                                                   ; STATEMENT # 875
+             0553  8B5EF4          MOV     BX,[BP].k
+             0556  C6879E0500      MOV     dirname[BX],0H
+                                                   ; STATEMENT # 877
+             055B  E91200          JMP     @52
+                           @45:
+                                                   ; STATEMENT # 880
+             055E  8D86F4FE        LEA     AX,[BP].longfilename
+             0562  1E              PUSH    DS      ; 1
+             0563  50              PUSH    AX      ; 2
+             0564  B89E05          MOV     AX,OFFSET(dirname)
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  38
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0567  1E              PUSH    DS      ; 3
+             0568  50              PUSH    AX      ; 4
+             0569  E80000          CALL    strcpy_
+             056C  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 881
+                           @52:
+                                                   ; STATEMENT # 883
+             0570  E90000          JMP     @53
+                           @44:
+                                                   ; STATEMENT # 888
+                           @53:
+                                                   ; STATEMENT # 891
+             0573  C686F4FE00      MOV     [BP].longfilename,0H
+                                                   ; STATEMENT # 893
+             0578  FF060002        INC     cur_dir
+                                                   ; STATEMENT # 897
+             057C  E9E900          JMP     @54
+                           @43:
+                                                   ; STATEMENT # 900
+             057F  6B1E000220      IMUL    BX,cur_dir,20H
+             0584  8B871A00        MOV     AX,dir_sector[BX+1AH]
+             0588  81E80200        SUB     AX,2H
+             058C  BA0000          MOV     DX,0H
+             058F  8B3E0802        MOV     DI,sectors_per_cluster+2H
+             0593  8B0E0602        MOV     CX,sectors_per_cluster
+             0597  9A00000000      CALL    LQ_SLONG_MUL
+             059C  03060A02        ADD     AX,first_file_sector
+             05A0  13160C02        ADC     DX,first_file_sector+2H
+             05A4  89061402        MOV     cur_sector,AX
+             05A8  89161602        MOV     cur_sector+2H,DX
+                                                   ; STATEMENT # 905
+             05AC  82BEF4FE00      CMP     [BP].longfilename,0H
+             05B1  7403            JZ      $+5H
+             05B3  E99B00          JMP     @55
+                                                   ; STATEMENT # 910
+             05B6  C746F40000      MOV     [BP].k,0H
+                                                   ; STATEMENT # 912
+             05BB  C746F60000      MOV     [BP].i,0H
+             05C0  E90300          JMP     @58
+                           @56:
+             05C3  FF46F6          INC     [BP].i
+                           @58:
+             05C6  8B5EF6          MOV     BX,[BP].i
+             05C9  81FB0800        CMP     BX,8H
+             05CD  7C03            JL      $+5H
+             05CF  E92800          JMP     @57
+             05D2  8B360002        MOV     SI,cur_dir
+             05D6  6BFE20          IMUL    DI,SI,20H
+             05D9  8A810000        MOV     AL,[BX].dir_sector[DI]
+             05DD  98              CBW
+             05DE  81F82000        CMP     AX,20H
+             05E2  7503            JNZ     $+5H
+             05E4  E91300          JMP     @57
+                                                   ; STATEMENT # 913
+             05E7  8B46F4          MOV     AX,[BP].k
+             05EA  FF46F4          INC     [BP].k
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  39
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             05ED  8A890000        MOV     CL,[BX].dir_sector[DI]
+             05F1  8BD8            MOV     BX,AX
+             05F3  888F9E06        MOV     filename[BX],CL
+             05F7  E9C9FF          JMP     @56
+                           @57:
+                                                   ; STATEMENT # 916
+             05FA  8B46F4          MOV     AX,[BP].k
+             05FD  FF46F4          INC     [BP].k
+             0600  8BD8            MOV     BX,AX
+             0602  C6879E062E      MOV     filename[BX],2EH
+                                                   ; STATEMENT # 919
+             0607  C746F60000      MOV     [BP].i,0H
+             060C  E90300          JMP     @61
+                           @59:
+             060F  FF46F6          INC     [BP].i
+                           @61:
+             0612  8B5EF6          MOV     BX,[BP].i
+             0615  81FB0300        CMP     BX,3H
+             0619  7C03            JL      $+5H
+             061B  E92800          JMP     @60
+             061E  8B360002        MOV     SI,cur_dir
+             0622  6BFE20          IMUL    DI,SI,20H
+             0625  8A810800        MOV     AL,[BX].dir_sector[DI+8H]
+             0629  98              CBW
+             062A  81F82000        CMP     AX,20H
+             062E  7503            JNZ     $+5H
+             0630  E91300          JMP     @60
+                                                   ; STATEMENT # 920
+             0633  8B46F4          MOV     AX,[BP].k
+             0636  FF46F4          INC     [BP].k
+             0639  8A890800        MOV     CL,[BX].dir_sector[DI+8H]
+             063D  8BD8            MOV     BX,AX
+             063F  888F9E06        MOV     filename[BX],CL
+             0643  E9C9FF          JMP     @59
+                           @60:
+                                                   ; STATEMENT # 923
+             0646  8B5EF4          MOV     BX,[BP].k
+             0649  C6879E0600      MOV     filename[BX],0H
+                                                   ; STATEMENT # 925
+             064E  E91200          JMP     @62
+                           @55:
+                                                   ; STATEMENT # 928
+             0651  8D86F4FE        LEA     AX,[BP].longfilename
+             0655  1E              PUSH    DS      ; 1
+             0656  50              PUSH    AX      ; 2
+             0657  B89E06          MOV     AX,OFFSET(filename)
+             065A  1E              PUSH    DS      ; 3
+             065B  50              PUSH    AX      ; 4
+             065C  E80000          CALL    strcpy_
+             065F  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 929
+                           @62:
+                                                   ; STATEMENT # 932
+             0663  C686F2FE01      MOV     [BP].done,1H
+                                                   ; STATEMENT # 933
+                           @54:
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  40
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           @42:
+                           @38:
+                           @35:
+                                                   ; STATEMENT # 934
+                           @33:
+                                                   ; STATEMENT # 935
+             0668  E98CFC          JMP     @23
+                           @22:
+                                                   ; STATEMENT # 936
+             066B  E90DFC          JMP     @18
+                           @17:
+                                                   ; STATEMENT # 940
+             066E  82BEF3FE00      CMP     [BP].error,0H
+             0673  7503            JNZ     $+5H
+             0675  E91000          JMP     @63
+                                                   ; STATEMENT # 943
+             0678  C6069E0600      MOV     filename,0H
+                                                   ; STATEMENT # 945
+             067D  B80000          MOV     AX,0H
+             0680  89061402        MOV     cur_sector,AX
+             0684  89061602        MOV     cur_sector+2H,AX
+                                                   ; STATEMENT # 950
+                           @63:
+             0688  8A86F3FE        MOV     AL,[BP].error
+             068C  C9              LEAVE
+             068D  5F              POP     DI
+             068E  5E              POP     SI
+             068F  C3              RET
+                                                   ; STATEMENT # 952
+                           get_next_dir_entry      ENDP
+                                                   ; STATEMENT # 1006
+                           get_previous_dir_entry      PROC NEAR
+             0690  56              PUSH    SI
+             0691  57              PUSH    DI
+             0692  C8040000        ENTER   4H,0H
+                           @64:
+                                                   ; STATEMENT # 1008
+             0696  C646FF00        MOV     [BP].error,0H
+                                                   ; STATEMENT # 1009
+             069A  C646FE00        MOV     [BP].done,0H
+                                                   ; STATEMENT # 1010
+             069E  C646FD00        MOV     [BP].have_entry,0H
+                                                   ; STATEMENT # 1016
+                           @66:
+             06A2  827EFF00        CMP     [BP].error,0H
+             06A6  7403            JZ      $+5H
+             06A8  E91501          JMP     @65
+             06AB  827EFE00        CMP     [BP].done,0H
+             06AF  7403            JZ      $+5H
+             06B1  E90C01          JMP     @65
+                                                   ; STATEMENT # 1019
+             06B4  833E000200      CMP     cur_dir,0H
+             06B9  7403            JZ      $+5H
+             06BB  E95800          JMP     @67
+                                                   ; STATEMENT # 1022
+             06BE  FF0E1202        DEC     dir_offset
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  41
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 1024
+             06C2  7803            JS      $+5H
+             06C4  E91300          JMP     @68
+                                                   ; STATEMENT # 1026
+             06C7  C70612020000    MOV     dir_offset,0H
+                                                   ; STATEMENT # 1028
+             06CD  C7060002FFFF    MOV     cur_dir,0FFFFH
+                                                   ; STATEMENT # 1030
+             06D3  C646FE01        MOV     [BP].done,1H
+                                                   ; STATEMENT # 1032
+             06D7  E93900          JMP     @69
+                           @68:
+                                                   ; STATEMENT # 1036
+             06DA  B80000          MOV     AX,OFFSET(dir_sector)
+             06DD  1E              PUSH    DS      ; 1
+             06DE  50              PUSH    AX      ; 2
+             06DF  680100          PUSH    1H
+             06E2  8B061202        MOV     AX,dir_offset
+             06E6  99              CWD
+             06E7  03060E02        ADD     AX,start_sector
+             06EB  13161002        ADC     DX,start_sector+2H
+             06EF  03060202        ADD     AX,partition_start
+             06F3  13160402        ADC     DX,partition_start+2H
+             06F7  52              PUSH    DX      ; 4
+             06F8  50              PUSH    AX      ; 5
+             06F9  E80000          CALL    get_blocks
+             06FC  81C40A00        ADD     SP,0AH
+             0700  81F80100        CMP     AX,1H
+             0704  B80100          MOV     AX,1H
+             0707  7501            JNZ     $+3H
+             0709  48              DEC     AX
+             070A  8846FF          MOV     [BP].error,AL
+                                                   ; STATEMENT # 1038
+             070D  C70600020F00    MOV     cur_dir,0FH
+                                                   ; STATEMENT # 1039
+                           @69:
+                                                   ; STATEMENT # 1041
+             0713  E90400          JMP     @70
+                           @67:
+                                                   ; STATEMENT # 1044
+             0716  FF0E0002        DEC     cur_dir
+                                                   ; STATEMENT # 1045
+                           @70:
+                                                   ; STATEMENT # 1049
+             071A  827EFE00        CMP     [BP].done,0H
+             071E  7403            JZ      $+5H
+             0720  E99A00          JMP     @71
+             0723  827EFF00        CMP     [BP].error,0H
+             0727  7403            JZ      $+5H
+             0729  E99100          JMP     @71
+                                                   ; STATEMENT # 1052
+             072C  827EFD00        CMP     [BP].have_entry,0H
+             0730  7403            JZ      $+5H
+             0732  E96D00          JMP     @72
+                                                   ; STATEMENT # 1057
+             0735  6B1E000220      IMUL    BX,cur_dir,20H
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  42
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             073A  82BF000000      CMP     dir_sector[BX],0H
+             073F  B80100          MOV     AX,1H
+             0742  7501            JNZ     $+3H
+             0744  48              DEC     AX
+             0745  B400            MOV     AH,0H
+             0747  0BC0            OR      AX,AX
+             0749  7503            JNZ     $+5H
+             074B  E92100          JMP     @74
+             074E  6B1E000220      IMUL    BX,cur_dir,20H
+             0753  8A870000        MOV     AL,dir_sector[BX]
+             0757  98              CBW
+             0758  81F8E5FF        CMP     AX,0FFE5H
+             075C  B80100          MOV     AX,1H
+             075F  7501            JNZ     $+3H
+             0761  48              DEC     AX
+             0762  0BC0            OR      AX,AX
+             0764  7503            JNZ     $+5H
+             0766  E90600          JMP     @74
+             0769  B80100          MOV     AX,1H
+             076C  E90200          JMP     @95
+                           @74:
+             076F  2BC0            SUB     AX,AX
+                           @95:
+             0771  0BC0            OR      AX,AX
+             0773  7503            JNZ     $+5H
+             0775  E92200          JMP     @73
+             0778  6B1E000220      IMUL    BX,cur_dir,20H
+             077D  8A870B00        MOV     AL,dir_sector[BX+0BH]
+             0781  B400            MOV     AH,0H
+             0783  81F80F00        CMP     AX,0FH
+             0787  B80100          MOV     AX,1H
+             078A  7501            JNZ     $+3H
+             078C  48              DEC     AX
+             078D  0BC0            OR      AX,AX
+             078F  7503            JNZ     $+5H
+             0791  E90600          JMP     @73
+             0794  B80100          MOV     AX,1H
+             0797  E90200          JMP     @96
+                           @73:
+             079A  2BC0            SUB     AX,AX
+                           @96:
+             079C  8846FD          MOV     [BP].have_entry,AL
+                                                   ; STATEMENT # 1059
+             079F  E91B00          JMP     @75
+                           @72:
+                                                   ; STATEMENT # 1063
+             07A2  6B1E000220      IMUL    BX,cur_dir,20H
+             07A7  8A870B00        MOV     AL,dir_sector[BX+0BH]
+             07AB  B400            MOV     AH,0H
+             07AD  81F80F00        CMP     AX,0FH
+             07B1  7503            JNZ     $+5H
+             07B3  E90700          JMP     @76
+                                                   ; STATEMENT # 1065
+             07B6  C646FE01        MOV     [BP].done,1H
+                                                   ; STATEMENT # 1067
+             07BA  E90000          JMP     @77
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  43
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                           @76:
+                                                   ; STATEMENT # 1071
+                           @77:
+                                                   ; STATEMENT # 1072
+                           @75:
+                                                   ; STATEMENT # 1074
+                           @71:
+             07BD  E9E2FE          JMP     @66
+                           @65:
+                                                   ; STATEMENT # 1078
+             07C0  827EFF00        CMP     [BP].error,0H
+             07C4  B90100          MOV     CX,1H
+             07C7  7401            JZ      $+3H
+             07C9  49              DEC     CX
+             07CA  B500            MOV     CH,0H
+             07CC  8A46FE          MOV     AL,[BP].done
+             07CF  98              CBW
+             07D0  85C8            TEST    CX,AX
+             07D2  7503            JNZ     $+5H
+             07D4  E90600          JMP     @78
+                                                   ; STATEMENT # 1083
+             07D7  E87EFA          CALL    get_next_dir_entry
+             07DA  8846FF          MOV     [BP].error,AL
+                                                   ; STATEMENT # 1088
+                           @78:
+             07DD  827EFF00        CMP     [BP].error,0H
+             07E1  7503            JNZ     $+5H
+             07E3  E91000          JMP     @79
+                                                   ; STATEMENT # 1091
+             07E6  C6069E0600      MOV     filename,0H
+                                                   ; STATEMENT # 1093
+             07EB  B80000          MOV     AX,0H
+             07EE  89061402        MOV     cur_sector,AX
+             07F2  89061602        MOV     cur_sector+2H,AX
+                                                   ; STATEMENT # 1098
+                           @79:
+             07F6  8A46FF          MOV     AL,[BP].error
+             07F9  C9              LEAVE
+             07FA  5F              POP     DI
+             07FB  5E              POP     SI
+             07FC  C3              RET
+                                                   ; STATEMENT # 1100
+                           get_previous_dir_entry      ENDP
+                                                   ; STATEMENT # 1145
+                           init_dir_stack      PROC NEAR
+             07FE  56              PUSH    SI
+             07FF  57              PUSH    DI
+             0800  55              PUSH    BP
+             0801  8BEC            MOV     BP,SP
+                           @80:
+                                                   ; STATEMENT # 1152
+             0803  C6069E0700      MOV     dirnames,0H
+                                                   ; STATEMENT # 1155
+             0808  B80000          MOV     AX,0H
+             080B  89061802        MOV     dirsectorstack,AX
+             080F  89061A02        MOV     dirsectorstack+2H,AX
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  44
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 1156
+             0813  C70670040000    MOV     dirnamestack,0H
+                                                   ; STATEMENT # 1159
+             0819  C7069C05FFFF    MOV     dirstack_ptr,0FFFFH
+                                                   ; STATEMENT # 1163
+             081F  5D              POP     BP
+             0820  5F              POP     DI
+             0821  5E              POP     SI
+             0822  C3              RET
+                                                   ; STATEMENT # 1165
+                           init_dir_stack      ENDP
+                                                   ; STATEMENT # 1208
+                           new_directory      PROC NEAR
+             0824  56              PUSH    SI
+             0825  57              PUSH    DI
+             0826  55              PUSH    BP
+             0827  8BEC            MOV     BP,SP
+                           @81:
+                                                   ; STATEMENT # 1215
+             0829  8B1E9C05        MOV     BX,dirstack_ptr
+             082D  09DB            OR      BX,BX
+             082F  7903            JNS     $+5H
+             0831  E92C00          JMP     @82
+             0834  6BF304          IMUL    SI,BX,4H
+             0837  8B941A02        MOV     DX,dirsectorstack[SI+2H]
+             083B  8B841802        MOV     AX,dirsectorstack[SI]
+             083F  3B161602        CMP     DX,cur_sector+2H
+             0843  7504            JNZ     $+6H
+             0845  3B061402        CMP     AX,cur_sector
+             0849  7403            JZ      $+5H
+             084B  E91200          JMP     @82
+                                                   ; STATEMENT # 1219
+             084E  D1E3            SAL     BX,1
+             0850  8B9F7004        MOV     BX,dirnamestack[BX]
+             0854  C6879E0700      MOV     dirnames[BX],0H
+                                                   ; STATEMENT # 1221
+             0859  FF0E9C05        DEC     dirstack_ptr
+                                                   ; STATEMENT # 1223
+             085D  E97600          JMP     @83
+                           @82:
+                                                   ; STATEMENT # 1229
+             0860  813E9C059500    CMP     dirstack_ptr,95H
+             0866  7C03            JL      $+5H
+             0868  E96B00          JMP     @84
+             086B  B89E07          MOV     AX,OFFSET(dirnames)
+             086E  1E              PUSH    DS      ; 1
+             086F  50              PUSH    AX      ; 2
+             0870  E80000          CALL    strlen_
+             0873  81C40400        ADD     SP,4H
+             0877  50              PUSH    AX      ; 1
+             0878  B99E05          MOV     CX,OFFSET(dirname)
+             087B  1E              PUSH    DS      ; 2
+             087C  51              PUSH    CX      ; 3
+             087D  E80000          CALL    strlen_
+             0880  81C40400        ADD     SP,4H
+             0884  59              POP     CX      ; 1
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  45
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0885  03C1            ADD     AX,CX
+             0887  81F82C01        CMP     AX,12CH
+             088B  7C03            JL      $+5H
+             088D  E94600          JMP     @84
+                                                   ; STATEMENT # 1232
+             0890  8B1E9C05        MOV     BX,dirstack_ptr
+             0894  43              INC     BX
+             0895  891E9C05        MOV     dirstack_ptr,BX
+                                                   ; STATEMENT # 1234
+             0899  6BDB04          IMUL    BX,BX,4H
+             089C  8B161002        MOV     DX,start_sector+2H
+             08A0  8B060E02        MOV     AX,start_sector
+             08A4  89871802        MOV     dirsectorstack[BX],AX
+             08A8  89971A02        MOV     dirsectorstack[BX+2H],DX
+                                                   ; STATEMENT # 1236
+             08AC  B89E07          MOV     AX,OFFSET(dirnames)
+             08AF  1E              PUSH    DS      ; 1
+             08B0  50              PUSH    AX      ; 2
+             08B1  E80000          CALL    strlen_
+             08B4  81C40400        ADD     SP,4H
+             08B8  8B1E9C05        MOV     BX,dirstack_ptr
+             08BC  D1E3            SAL     BX,1
+             08BE  89877004        MOV     dirnamestack[BX],AX
+                                                   ; STATEMENT # 1237
+             08C2  B89E05          MOV     AX,OFFSET(dirname)
+             08C5  1E              PUSH    DS      ; 1
+             08C6  50              PUSH    AX      ; 2
+             08C7  B89E07          MOV     AX,OFFSET(dirnames)
+             08CA  1E              PUSH    DS      ; 3
+             08CB  50              PUSH    AX      ; 4
+             08CC  E80000          CALL    strcat_
+             08CF  81C40800        ADD     SP,8H
+                                                   ; STATEMENT # 1239
+             08D3  E90000          JMP     @85
+                           @84:
+                                                   ; STATEMENT # 1243
+                           @85:
+                                                   ; STATEMENT # 1244
+                           @83:
+                                                   ; STATEMENT # 1248
+             08D6  5D              POP     BP
+             08D7  5F              POP     DI
+             08D8  5E              POP     SI
+             08D9  C3              RET
+                                                   ; STATEMENT # 1250
+                           new_directory      ENDP
+                                                   ; STATEMENT # 1285
+                           get_dir_tos_name      PROC NEAR
+             08DA  56              PUSH    SI
+             08DB  57              PUSH    DI
+             08DC  C8040000        ENTER   4H,0H
+                           @86:
+                                                   ; STATEMENT # 1292
+             08E0  8B1E9C05        MOV     BX,dirstack_ptr
+             08E4  09DB            OR      BX,BX
+             08E6  7903            JNS     $+5H
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  46
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             08E8  E91300          JMP     @87
+                                                   ; STATEMENT # 1295
+             08EB  D1E3            SAL     BX,1
+             08ED  8B9F7004        MOV     BX,dirnamestack[BX]
+             08F1  8D879E07        LEA     AX,dirnames[BX]
+             08F5  8946FC          MOV     [BP].name,AX
+             08F8  8C5EFE          MOV     [BP].name+2H,DS
+                                                   ; STATEMENT # 1297
+             08FB  E90E00          JMP     @88
+                           @87:
+                                                   ; STATEMENT # 1301
+             08FE  C6069E0700      MOV     dirnames,0H
+                                                   ; STATEMENT # 1303
+             0903  B89E07          MOV     AX,OFFSET(dirnames)
+             0906  8946FC          MOV     [BP].name,AX
+             0909  8C5EFE          MOV     [BP].name+2H,DS
+                                                   ; STATEMENT # 1304
+                           @88:
+                                                   ; STATEMENT # 1308
+             090C  C446FC          LES     AX,[BP].name
+             090F  8CC2            MOV     DX,ES
+             0911  C9              LEAVE
+             0912  5F              POP     DI
+             0913  5E              POP     SI
+             0914  C3              RET
+                                                   ; STATEMENT # 1310
+                           get_dir_tos_name      ENDP
+                                                   ; STATEMENT # 1344
+                           get_dir_tos_sector      PROC NEAR
+             0916  56              PUSH    SI
+             0917  57              PUSH    DI
+             0918  C8040000        ENTER   4H,0H
+                           @89:
+                                                   ; STATEMENT # 1351
+             091C  8B1E9C05        MOV     BX,dirstack_ptr
+             0920  09DB            OR      BX,BX
+             0922  7903            JNS     $+5H
+             0924  E91400          JMP     @90
+                                                   ; STATEMENT # 1354
+             0927  6BDB04          IMUL    BX,BX,4H
+             092A  8B971A02        MOV     DX,dirsectorstack[BX+2H]
+             092E  8B871802        MOV     AX,dirsectorstack[BX]
+             0932  8946FC          MOV     [BP].sect,AX
+             0935  8956FE          MOV     [BP].sect+2H,DX
+                                                   ; STATEMENT # 1356
+             0938  E90900          JMP     @91
+                           @90:
+                                                   ; STATEMENT # 1359
+             093B  B80000          MOV     AX,0H
+             093E  8946FC          MOV     [BP].sect,AX
+             0941  8946FE          MOV     [BP].sect+2H,AX
+                                                   ; STATEMENT # 1360
+                           @91:
+                                                   ; STATEMENT # 1364
+             0944  8B56FE          MOV     DX,[BP].sect+2H
+             0947  8B46FC          MOV     AX,[BP].sect
+iC-86  COMPILER   FATUTIL                                                                    05/07/;6 12:45:18  PAGE  47
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             094A  C9              LEAVE
+             094B  5F              POP     DI
+             094C  5E              POP     SI
+             094D  C3              RET
+                                                   ; STATEMENT # 1366
+                           get_dir_tos_sector      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 094EH   2382D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 08CAH   2250D
+     MAXIMUM STACK SIZE           = 0218H    536D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

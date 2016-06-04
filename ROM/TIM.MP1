@@ -1,0 +1,26 @@
+
+DOS 5.0 (038-N) 8086 LINKER, V2.7
+
+INPUT FILES: TIM1.LNK, TIM2.LNK, TIM3.LNK
+OUTPUT FILE: TIM.LNK
+CONTROLS SPECIFIED IN INVOCATION COMMAND:
+DATE:  06/03/;6  TIME:  19:30:15
+
+
+LINK MAP OF MODULE STARTUP
+
+LOGICAL SEGMENTS INCLUDED:
+LENGTH ADDRESS ALIGN  SEGMENT         CLASS           OVERLAY
+ 0000H ------    G    ??SEG                                         
+ 080CH ------    G    CODE            CODE                          
+ 016DH ------    G    DATA            DATA                          
+ 0280H ------    W    STACK           STACK                         
+ 000CH ------    W    BOOT            BOOT                          
+
+INPUT MODULES INCLUDED:
+TIM1.LNK(STARTUP)
+TIM2.LNK(QUEUE)
+TIM3.LNK(DRAM)
+
+UNRESOLVED EXTERNAL NAMES
+  MAIN IN TIM1.LNK(STARTUP)

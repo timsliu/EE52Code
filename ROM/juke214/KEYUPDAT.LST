@@ -1,0 +1,479 @@
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE KEYUPDAT
+OBJECT MODULE PLACED IN KEYUPDAT.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE KEYUPDAT.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                KEYUPDAT                                  */
+    4             /*            Miscellaneous Key Processing and Update Functions             */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS  52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains the key processing and update functions for operations
+   12                other than Play, Record, Fast Forward, and Reverse for the MP3 Jukebox
+   13                Project.  These functions are called by the main loop of the MP3 Jukebox.
+   14                The functions included are:
+   15                   do_TrackUp      - go to the next track (key processing function)
+   16                   do_TrackDown    - go to the previous track (key processing function)
+   17                   no_action       - nothing to do (key processing function)
+   18                   no_update       - nothing to do (update function)
+   19                   stop_idle       - stop when doing nothing (key processing function)
+   20             
+   21                The local functions included are:
+   22                   none
+   23             
+   24                The global variable definitions included are:
+   25                   none
+   26             
+   27             
+   28                Revision History
+   29                   6/6/00   Glen George       Initial revision (from 3/6/99 version of
+   30                                              keyupdat.c for the Digital Audio Recorder
+   31                                              Project).
+   32                   6/2/02   Glen George       Updated comments.
+   33                   6/5/03   Glen George       Updated do_TrackUp and do_TrackDown to handle
+   34                                              directory traversal in order to support FAT
+   35                                              directory structures, they now go up and down
+   36                                              in the current directory.
+   37                   6/5/03   Glen George       Added #include of fatutil.h for function
+   38                                              declarations needed by above change.
+   39                   6/5/03   Glen George       Updated function headers.
+   40             */
+   41             
+   42             
+   43             
+   44             /* library include files */
+   45               /* none */
+   46             
+   47             /* local include files */
+   48             #include  "interfac.h"
+   49             #include  "mp3defs.h"
+   50             #include  "keyproc.h"
+   51             #include  "updatfnc.h"
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   2
+
+
+   52             #include  "trakutil.h"
+   53             #include  "fatutil.h"
+   54             
+   55             
+   56             
+   57             
+   58             /*
+   59                no_action
+   60             
+   61                Description:      This function handles a key when there is nothing to be
+   62                                  done.  It just returns.
+   63             
+   64                Arguments:        cur_status (enum status) - the current system status.
+   65                Return Value:     (enum status) - the new status (same as current status).
+   66             
+   67                Input:            None.
+   68                Output:           None.
+   69             
+   70                Error Handling:   None.
+   71             
+   72                Algorithms:       None.
+   73                Data Structures:  None.
+   74             
+   75                Shared Variables: None.
+   76             
+   77                Author:           Glen George
+   78                Last Modified:    Mar. 5, 1994
+   79             
+   80             */
+   81             
+   82             enum status  no_action(enum status cur_status)
+   83             {
+   84     1           /* variables */
+   85     1             /* none */
+   86     1       
+   87     1       
+   88     1       
+   89     1           /* return the current status */
+   90     1           return  cur_status;
+   91     1       
+   92     1       }
+   93             
+   94             
+   95             
+   96             
+   97             /*
+   98                do_TrackUp
+   99             
+  100                Description:      This function handles the <Track Up> key when nothing is
+  101                                  happening in the system.  It moves to the previous entry
+  102                                  in the directory and resets the track time and loads the
+  103                                  track information for the new track.
+  104             
+  105                Arguments:        cur_status (enum status) - the current system status.
+  106                Return Value:     (enum status) - the new status (same as current status).
+  107             
+  108                Input:            None.
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   3
+
+
+  109                Output:           The new track information is output.
+  110             
+  111                Error Handling:   None.
+  112             
+  113                Algorithms:       None.
+  114                Data Structures:  None.
+  115             
+  116                Shared Variables: None.
+  117             
+  118                Author:           Glen George
+  119                Last Modified:    June 5, 2003
+  120             
+  121             */
+  122             
+  123             enum status  do_TrackUp(enum status cur_status)
+  124             {
+  125     1           /* variables */
+  126     1             /* none */
+  127     1       
+  128     1       
+  129     1       
+  130     1           /* move to the previous directory entry, watching for errors */
+  131     1           if (!get_previous_dir_entry())
+  132     1               /* successfully got the new entry, load its data */
+  133     1               setup_cur_track_info();
+  134     1           else
+  135     1               /* there was an error - load error track information */
+  136     1               setup_error_track_info();
+  137     1       
+  138     1       
+  139     1           /* display the track information for this track */
+  140     1           display_time(get_track_time());
+  141     1           display_title(get_track_title());
+  142     1           display_artist(get_track_artist());
+  143     1       
+  144     1       
+  145     1           /* done so return the current status */
+  146     1           return  cur_status;
+  147     1       
+  148     1       }
+  149             
+  150             
+  151             
+  152             
+  153             /*
+  154                do_TrackDown
+  155             
+  156                Description:      This function handles the <Track Down> key when nothing
+  157                                  is happening in the system.  It moves to the next entry
+  158                                  in the directory and resets the track time and loads the
+  159                                  track information for the new track.
+  160             
+  161                Arguments:        cur_status (enum status) - the current system status.
+  162                Return Value:     (enum status) - the new status (same as current status).
+  163             
+  164                Input:            None.
+  165                Output:           The new track information is output.
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   4
+
+
+  166             
+  167                Error Handling:   None.
+  168             
+  169                Algorithms:       None.
+  170                Data Structures:  None.
+  171             
+  172                Shared Variables: None.
+  173             
+  174                Author:           Glen George
+  175                Last Modified:    June 5, 2003
+  176             
+  177             */
+  178             
+  179             enum status  do_TrackDown(enum status cur_status)
+  180             {
+  181     1           /* variables */
+  182     1             /* none */
+  183     1       
+  184     1       
+  185     1       
+  186     1           /* move to the next directory entry, watching for errors */
+  187     1           if (!get_next_dir_entry())
+  188     1               /* successfully got the new entry, load its data */
+  189     1               setup_cur_track_info();
+  190     1           else
+  191     1               /* there was an error - load error track information */
+  192     1               setup_error_track_info();
+  193     1       
+  194     1       
+  195     1           /* display the track information for this track */
+  196     1           display_time(get_track_time());
+  197     1           display_title(get_track_title());
+  198     1           display_artist(get_track_artist());
+  199     1       
+  200     1       
+  201     1           /* done so return the current status */
+  202     1           return  cur_status;
+  203     1       
+  204     1       }
+  205             
+  206             
+  207             
+  208             
+  209             /*
+  210                stop_idle
+  211             
+  212                Description:      This function handles the <Stop> key when nothing is
+  213                                  happening in the system.  It just resets the track time
+  214                                  and variables to indicate the start of the track.
+  215             
+  216                Arguments:        cur_status (enum status) - the current system status.
+  217                Return Value:     (enum status) - the new status (same as current status).
+  218             
+  219                Input:            None.
+  220                Output:           The new track time (the track length) is output.
+  221             
+  222                Error Handling:   None.
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   5
+
+
+  223             
+  224                Algorithms:       None.
+  225                Data Structures:  None.
+  226             
+  227                Shared Variables: None.
+  228             
+  229                Author:           Glen George
+  230                Last Modified:    June 3, 2000
+  231             
+  232             */
+  233             
+  234             enum status  stop_idle(enum status cur_status)
+  235             {
+  236     1           /* variables */
+  237     1             /* none */
+  238     1       
+  239     1       
+  240     1       
+  241     1           /* reset to the start of the current track */
+  242     1           init_track();
+  243     1       
+  244     1           /* display the new time for the current track */
+  245     1           display_time(get_track_time());
+  246     1       
+  247     1       
+  248     1           /* return with the status unchanged */
+  249     1           return  cur_status;
+  250     1       
+  251     1       }
+  252             
+  253             
+  254             
+  255             
+  256             /*
+  257                no_update
+  258             
+  259                Description:      This function handles updates when there is nothing to
+  260                                  do.  It just returns with the status unchanged.
+  261             
+  262                Arguments:        cur_status (enum status) - the current system status.
+  263                Return Value:     (enum status) - the new status (same as current status).
+  264             
+  265                Input:            None.
+  266                Output:           None.
+  267             
+  268                Error Handling:   None.
+  269             
+  270                Algorithms:       None.
+  271                Data Structures:  None.
+  272             
+  273                Shared Variables: None.
+  274             
+  275                Author:           Glen George
+  276                Last Modified:    Mar. 5, 1994
+  277             
+  278             */
+  279             
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   6
+
+
+  280             enum status  no_update(enum status cur_status)
+  281             {
+  282     1           /* variables */
+  283     1             /* none */
+  284     1       
+  285     1       
+  286     1       
+  287     1           /* nothing to do - return with the status unchanged */
+  288     1           return  cur_status;
+  289     1       
+  290     1       }
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   7
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 83
+                           no_action      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 90
+             0005  8B4608          MOV     AX,[BP].cur_status
+             0008  5D              POP     BP
+             0009  5F              POP     DI
+             000A  5E              POP     SI
+             000B  C3              RET
+                                                   ; STATEMENT # 92
+                           no_action      ENDP
+                                                   ; STATEMENT # 124
+                           do_TrackUp      PROC NEAR
+             000C  56              PUSH    SI
+             000D  57              PUSH    DI
+             000E  55              PUSH    BP
+             000F  8BEC            MOV     BP,SP
+                           @2:
+                                                   ; STATEMENT # 131
+             0011  E80000          CALL    get_previous_dir_entry
+             0014  08C0            OR      AL,AL
+             0016  7403            JZ      $+5H
+             0018  E90600          JMP     @3
+                                                   ; STATEMENT # 133
+             001B  E80000          CALL    setup_cur_track_info
+                                                   ; STATEMENT # 134
+             001E  E90300          JMP     @4
+                           @3:
+                                                   ; STATEMENT # 136
+             0021  E80000          CALL    setup_error_track_info
+                           @4:
+                                                   ; STATEMENT # 140
+             0024  E80000          CALL    get_track_time
+             0027  50              PUSH    AX      ; 1
+             0028  E80000          CALL    display_time
+             002B  59              POP     CX      ; 1
+                                                   ; STATEMENT # 141
+             002C  E80000          CALL    get_track_title
+             002F  52              PUSH    DX      ; 1
+             0030  50              PUSH    AX      ; 2
+             0031  E80000          CALL    display_title
+             0034  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 142
+             0038  E80000          CALL    get_track_artist
+             003B  52              PUSH    DX      ; 1
+             003C  50              PUSH    AX      ; 2
+             003D  E80000          CALL    display_artist
+             0040  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 146
+             0044  8B4608          MOV     AX,[BP].cur_status
+             0047  5D              POP     BP
+             0048  5F              POP     DI
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   8
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0049  5E              POP     SI
+             004A  C3              RET
+                                                   ; STATEMENT # 148
+                           do_TrackUp      ENDP
+                                                   ; STATEMENT # 180
+                           do_TrackDown      PROC NEAR
+             004C  56              PUSH    SI
+             004D  57              PUSH    DI
+             004E  55              PUSH    BP
+             004F  8BEC            MOV     BP,SP
+                           @5:
+                                                   ; STATEMENT # 187
+             0051  E80000          CALL    get_next_dir_entry
+             0054  08C0            OR      AL,AL
+             0056  7403            JZ      $+5H
+             0058  E90600          JMP     @6
+                                                   ; STATEMENT # 189
+             005B  E80000          CALL    setup_cur_track_info
+                                                   ; STATEMENT # 190
+             005E  E90300          JMP     @7
+                           @6:
+                                                   ; STATEMENT # 192
+             0061  E80000          CALL    setup_error_track_info
+                           @7:
+                                                   ; STATEMENT # 196
+             0064  E80000          CALL    get_track_time
+             0067  50              PUSH    AX      ; 1
+             0068  E80000          CALL    display_time
+             006B  59              POP     CX      ; 1
+                                                   ; STATEMENT # 197
+             006C  E80000          CALL    get_track_title
+             006F  52              PUSH    DX      ; 1
+             0070  50              PUSH    AX      ; 2
+             0071  E80000          CALL    display_title
+             0074  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 198
+             0078  E80000          CALL    get_track_artist
+             007B  52              PUSH    DX      ; 1
+             007C  50              PUSH    AX      ; 2
+             007D  E80000          CALL    display_artist
+             0080  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 202
+             0084  8B4608          MOV     AX,[BP].cur_status
+             0087  5D              POP     BP
+             0088  5F              POP     DI
+             0089  5E              POP     SI
+             008A  C3              RET
+                                                   ; STATEMENT # 204
+                           do_TrackDown      ENDP
+                                                   ; STATEMENT # 235
+                           stop_idle      PROC NEAR
+             008C  56              PUSH    SI
+             008D  57              PUSH    DI
+             008E  55              PUSH    BP
+             008F  8BEC            MOV     BP,SP
+                           @8:
+iC-86  COMPILER   KEYUPDAT                                                                   05/07/;6 12:45:19  PAGE   9
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 242
+             0091  E80000          CALL    init_track
+                                                   ; STATEMENT # 245
+             0094  E80000          CALL    get_track_time
+             0097  50              PUSH    AX      ; 1
+             0098  E80000          CALL    display_time
+             009B  59              POP     CX      ; 1
+                                                   ; STATEMENT # 249
+             009C  8B4608          MOV     AX,[BP].cur_status
+             009F  5D              POP     BP
+             00A0  5F              POP     DI
+             00A1  5E              POP     SI
+             00A2  C3              RET
+                                                   ; STATEMENT # 251
+                           stop_idle      ENDP
+                                                   ; STATEMENT # 281
+                           no_update      PROC NEAR
+             00A4  56              PUSH    SI
+             00A5  57              PUSH    DI
+             00A6  55              PUSH    BP
+             00A7  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 288
+             00A9  8B4608          MOV     AX,[BP].cur_status
+             00AC  5D              POP     BP
+             00AD  5F              POP     DI
+             00AE  5E              POP     SI
+             00AF  C3              RET
+                                                   ; STATEMENT # 290
+                           no_update      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 00B0H    176D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 000EH     14D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

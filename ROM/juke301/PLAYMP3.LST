@@ -1,0 +1,1731 @@
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE PLAYMP3
+OBJECT MODULE PLACED IN PLAYMP3.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE PLAYMP3.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                 PLAYMP3                                  */
+    4             /*                              Play Functions                              */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS  52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains the key processing and update functions for the Play
+   12                operations of the MP3 Jukebox Project.  These functions take care of
+   13                processing an input key (from the keypad) and updates for the Play
+   14                operation.  They are called by the main loop of the MP3 Jukebox.  The
+   15                functions included are:
+   16                   begin_Play         - start playing from fast forward or reverse (key
+   17                                        processing function)
+   18                   begin_RptPlay      - start repeatedly playing from fast forward or
+   19                                        reverse (key processing function)
+   20                   cont_RptPlay       - switch to repeat play from standard play (key
+   21                                        processing function)
+   22                   start_Play         - begin playing the current track (key processing
+   23                                        function)
+   24                   start_RptPlay      - begin repeatedly playing the current track (key
+   25                                        processing function)
+   26                   stop_Play          - stop when playing (key processing function)
+   27                   update_Play        - update function for play and repeat play (update
+   28                                        function)
+   29             
+   30                The local functions included are:
+   31                   init_Play          - actually start playing a track
+   32             
+   33                The locally global variable definitions included are:
+   34                   buffers        - buffers for playing
+   35                   empty_buffer   - buffer used for audio I/O when have no data available
+   36                   current_buffer - which buffer is currently being played
+   37                   play_time      - current time of play operation
+   38                   rpt_play       - flag indicating doing repeat play instead of play
+   39             
+   40             
+   41                Revision History
+   42                   6/5/00   Glen George       Initial revision (from 3/6/99 version of
+   43                                              playrec.c for the Digital Audio Recorder
+   44                                              Project).
+   45                   6/7/00   Glen George       Fixed calls to get_track_position() in
+   46                                              init_Play and update_Play to call
+   47                                              get_track_block_position() instead and
+   48                                              fixed the size of some variables.
+   49                   6/7/00   Glen George       Call elapsed_time() in init_Play() to reset
+   50                                              the play timing.
+   51                   6/14/00  Glen George       "Fix" arithmetic in init_Play() so it
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   2
+
+
+   52                                              actually does long int calculations.
+   53                   6/14/00  Glen George       Fix buffer wrapping error in update_Play().
+   54                   6/14/00  Glen George       Updated type casts on buffers[].p in
+   55                                              init_Play() and changed empty_buffer type to
+   56                                              match that of buffers[].p.
+   57                   6/2/02   Glen George       Removed calls to ffrev_halt() in begin_Play()
+   58                                              and begin_RptPlay() since they are no longer
+   59                                              needed and the function no longer exists.
+   60                   6/2/02   Glen George       Output the absolute value of the time in
+   61                                              update_Play() so tracks with unknown length
+   62                                              will automatically count up in time.  Also
+   63                                              requires that stdlib.h be included.
+   64                   6/2/02   Glen George       Use MAKE_FARPTR macro instead of inline code
+   65                                              to create far pointers.
+   66                   6/2/02   Glen George       Use size_t instead of int for array indices.
+   67                   6/2/02   Glen George       Updated comments.
+   68                   6/10/02  Glen George       Added use of SECTOR_ADJUST constant for
+   69                                              dealing with hard drives with different
+   70                                              geometries.
+   71                   6/5/03   Glen George       Updated start_Play and start_RptPlay to
+   72                                              handle FAT directory structures by checking
+   73                                              if the current track is a directory or a
+   74                                              song (file).
+   75                   6/5/03   Glen George       Added #include of fatutil.h for function
+   76                                              declarations needed by above change.
+   77                   6/5/03   Glen George       Updated function headers.
+   78                   6/5/03   Glen George       Added support for the PC simulation version
+   79                                              in init_Play, stop_Play, and update_Play
+   80                                              (allocate/deallocate memory instead of
+   81                                              assuming DRAM).
+   82                   6/9/05   Glen George       Fixed a minor bug in update_Play that caused
+   83                                              repeat play to "stutter" at the start of the
+   84                                              track when repeating.
+   85                   4/29/06  Glen George       Removed inclusion of stdlib.h - it's handled
+   86                                              by mp3defs.h now.
+   87                   4/29/06  Glen George       Changed buffers to be short ints instead of
+   88                                              chars.
+   89                   6/4/06   Glen George       Fixed allocated buffer size to match the fact
+   90                                              that buffers are short ints, not chars.
+   91                   6/6/06   Glen George       Made allocation buffer sizes more portable
+   92                                              and fixed more byte/word problems.
+   93                   6/6/06   Glen George       Unrolled part of a loop to fix a possible
+   94                                              compiler issue with gcc.
+   95                   6/6/06   Glen George       Added a temporary variable to fix a possible
+   96                                              compiler issue with gcc.
+   97                   6/6/06   Glen George       Updated comments.
+   98                   6/19/08  Glen George       Now using get_partition_start() to get the
+   99                                              start of the partition for accessing the hard
+  100                                              drive.
+  101                   3/15/13  Glen George       Changed to using get_file_blocks() instead of
+  102                                              get_blocks() to support fragmented files.
+  103             */
+  104             
+  105             
+  106             
+  107             /* library include files */
+  108             #ifdef  PCVERSION
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   3
+
+
+                  #endif
+  111             
+  112             /* local include files */
+  113             #include  "mp3defs.h"
+  114             #include  "keyproc.h"
+  115             #include  "updatfnc.h"
+  116             #include  "trakutil.h"
+  117             #include  "fatutil.h"
+  118             
+  119             
+  120             
+  121             
+  122             /* local definitions */
+  123               /* none */
+  124             
+  125             
+  126             
+  127             
+  128             /* local function declarations */
+  129             enum status  init_Play(enum status);            /* initialize playing */
+  130             
+  131             
+  132             
+  133             
+  134             /* locally global variables */
+  135             static struct audio_buf          buffers[NO_BUFFERS];/* buffers to play */
+  136             static unsigned short int  far  *empty_buffer;       /* empty (no data) buffer */
+  137             static int                       current_buffer;     /* buffer currently playing */
+  138             
+  139             static long int                  play_time;          /* time for play operation */
+  140             static int                       rpt_play;           /* doing repeat play */
+  141             
+  142             
+  143             
+  144             
+  145             /*
+  146                start_Play
+  147             
+  148                Description:      This function handles the <Play> key when nothing is
+  149                                  happening in the system.  If the current entry is a
+  150                                  directory, that directory is entered.  If it is a song,
+  151                                  it starts playing the track at the current position.  If
+  152                                  there is no time remaining on the track (it is at the
+  153                                  end) of if the current entry is a directory, the function
+  154                                  returns with the passed status as the current state,
+  155                                  otherwise it returns the play state as the current state.
+  156             
+  157                Arguments:        cur_status (enum status) - the current system status.
+  158                Return Value:     (enum status) - the new system status: STAT_PLAY if there
+  159                                  is something to play on the track, the passed status
+  160                                  otherwise.
+  161             
+  162                Input:            None.
+  163                Output:           None.
+  164             
+  165                Error Handling:   None.
+  166             
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   4
+
+
+  167                Algorithms:       None.
+  168                Data Structures:  None.
+  169             
+  170                Shared Variables: rpt_play - set to FALSE.
+  171             
+  172                Author:           Glen George
+  173                Last Modified:    March 15, 2013
+  174             
+  175             */
+  176             
+  177             enum status  start_Play(enum status cur_status)
+  178             {
+  179     1           /* variables */
+  180     1             /* none */
+  181     1       
+  182     1       
+  183     1       
+  184     1           /* check if we are on a directory or a song */
+  185     1           if (cur_isDir())  {
+  186     2       
+  187     2               /* is a directory - move into it */
+  188     2               if (!get_first_dir_entry())
+  189     2                   /* successfully got the new entry, load its data */
+  190     2                   setup_cur_track_info();
+  191     2               else
+  192     2                   /* there was an error - load error track information */
+  193     2                   setup_error_track_info();
+  194     2       
+  195     2               /* display the track information for this track */
+  196     2               display_time(get_track_time());
+  197     2               display_title(get_track_title());
+  198     2               display_artist(get_track_artist());
+  199     2           }
+  200     1           else  {
+  201     2       
+  202     2               /* it's a song so set global flag to normal play (not repeat play) */
+  203     2               rpt_play = FALSE;
+  204     2       
+  205     2               /* and start playing and update the status */
+  206     2               cur_status = init_Play(cur_status);
+  207     2           }
+  208     1       
+  209     1       
+  210     1           /* return the new status */
+  211     1           return  cur_status;
+  212     1       
+  213     1       }
+  214             
+  215             
+  216             
+  217             
+  218             /*
+  219                start_RptPlay
+  220             
+  221                Description:      This function handles the <Repeat Play> key when nothing
+  222                                  is happening in the system.  If the current track is a
+  223                                  song it starts playing the track at the current position.
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   5
+
+
+  224                                  If there is no time remaining on the track (for example,
+  225                                  it was fast forwarded) the track is started from the
+  226                                  beginning.  If the track is empty or a directory, nothing
+  227                                  is played and the function returns the passed status.
+  228             
+  229                Arguments:        cur_status (enum status) - the current system status.
+  230                Return Value:     (enum status) - the new status: STAT_PLAY if there is
+  231                                  something on the track, the passed status otherwise.
+  232             
+  233                Input:            None.
+  234                Output:           None.
+  235             
+  236                Error Handling:   None.
+  237             
+  238                Algorithms:       None.
+  239                Data Structures:  None.
+  240             
+  241                Shared Variables: rpt_play - set to TRUE.
+  242             
+  243                Author:           Glen George
+  244                Last Modified:    June 5, 2003
+  245             
+  246             */
+  247             
+  248             enum status  start_RptPlay(enum status cur_status)
+  249             {
+  250     1           /* variables */
+  251     1             /* none */
+  252     1       
+  253     1       
+  254     1       
+  255     1           /* check if this is a directory or a song */
+  256     1           if (!cur_isDir())  {
+  257     2       
+  258     2               /* not a directory, must be a song, so play it */
+  259     2       
+  260     2               /* set global flags to repeat play */
+  261     2               rpt_play = TRUE;
+  262     2       
+  263     2               /* now start playing and get the status */
+  264     2               cur_status = init_Play(cur_status);
+  265     2           }
+  266     1       
+  267     1       
+  268     1           /* return with the possibly new status */
+  269     1           return  cur_status;
+  270     1       
+  271     1       }
+  272             
+  273             
+  274             
+  275             
+  276             /*
+  277                cont_RptPlay
+  278             
+  279                Description:      This function handles the <Repeat Play> key when already
+  280                                  playing a track.  It just changes the locally global
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   6
+
+
+  281                                  variable rpt_play (to TRUE indicating doing repeat play).
+  282                                  The update function takes care of restarting the track at
+  283                                  the end of the track.
+  284             
+  285                Arguments:        cur_status (enum status) - the current system status (not
+  286                                                             used).
+  287                Return Value:     (enum status) - the new system status (STAT_PLAY).
+  288             
+  289                Input:            None.
+  290                Output:           None.
+  291             
+  292                Error Handling:   None.
+  293             
+  294                Algorithms:       None.
+  295                Data Structures:  None.
+  296             
+  297                Shared Variables: rpt_play - set to TRUE (doing repeat play).
+  298             
+  299                Author:           Glen George
+  300                Last Modified:    Mar. 15, 1995
+  301             
+  302             */
+  303             
+  304             enum status  cont_RptPlay(enum status cur_status)
+  305             {
+  306     1           /* variables */
+  307     1             /* none */
+  308     1       
+  309     1       
+  310     1       
+  311     1           /* now doing repeat play */
+  312     1           rpt_play = TRUE;
+  313     1       
+  314     1       
+  315     1           /* done setting up for repeat play - return the status (STAT_PLAY) */
+  316     1           return  STAT_PLAY;
+  317     1       
+  318     1       }
+  319             
+  320             
+  321             
+  322             
+  323             /*
+  324                begin_Play
+  325             
+  326                Description:      This function handles the <Play> key when fast forwarding
+  327                                  or reversing.  It turns off the fast forward or reverse
+  328                                  operation and then starts playing the track at the
+  329                                  current position.
+  330             
+  331                Arguments:        cur_status (enum status) - the current system status (not
+  332                                                             used).
+  333                Return Value:     (enum status) - the new system status (actually returned
+  334                                  by start_Play, either STAT_IDLE if at the end of the
+  335                                  track, or STAT_PLAY otherwise).
+  336             
+  337                Input:            None.
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   7
+
+
+  338                Output:           None.
+  339             
+  340                Error Handling:   None.
+  341             
+  342                Algorithms:       None.
+  343                Data Structures:  None.
+  344             
+  345                Shared Variables: None.
+  346             
+  347                Author:           Glen George
+  348                Last Modified:    June 2, 2002
+  349             
+  350             */
+  351             
+  352             enum status  begin_Play(enum status cur_status)
+  353             {
+  354     1           /* variables */
+  355     1             /* none */
+  356     1       
+  357     1       
+  358     1       
+  359     1           /* start playing, returning the appropriate status */
+  360     1           /* note: fast forward or reverse is turned off by change of state */
+  361     1           /* note: want to return to idle state if at the end of the track */
+  362     1           return  start_Play(STAT_IDLE);
+  363     1       
+  364     1       }
+  365             
+  366             
+  367             
+  368             
+  369             /*
+  370                begin_RptPlay
+  371             
+  372                Description:      This function handles the <Repeat Play> key when fast
+  373                                  forwarding or reversing.  It turns off the fast forward
+  374                                  or reverse operation and then starts playing the track at
+  375                                  the current position (time).
+  376             
+  377                Arguments:        cur_status (enum status) - the current system status (not
+  378                                                             used).
+  379                Return Value:     (enum status) - the new status (actually returned by
+  380                                  start_RptPlay, either STAT_IDLE if the track is empty, or
+  381                                  STAT_PLAY otherwise).
+  382             
+  383                Input:            None.
+  384                Output:           None.
+  385             
+  386                Error Handling:   None.
+  387             
+  388                Algorithms:       None.
+  389                Data Structures:  None.
+  390             
+  391                Shared Variables: None.
+  392             
+  393                Author:           Glen George
+  394                Last Modified:    June 2, 2002
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   8
+
+
+  395             
+  396             */
+  397             
+  398             enum status  begin_RptPlay(enum status cur_status)
+  399             {
+  400     1           /* variables */
+  401     1             /* none */
+  402     1       
+  403     1       
+  404     1       
+  405     1           /* now start repeat playing, returning the appropriate status */
+  406     1           /* note: fast forward or reverse is turned off by change of state */
+  407     1           /* note: want to return to idle state if nothing on the track */
+  408     1           return  start_RptPlay(STAT_IDLE);
+  409     1       
+  410     1       }
+  411             
+  412             
+  413             
+  414             
+  415             /*
+  416                stop_Play
+  417             
+  418                Description:      This function handles the <Stop> key when playing.  It
+  419                                  halts the audio system, resets the track to the start of
+  420                                  the track, and changes the current status to idle.
+  421             
+  422                Arguments:        cur_status (enum status) - the current system status (not
+  423                                                             used).
+  424                Return Value:     (enum status) - the new status (STAT_IDLE).
+  425             
+  426                Input:            None.
+  427                Output:           The new track time (the track length) is output.
+  428             
+  429                Error Handling:   None.
+  430             
+  431                Algorithms:       None.
+  432                Data Structures:  None.
+  433             
+  434                Shared Variables: None.
+  435             
+  436                Author:           Glen George
+  437                Last Modified:    June 5, 2003
+  438             
+  439             */
+  440             
+  441             enum status  stop_Play(enum status cur_status)
+  442             {
+  443     1           /* variables */
+  444     1       #ifdef  PCVERSION
+                  #else
+  447     1           /* none */
+  448     1       #endif
+  449     1       
+  450     1       
+  451     1       
+  452     1           /* first halt the audio output */
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE   9
+
+
+  453     1           audio_halt();
+  454     1       
+  455     1           /* if the PC version need to free memory */
+  456     1       #ifdef PCVERSION
+                  #endif
+  463     1       
+  464     1           /* reset to the start of the current track */
+  465     1           init_track();
+  466     1       
+  467     1           /* display the new track time */
+  468     1           display_time(get_track_time());
+  469     1       
+  470     1       
+  471     1           /* return with the new status */
+  472     1           return  STAT_IDLE;
+  473     1       
+  474     1       }
+  475             
+  476             
+  477             
+  478             
+  479             /*
+  480                init_Play
+  481             
+  482                Description:      This function handles starting a track playing for the
+  483                                  <Play> and <Repeat Play> keys.  It starts playing the
+  484                                  track at the current position.  If there is no time
+  485                                  remaining on the track (for example, it is at the end)
+  486                                  the function returns with the current status, otherwise
+  487                                  it returns with the status set to STAT_PLAY.
+  488             
+  489                Arguments:        cur_status (enum status) - the current system status.
+  490                Return Value:     (enum status) - the new system status: STAT_PLAY if there
+  491                                  is something to play on the track, the passed status
+  492                                  otherwise.
+  493             
+  494                Input:            None.
+  495                Output:           The new time for the track is output to the display.
+  496             
+  497                Error Handling:   None.
+  498             
+  499                Algorithms:       None.
+  500                Data Structures:  None.
+  501             
+  502                Shared Variables: buffers        - initialized with data.
+  503                                  empty_buffer   - filled with NO_MP3_DATA signal.
+  504                                  current_buffer - set to first buffer (0).
+  505                                  play_time      - set to the current track time.
+  506                                  rpt_play       - used to determine normal or repeat play.
+  507             
+  508                Author:           Glen George
+  509                Last Modified:    June 6, 2006
+  510             
+  511             */
+  512             
+  513             static  enum status  init_Play(enum status cur_status)
+  514             {
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  10
+
+
+  515     1           /* variables */
+  516     1           int           blocks_to_read;       /* number of blocks to read */
+  517     1           int           blocks_read;          /* blocks actually read from disk */
+  518     1           int           tot_blocks_read = 0;  /* total number of blocks read */
+  519     1       
+  520     1           long int      bytes_left;           /* bytes left in the track */
+  521     1       
+  522     1           int           have_buffer = FALSE;  /* have a buffer with data */
+  523     1           int           end_track = FALSE;    /* at the end of the track */
+  524     1       
+  525     1           unsigned int  tmp;                  /* temporary variable for intermediate results */
+  526     1                                               /*    (seems to fix a compiler bug) */
+  527     1       
+  528     1           int           i;                    /* loop index */
+  529     1       
+  530     1       
+  531     1       
+  532     1           /* first initialize the buffer pointers and buffer structure */
+  533     1           for (i = 0; i < NO_BUFFERS; i++)  {
+  534     2               /* nothing in the buffer, it isn't the end, and point to DRAM */
+  535     2               buffers[i].size = 0;
+  536     2               buffers[i].done = FALSE;
+  537     2           }
+  538     1       
+  539     1           /* allocate the buffer - remember it is words (short ints) */
+  540     1           /* unroll the loop to workaround a possible compiler problem */
+  541     1       #ifdef  PCVERSION
+                  #else
+  547     1           buffers[0].p    = (unsigned short int far *) MAKE_FARPTR(DRAM_STARTSEG, 0UL);
+  548     1           buffers[1].p    = (unsigned short int far *) MAKE_FARPTR(DRAM_STARTSEG, 1UL * BUFFER_SIZE * sizeof
+                -(short int));
+  549     1           buffers[2].p    = (unsigned short int far *) MAKE_FARPTR(DRAM_STARTSEG, 2UL * BUFFER_SIZE * sizeof
+                -(short int));
+  550     1       #endif
+  551     1       
+  552     1           /* need to setup empty buffer too */
+  553     1           /* first the pointer */
+  554     1       #ifdef  PCVERSION
+                  #else
+  558     1           empty_buffer = (unsigned short int far *) MAKE_FARPTR(DRAM_STARTSEG, (unsigned long int) NO_BUFFER
+                -S * BUFFER_SIZE);
+  559     1       #endif
+  560     1           /* now fill it */
+  561     1           for (i = 0; i < BUFFER_SIZE; i++)
+  562     1               empty_buffer[i] = NO_MP3_DATA;
+  563     1       
+  564     1       
+  565     1           /* now setup the playing time */
+  566     1           play_time = get_track_time() * TIME_SCALE;
+  567     1       
+  568     1       
+  569     1           /* now get the two buffers for the track from the disk */
+  570     1           for (i = 0 ; (i < 2); i++)  {
+  571     2       
+  572     2               /* first check if at end of track */
+  573     2               if (get_track_remaining_length() == 0)  {
+  574     3                   /* at end of track - check if repeat playing */
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  11
+
+
+  575     3                   if (rpt_play)  {
+  576     4                       /* at end and repeat playing - restart at beginning */
+  577     4                       init_track();
+  578     4                       /* need to reset total number of blocks read for track too */
+  579     4                       tot_blocks_read = 0;
+  580     4                   }
+  581     3                   else  {
+  582     4                       /* at end, but not repeating, so set flag */
+  583     4                       end_track = TRUE;
+  584     4                   }
+  585     3               }
+  586     2       
+  587     2               /* if not at end, read the blocks for this buffer */
+  588     2               if (!end_track)  {
+  589     3       
+  590     3                   /* compute the number of blocks to read (block size is in words) */
+  591     3                   bytes_left = get_track_remaining_length() - (2 * IDE_BLOCK_SIZE * tot_blocks_read);
+  592     3                   blocks_to_read = (bytes_left + (2 * IDE_BLOCK_SIZE - 1)) / (2 * IDE_BLOCK_SIZE);
+  593     3                   /* but only read up to BUFFER_BLOCKS blocks */
+  594     3                   if (blocks_to_read > BUFFER_BLOCKS)
+  595     3                       blocks_to_read = BUFFER_BLOCKS;
+  596     3       
+  597     3                   /* now read the blocks */
+  598     3                   blocks_read = get_file_blocks(get_track_block_position() + tot_blocks_read, blocks_to_read
+                -, buffers[i].p);
+  599     3       
+  600     3                   /* check if read anything */
+  601     3                   if (blocks_read > 0)  {
+  602     4                       /* did read something, store how much (in words, not bytes) */
+  603     4                       if (bytes_left >= (2 * IDE_BLOCK_SIZE * blocks_read))
+  604     4                           /* all of the blocks are data */
+  605     4                           tmp = blocks_read * IDE_BLOCK_SIZE;
+  606     4                       else
+  607     4                           /* remember the buffer size is in words */
+  608     4                           tmp = (bytes_left + 1) / 2;
+  609     4                       /* now store the buffer size */
+  610     4                       buffers[i].size = tmp;
+  611     4                       /* also set the flag that we read data */
+  612     4                       have_buffer = TRUE;
+  613     4                   }
+  614     3                   else  {
+  615     4                       /* couldn't read anything, it is the end of the track */
+  616     4                       end_track = TRUE;
+  617     4                   }
+  618     3       
+  619     3                   /* update number of blocks read so far */
+  620     3                   tot_blocks_read += blocks_read;
+  621     3               }
+  622     2       
+  623     2               /* if at the end of the track need to play the empty buffer */
+  624     2               if (end_track)  {
+  625     3                   buffers[i].size = BUFFER_SIZE;
+  626     3                   buffers[i].done = TRUE;
+  627     3                   buffers[i].p = empty_buffer;
+  628     3               }
+  629     2           }
+  630     1       
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  12
+
+
+  631     1       
+  632     1           /* got a buffer, start the audio output if there is anything to output */
+  633     1           if (have_buffer)  {
+  634     2               /* have audio data - play it */
+  635     2               audio_play(buffers[0].p, buffers[0].size);
+  636     2               /* on the first buffer */
+  637     2               current_buffer = 0;
+  638     2               /* also update the time display */
+  639     2               display_time(play_time / TIME_SCALE);
+  640     2               /* and reset the elapsed time */
+  641     2               elapsed_time();
+  642     2           }
+  643     1       
+  644     1       
+  645     1           /* finally, return with the proper status */
+  646     1           if (have_buffer)
+  647     1               /* have something to play - return with play status */
+  648     1               return  STAT_PLAY;
+  649     1           else
+  650     1               /* empty track - return with status unchanged */
+  651     1               return  cur_status;
+  652     1       
+  653     1       }
+  654             
+  655             
+  656             
+  657             
+  658             /*
+  659                update_Play
+  660             
+  661                Description:      This function handles updates when playing or repeat
+  662                                  playing.  It first checks if it is time for an update (by
+  663                                  calling the function update) and if so it gets the next
+  664                                  buffer to output and updates the time as is appropriate.
+  665                                  When it reaches the end of the track (when not in repeat
+  666                                  play mode) it uses the empty_buffer, which was previously
+  667                                  filled with NO_MP3_DATA signal, to fill out the track and
+  668                                  make sure all of the "good" signal has made it all the
+  669                                  way through the pipeline.
+  670             
+  671                Arguments:        cur_status (enum status) - the current system status.
+  672                Return Value:     (enum status) - the new system status: STAT_IDLE if have
+  673                                  finished with the track, the passed status otherwise.
+  674             
+  675                Input:            None.
+  676                Output:           The new time for the track is output to the display.
+  677             
+  678                Error Handling:   None.
+  679             
+  680                Algorithms:       None.
+  681                Data Structures:  None.
+  682             
+  683                Shared Variables: buffers        - used for track data and filled.
+  684                                  empty_buffer   - output at the end of the track.
+  685                                  current_buffer - set to the buffer now being played.
+  686                                  play_time      - updated to the time the track has left
+  687                                                   to play.
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  13
+
+
+  688                                  rpt_play       - accessed to determine normal or repeat
+  689                                                   play mode.
+  690             
+  691                Author:           Glen George
+  692                Last Modified:    March 15, 2013
+  693             
+  694             */
+  695             
+  696             enum status  update_Play(enum status cur_status)
+  697             {
+  698     1           /* variables */
+  699     1           long int  old_play_time = play_time;    /* previous time value */
+  700     1       
+  701     1           int       next_buffer;                  /* next buffer to play */
+  702     1           int       previous_buffer;              /* buffer that just finished */
+  703     1           int       fill_buffer;                  /* next buffer to fill */
+  704     1       
+  705     1           long int  start_pos;                    /* starting position for read */
+  706     1           int       blocks_to_read;               /* number of blocks to read */
+  707     1           int       blocks_read;                  /* blocks actually read from disk */
+  708     1       
+  709     1           long int  bytes_left;                   /* bytes left in the track */
+  710     1           long int  words_read;                   /* words read and waiting to play */
+  711     1       
+  712     1           int       end_play = FALSE;             /* done playing (out of data) */
+  713     1       
+  714     1       #ifdef  PCVERSION
+                  #endif
+  717     1       
+  718     1       
+  719     1       
+  720     1           /* figure out the next buffer */
+  721     1           next_buffer = current_buffer + 1;
+  722     1           /* check if wrapping around the end of the buffers */
+  723     1           if (next_buffer >= NO_BUFFERS)
+  724     1               next_buffer -= NO_BUFFERS;
+  725     1       
+  726     1       
+  727     1           /* check if it is time to do an update */
+  728     1           if (update(buffers[next_buffer].p, buffers[next_buffer].size))  {
+  729     2       
+  730     2               /* system was ready for the buffer - need to do an update */
+  731     2       
+  732     2               /* update the track position */
+  733     2               /* get the buffer that just finished */
+  734     2               previous_buffer = current_buffer - 1;
+  735     2               /* take care of wrapping around start of array */
+  736     2               if (previous_buffer < 0)
+  737     2                   previous_buffer += NO_BUFFERS;
+  738     2               /* now update the position if not starting over on a repeat play */
+  739     2               /* this is necessary because previous_buffer and/or current_buffer */
+  740     2               /* could be from the last iteration of the repeat play */
+  741     2               if (!(buffers[previous_buffer].done || buffers[current_buffer].done))
+  742     2                   /* not finishing an iteration - update the position */
+  743     2                   /* remember that buffer size is in words and track position is */
+  744     2                   /* maintained in bytes */
+  745     2                   update_track_position(2 * buffers[previous_buffer].size);
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  14
+
+
+  746     2       
+  747     2               /* check if at the end of the track (if now outputting done buffer */
+  748     2               /* this guarantees last buffer with data has been output) */
+  749     2               if (buffers[current_buffer].done && !rpt_play)  {
+  750     3       
+  751     3                   /* done with this track - turn off audio output */
+  752     3                   audio_halt();
+  753     3       
+  754     3                   /* if the PC version need to free memory */
+  755     3       #ifdef  PCVERSION
+                  #endif
+  762     3       
+  763     3                   /* reset to start of track */
+  764     3                   init_track();
+  765     3       
+  766     3                   /* set status back to idle */
+  767     3                   cur_status = STAT_IDLE;
+  768     3               }
+  769     2               else  {
+  770     3       
+  771     3                   /* not done playing */
+  772     3       
+  773     3                   /* get the next buffer to fill */
+  774     3                   fill_buffer = current_buffer + 2;
+  775     3                   /* watch out for wrapping */
+  776     3                   if (fill_buffer >= NO_BUFFERS)
+  777     3                       fill_buffer -= NO_BUFFERS;
+  778     3       
+  779     3                   /* attempt to get another buffer */
+  780     3       
+  781     3                   /* first figure out where the buffer is and how big it is */
+  782     3                   /* the next buffer has to be part of the newest iteration */
+  783     3                   words_read = buffers[next_buffer].size;
+  784     3                   /* only include the current buffer if it wasn't the end of the previous iteration */
+  785     3                   if (!(buffers[current_buffer].done))
+  786     3                       words_read += buffers[current_buffer].size;
+  787     3                   /* now compute the number of bytes left and starting position */
+  788     3                   bytes_left = get_track_remaining_length() - (2 * words_read);
+  789     3                   start_pos = get_track_block_position() + (words_read / IDE_BLOCK_SIZE);
+  790     3       
+  791     3                   /* check if out of data */
+  792     3                   if (bytes_left <= 0)  {
+  793     4                       /* nothing left to play, check if repeating */
+  794     4                       if (rpt_play)  {
+  795     5                           /* repeating, so can reinitialize the track */
+  796     5                           init_track();
+  797     5                           /* and recompute the number of bytes left */
+  798     5                           bytes_left = get_track_remaining_length();
+  799     5                           /* and the starting position */
+  800     5                           start_pos = get_track_block_position();
+  801     5                           /* the block just sent was last one of the iteration */
+  802     5                           buffers[next_buffer].done = TRUE;
+  803     5                       }
+  804     4                       else  {
+  805     5                           /* not repeating, we're done */
+  806     5                           end_play = TRUE;
+  807     5                       }
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  15
+
+
+  808     4                   }
+  809     3       
+  810     3                   /* if still playing, can get the data */
+  811     3                   if (!end_play)  {
+  812     4       
+  813     4                       /* compute the number of blocks to read */
+  814     4                       blocks_to_read = (bytes_left + (2 * IDE_BLOCK_SIZE - 1)) / (2 * IDE_BLOCK_SIZE);
+  815     4                       /* but only read up to BUFFER_BLOCKS blocks */
+  816     4                       if (blocks_to_read > BUFFER_BLOCKS)
+  817     4                           blocks_to_read = BUFFER_BLOCKS;
+  818     4       
+  819     4                       /* now read the blocks */
+  820     4                       blocks_read = get_file_blocks(start_pos, blocks_to_read, buffers[fill_buffer].p);
+  821     4       
+  822     4                       /* check if read anything */
+  823     4                       if (blocks_read > 0)  {
+  824     5                           /* did read something, store how much (words, not bytes) */
+  825     5                           if (bytes_left >= (2 * IDE_BLOCK_SIZE * blocks_read))
+  826     5                               /* all of the blocks are data */
+  827     5                               buffers[fill_buffer].size = blocks_read * IDE_BLOCK_SIZE;
+  828     5                           else
+  829     5                               /* only play the real data */
+  830     5                               /* remember that buffer sizes are in words, not bytes */
+  831     5                               buffers[fill_buffer].size = (bytes_left + 1) / 2;
+  832     5                           /* this block is not the last one */
+  833     5                           buffers[fill_buffer].done = FALSE;
+  834     5                       }
+  835     4                       else  {
+  836     5                           /* couldn't read anything, it is the end of the track */
+  837     5                           end_play = TRUE;
+  838     5                       }
+  839     4                   }
+  840     3       
+  841     3                   /* if at the end of play, need to play the empty buffer */
+  842     3                   if (end_play)  {
+  843     4                       buffers[fill_buffer].p = empty_buffer;
+  844     4                       buffers[fill_buffer].size = BUFFER_SIZE;
+  845     4                       buffers[fill_buffer].done = TRUE;
+  846     4                   }
+  847     3       
+  848     3       
+  849     3                   /* finally, update the current buffer */
+  850     3                   current_buffer = next_buffer;
+  851     3               }
+  852     2           }
+  853     1       
+  854     1       
+  855     1           /* always update the displayed time */
+  856     1       
+  857     1           /* get the elapsed time */
+  858     1           play_time -= elapsed_time();
+  859     1           /* see if we need to update the display */
+  860     1           if ((play_time / TIME_SCALE) != (old_play_time / TIME_SCALE))
+  861     1               /* the time has changed - update the display */
+  862     1               display_time(abs(play_time / TIME_SCALE));
+  863     1       
+  864     1       
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  16
+
+
+  865     1           /* done with update, return possibly new status */
+  866     1           return  cur_status;
+  867     1       
+  868     1       }
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  17
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 178
+                           start_Play      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 185
+             0005  E80000          CALL    cur_isDir
+             0008  08C0            OR      AL,AL
+             000A  7503            JNZ     $+5H
+             000C  E93600          JMP     @2
+                                                   ; STATEMENT # 188
+             000F  E80000          CALL    get_first_dir_entry
+             0012  08C0            OR      AL,AL
+             0014  7403            JZ      $+5H
+             0016  E90600          JMP     @3
+                                                   ; STATEMENT # 190
+             0019  E80000          CALL    setup_cur_track_info
+                                                   ; STATEMENT # 191
+             001C  E90300          JMP     @4
+                           @3:
+                                                   ; STATEMENT # 193
+             001F  E80000          CALL    setup_error_track_info
+                           @4:
+                                                   ; STATEMENT # 196
+             0022  E80000          CALL    get_track_time
+             0025  50              PUSH    AX      ; 1
+             0026  E80000          CALL    display_time
+             0029  59              POP     CX      ; 1
+                                                   ; STATEMENT # 197
+             002A  E80000          CALL    get_track_title
+             002D  52              PUSH    DX      ; 1
+             002E  50              PUSH    AX      ; 2
+             002F  E80000          CALL    display_title
+             0032  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 198
+             0036  E80000          CALL    get_track_artist
+             0039  52              PUSH    DX      ; 1
+             003A  50              PUSH    AX      ; 2
+             003B  E80000          CALL    display_artist
+             003E  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 200
+             0042  E91000          JMP     @5
+                           @2:
+                                                   ; STATEMENT # 203
+             0045  C70622000000    MOV     rpt_play,0H
+                                                   ; STATEMENT # 206
+             004B  FF7608          PUSH    [BP].cur_status; 1
+             004E  E88100          CALL    init_Play
+             0051  59              POP     CX      ; 1
+             0052  894608          MOV     [BP].cur_status,AX
+                                                   ; STATEMENT # 207
+                           @5:
+                                                   ; STATEMENT # 211
+             0055  8B4608          MOV     AX,[BP].cur_status
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  18
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0058  5D              POP     BP
+             0059  5F              POP     DI
+             005A  5E              POP     SI
+             005B  C3              RET
+                                                   ; STATEMENT # 213
+                           start_Play      ENDP
+                                                   ; STATEMENT # 249
+                           start_RptPlay      PROC NEAR
+             005C  56              PUSH    SI
+             005D  57              PUSH    DI
+             005E  55              PUSH    BP
+             005F  8BEC            MOV     BP,SP
+                           @6:
+                                                   ; STATEMENT # 256
+             0061  E80000          CALL    cur_isDir
+             0064  08C0            OR      AL,AL
+             0066  7403            JZ      $+5H
+             0068  E91000          JMP     @7
+                                                   ; STATEMENT # 261
+             006B  C70622000100    MOV     rpt_play,1H
+                                                   ; STATEMENT # 264
+             0071  FF7608          PUSH    [BP].cur_status; 1
+             0074  E85B00          CALL    init_Play
+             0077  59              POP     CX      ; 1
+             0078  894608          MOV     [BP].cur_status,AX
+                                                   ; STATEMENT # 269
+                           @7:
+             007B  8B4608          MOV     AX,[BP].cur_status
+             007E  5D              POP     BP
+             007F  5F              POP     DI
+             0080  5E              POP     SI
+             0081  C3              RET
+                                                   ; STATEMENT # 271
+                           start_RptPlay      ENDP
+                                                   ; STATEMENT # 305
+                           cont_RptPlay      PROC NEAR
+             0082  56              PUSH    SI
+             0083  57              PUSH    DI
+             0084  55              PUSH    BP
+             0085  8BEC            MOV     BP,SP
+                           @8:
+                                                   ; STATEMENT # 312
+             0087  C70622000100    MOV     rpt_play,1H
+                                                   ; STATEMENT # 316
+             008D  B80100          MOV     AX,1H
+             0090  5D              POP     BP
+             0091  5F              POP     DI
+             0092  5E              POP     SI
+             0093  C3              RET
+                                                   ; STATEMENT # 318
+                           cont_RptPlay      ENDP
+                                                   ; STATEMENT # 353
+                           begin_Play      PROC NEAR
+             0094  56              PUSH    SI
+             0095  57              PUSH    DI
+             0096  55              PUSH    BP
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  19
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0097  8BEC            MOV     BP,SP
+                           @9:
+                                                   ; STATEMENT # 362
+             0099  680000          PUSH    0H
+             009C  E861FF          CALL    start_Play
+             009F  8BE5            MOV     SP,BP
+             00A1  5D              POP     BP
+             00A2  5F              POP     DI
+             00A3  5E              POP     SI
+             00A4  C3              RET
+                                                   ; STATEMENT # 364
+                           begin_Play      ENDP
+                                                   ; STATEMENT # 399
+                           begin_RptPlay      PROC NEAR
+             00A6  56              PUSH    SI
+             00A7  57              PUSH    DI
+             00A8  55              PUSH    BP
+             00A9  8BEC            MOV     BP,SP
+                           @10:
+                                                   ; STATEMENT # 408
+             00AB  680000          PUSH    0H
+             00AE  E8ABFF          CALL    start_RptPlay
+             00B1  8BE5            MOV     SP,BP
+             00B3  5D              POP     BP
+             00B4  5F              POP     DI
+             00B5  5E              POP     SI
+             00B6  C3              RET
+                                                   ; STATEMENT # 410
+                           begin_RptPlay      ENDP
+                                                   ; STATEMENT # 442
+                           stop_Play      PROC NEAR
+             00B8  56              PUSH    SI
+             00B9  57              PUSH    DI
+             00BA  55              PUSH    BP
+             00BB  8BEC            MOV     BP,SP
+                           @11:
+                                                   ; STATEMENT # 453
+             00BD  E80000          CALL    audio_halt
+                                                   ; STATEMENT # 465
+             00C0  E80000          CALL    init_track
+                                                   ; STATEMENT # 468
+             00C3  E80000          CALL    get_track_time
+             00C6  50              PUSH    AX      ; 1
+             00C7  E80000          CALL    display_time
+             00CA  59              POP     CX      ; 1
+                                                   ; STATEMENT # 472
+             00CB  31C0            XOR     AX,AX
+             00CD  5D              POP     BP
+             00CE  5F              POP     DI
+             00CF  5E              POP     SI
+             00D0  C3              RET
+                                                   ; STATEMENT # 474
+                           stop_Play      ENDP
+                                                   ; STATEMENT # 514
+                           init_Play      PROC NEAR
+             00D2  56              PUSH    SI
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  20
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             00D3  57              PUSH    DI
+             00D4  C8120000        ENTER   12H,0H
+                           @12:
+                                                   ; STATEMENT # 518
+             00D8  C746FA0000      MOV     [BP].tot_blocks_read,0H
+                                                   ; STATEMENT # 522
+             00DD  C746F40000      MOV     [BP].have_buffer,0H
+                                                   ; STATEMENT # 523
+             00E2  C746F20000      MOV     [BP].end_track,0H
+                                                   ; STATEMENT # 533
+             00E7  C746EE0000      MOV     [BP].i,0H
+             00EC  E90300          JMP     @15
+                           @13:
+             00EF  FF46EE          INC     [BP].i
+                           @15:
+             00F2  8B5EEE          MOV     BX,[BP].i
+             00F5  81FB0300        CMP     BX,3H
+             00F9  7C03            JL      $+5H
+             00FB  E91200          JMP     @14
+                                                   ; STATEMENT # 535
+             00FE  6BDB08          IMUL    BX,BX,8H
+             0101  C78704000000    MOV     buffers[BX+4H],0H
+                                                   ; STATEMENT # 536
+             0107  C78706000000    MOV     buffers[BX+6H],0H
+                                                   ; STATEMENT # 537
+             010D  E9DFFF          JMP     @13
+                           @14:
+                                                   ; STATEMENT # 547
+             0110  B80000          MOV     AX,0H
+             0113  BA0080          MOV     DX,8000H
+             0116  89060000        MOV     buffers,AX
+             011A  89160200        MOV     buffers+2H,DX
+                                                   ; STATEMENT # 548
+             011E  B80040          MOV     AX,4000H
+             0121  BA0080          MOV     DX,8000H
+             0124  89060800        MOV     buffers+8H,AX
+             0128  89160A00        MOV     buffers+0AH,DX
+                                                   ; STATEMENT # 549
+             012C  B80080          MOV     AX,8000H
+             012F  8BD0            MOV     DX,AX
+             0131  89061000        MOV     buffers+10H,AX
+             0135  89161200        MOV     buffers+12H,DX
+                                                   ; STATEMENT # 558
+             0139  B80060          MOV     AX,6000H
+             013C  BA0080          MOV     DX,8000H
+             013F  89061800        MOV     empty_buffer,AX
+             0143  89161A00        MOV     empty_buffer+2H,DX
+                                                   ; STATEMENT # 561
+             0147  C746EE0000      MOV     [BP].i,0H
+             014C  E90300          JMP     @18
+                           @16:
+             014F  FF46EE          INC     [BP].i
+                           @18:
+             0152  8B5EEE          MOV     BX,[BP].i
+             0155  81FB0020        CMP     BX,2000H
+             0159  7C03            JL      $+5H
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  21
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             015B  E90E00          JMP     @17
+                                                   ; STATEMENT # 562
+             015E  D1E3            SAL     BX,1
+             0160  C4361800        LES     SI,empty_buffer
+             0164  26C7000000      MOV     ES:[BX].[SI],0H
+             0169  E9E3FF          JMP     @16
+                           @17:
+                                                   ; STATEMENT # 566
+             016C  E80000          CALL    get_track_time
+             016F  99              CWD
+             0170  B96400          MOV     CX,64H
+             0173  BF0000          MOV     DI,0H
+             0176  9A00000000      CALL    LQ_SLONG_MUL
+             017B  89061E00        MOV     play_time,AX
+             017F  89162000        MOV     play_time+2H,DX
+                                                   ; STATEMENT # 570
+             0183  C746EE0000      MOV     [BP].i,0H
+             0188  E90300          JMP     @21
+                           @19:
+             018B  FF46EE          INC     [BP].i
+                           @21:
+             018E  817EEE0200      CMP     [BP].i,2H
+             0193  7C03            JL      $+5H
+             0195  E92801          JMP     @20
+                                                   ; STATEMENT # 573
+             0198  E80000          CALL    get_track_remaining_length
+             019B  09D2            OR      DX,DX
+             019D  7504            JNZ     $+6H
+             019F  81F80000        CMP     AX,0H
+             01A3  7403            JZ      $+5H
+             01A5  E91A00          JMP     @22
+                                                   ; STATEMENT # 575
+             01A8  833E220000      CMP     rpt_play,0H
+             01AD  7503            JNZ     $+5H
+             01AF  E90B00          JMP     @23
+                                                   ; STATEMENT # 577
+             01B2  E80000          CALL    init_track
+                                                   ; STATEMENT # 579
+             01B5  C746FA0000      MOV     [BP].tot_blocks_read,0H
+                                                   ; STATEMENT # 581
+             01BA  E90500          JMP     @24
+                           @23:
+                                                   ; STATEMENT # 583
+             01BD  C746F20100      MOV     [BP].end_track,1H
+                                                   ; STATEMENT # 584
+                           @24:
+                                                   ; STATEMENT # 588
+                           @22:
+             01C2  837EF200        CMP     [BP].end_track,0H
+             01C6  7403            JZ      $+5H
+             01C8  E9CD00          JMP     @25
+                                                   ; STATEMENT # 591
+             01CB  E80000          CALL    get_track_remaining_length
+             01CE  50              PUSH    AX      ; 1
+             01CF  6946FA0002      IMUL    AX,[BP].tot_blocks_read,200H
+             01D4  52              PUSH    DX      ; 2
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  22
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             01D5  99              CWD
+             01D6  5F              POP     DI      ; 2
+             01D7  59              POP     CX      ; 1
+             01D8  2BC8            SUB     CX,AX
+             01DA  1BFA            SBB     DI,DX
+             01DC  894EF6          MOV     [BP].bytes_left,CX
+             01DF  897EF8          MOV     [BP].bytes_left+2H,DI
+                                                   ; STATEMENT # 592
+             01E2  81C1FF01        ADD     CX,1FFH
+             01E6  81D70000        ADC     DI,0H
+             01EA  8BC1            MOV     AX,CX
+             01EC  B90002          MOV     CX,200H
+             01EF  BA0000          MOV     DX,0H
+             01F2  87D7            XCHG    DX,DI
+             01F4  9A00000000      CALL    LQ_SLONG_DIV
+             01F9  8946FE          MOV     [BP].blocks_to_read,AX
+                                                   ; STATEMENT # 594
+             01FC  81F82000        CMP     AX,20H
+             0200  7F03            JG      $+5H
+             0202  E90500          JMP     @26
+                                                   ; STATEMENT # 595
+             0205  C746FE2000      MOV     [BP].blocks_to_read,20H
+                                                   ; STATEMENT # 598
+                           @26:
+             020A  6B5EEE08        IMUL    BX,[BP].i,8H
+             020E  C49F0000        LES     BX,buffers[BX]
+             0212  06              PUSH    ES      ; 1
+             0213  53              PUSH    BX      ; 2
+             0214  FF76FE          PUSH    [BP].blocks_to_read; 3
+             0217  E80000          CALL    get_track_block_position
+             021A  50              PUSH    AX      ; 4
+             021B  8B46FA          MOV     AX,[BP].tot_blocks_read
+             021E  52              PUSH    DX      ; 5
+             021F  99              CWD
+             0220  5F              POP     DI      ; 5
+             0221  59              POP     CX      ; 4
+             0222  03C1            ADD     AX,CX
+             0224  13D7            ADC     DX,DI
+             0226  52              PUSH    DX      ; 4
+             0227  50              PUSH    AX      ; 5
+             0228  E80000          CALL    get_file_blocks
+             022B  81C40A00        ADD     SP,0AH
+             022F  8946FC          MOV     [BP].blocks_read,AX
+                                                   ; STATEMENT # 601
+             0232  09C0            OR      AX,AX
+             0234  7F03            JG      $+5H
+             0236  E95400          JMP     @27
+                                                   ; STATEMENT # 603
+             0239  69C00002        IMUL    AX,AX,200H
+             023D  99              CWD
+             023E  3B56F8          CMP     DX,[BP].bytes_left+2H
+             0241  7E03            JLE     $+5H
+             0243  E91800          JMP     @28
+             0246  7D03            JGE     $+5H
+             0248  E90800          JMP     @54
+             024B  3B46F6          CMP     AX,[BP].bytes_left
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  23
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             024E  7603            JBE     $+5H
+             0250  E90B00          JMP     @28
+                           @54:
+                                                   ; STATEMENT # 605
+             0253  6946FC0001      IMUL    AX,[BP].blocks_read,100H
+             0258  8946F0          MOV     [BP].tmp,AX
+                                                   ; STATEMENT # 606
+             025B  E91C00          JMP     @29
+                           @28:
+                                                   ; STATEMENT # 608
+             025E  8B56F8          MOV     DX,[BP].bytes_left+2H
+             0261  8B46F6          MOV     AX,[BP].bytes_left
+             0264  81C00100        ADD     AX,1H
+             0268  81D20000        ADC     DX,0H
+             026C  B90200          MOV     CX,2H
+             026F  BF0000          MOV     DI,0H
+             0272  9A00000000      CALL    LQ_SLONG_DIV
+             0277  8946F0          MOV     [BP].tmp,AX
+                           @29:
+                                                   ; STATEMENT # 610
+             027A  6B5EEE08        IMUL    BX,[BP].i,8H
+             027E  8B46F0          MOV     AX,[BP].tmp
+             0281  89870400        MOV     buffers[BX+4H],AX
+                                                   ; STATEMENT # 612
+             0285  C746F40100      MOV     [BP].have_buffer,1H
+                                                   ; STATEMENT # 614
+             028A  E90500          JMP     @30
+                           @27:
+                                                   ; STATEMENT # 616
+             028D  C746F20100      MOV     [BP].end_track,1H
+                                                   ; STATEMENT # 617
+                           @30:
+                                                   ; STATEMENT # 620
+             0292  8B46FC          MOV     AX,[BP].blocks_read
+             0295  0146FA          ADD     [BP].tot_blocks_read,AX
+                                                   ; STATEMENT # 624
+                           @25:
+             0298  837EF200        CMP     [BP].end_track,0H
+             029C  7503            JNZ     $+5H
+             029E  E91C00          JMP     @31
+                                                   ; STATEMENT # 625
+             02A1  6B5EEE08        IMUL    BX,[BP].i,8H
+             02A5  C78704000020    MOV     buffers[BX+4H],2000H
+                                                   ; STATEMENT # 626
+             02AB  C78706000100    MOV     buffers[BX+6H],1H
+                                                   ; STATEMENT # 627
+             02B1  C4061800        LES     AX,empty_buffer
+             02B5  89870000        MOV     buffers[BX],AX
+             02B9  8C870200        MOV     buffers[BX+2H],ES
+                                                   ; STATEMENT # 629
+                           @31:
+             02BD  E9CBFE          JMP     @19
+                           @20:
+                                                   ; STATEMENT # 633
+             02C0  837EF400        CMP     [BP].have_buffer,0H
+             02C4  7503            JNZ     $+5H
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  24
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             02C6  E93200          JMP     @32
+                                                   ; STATEMENT # 635
+             02C9  FF360400        PUSH    buffers+4H; 1
+             02CD  C41E0000        LES     BX,buffers
+             02D1  06              PUSH    ES      ; 2
+             02D2  53              PUSH    BX      ; 3
+             02D3  E80000          CALL    audio_play
+             02D6  81C40600        ADD     SP,6H
+                                                   ; STATEMENT # 637
+             02DA  C7061C000000    MOV     current_buffer,0H
+                                                   ; STATEMENT # 639
+             02E0  8B162000        MOV     DX,play_time+2H
+             02E4  8B061E00        MOV     AX,play_time
+             02E8  B96400          MOV     CX,64H
+             02EB  BF0000          MOV     DI,0H
+             02EE  9A00000000      CALL    LQ_SLONG_DIV
+             02F3  50              PUSH    AX      ; 1
+             02F4  E80000          CALL    display_time
+             02F7  59              POP     CX      ; 1
+                                                   ; STATEMENT # 641
+             02F8  E80000          CALL    elapsed_time
+                                                   ; STATEMENT # 646
+                           @32:
+             02FB  837EF400        CMP     [BP].have_buffer,0H
+             02FF  7503            JNZ     $+5H
+             0301  E90700          JMP     @33
+                                                   ; STATEMENT # 648
+             0304  B80100          MOV     AX,1H
+             0307  C9              LEAVE
+             0308  5F              POP     DI
+             0309  5E              POP     SI
+             030A  C3              RET
+                                                   ; STATEMENT # 649
+                           @33:
+                                                   ; STATEMENT # 651
+             030B  8B4608          MOV     AX,[BP].cur_status
+             030E  C9              LEAVE
+             030F  5F              POP     DI
+             0310  5E              POP     SI
+             0311  C3              RET
+                                                   ; STATEMENT # 653
+                           init_Play      ENDP
+                                                   ; STATEMENT # 697
+                           update_Play      PROC NEAR
+             0312  56              PUSH    SI
+             0313  57              PUSH    DI
+             0314  C81C0000        ENTER   1CH,0H
+                           @34:
+                                                   ; STATEMENT # 699
+             0318  8B162000        MOV     DX,play_time+2H
+             031C  8B061E00        MOV     AX,play_time
+             0320  8946FC          MOV     [BP].old_play_time,AX
+             0323  8956FE          MOV     [BP].old_play_time+2H,DX
+                                                   ; STATEMENT # 712
+             0326  C746E40000      MOV     [BP].end_play,0H
+                                                   ; STATEMENT # 721
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  25
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             032B  8B061C00        MOV     AX,current_buffer
+             032F  40              INC     AX
+             0330  8946FA          MOV     [BP].next_buffer,AX
+                                                   ; STATEMENT # 723
+             0333  81F80300        CMP     AX,3H
+             0337  7D03            JGE     $+5H
+             0339  E90500          JMP     @35
+                                                   ; STATEMENT # 724
+             033C  816EFA0300      SUB     [BP].next_buffer,3H
+                                                   ; STATEMENT # 728
+                           @35:
+             0341  8B5EFA          MOV     BX,[BP].next_buffer
+             0344  6BF308          IMUL    SI,BX,8H
+             0347  FFB40400        PUSH    buffers[SI+4H]; 1
+             034B  C4BC0000        LES     DI,buffers[SI]
+             034F  06              PUSH    ES      ; 2
+             0350  57              PUSH    DI      ; 3
+             0351  E80000          CALL    update
+             0354  81C40600        ADD     SP,6H
+             0358  08C0            OR      AL,AL
+             035A  7503            JNZ     $+5H
+             035C  E92802          JMP     @36
+                                                   ; STATEMENT # 734
+             035F  8B061C00        MOV     AX,current_buffer
+             0363  48              DEC     AX
+             0364  8946F8          MOV     [BP].previous_buffer,AX
+                                                   ; STATEMENT # 736
+             0367  7803            JS      $+5H
+             0369  E90500          JMP     @37
+                                                   ; STATEMENT # 737
+             036C  8146F80300      ADD     [BP].previous_buffer,3H
+                                                   ; STATEMENT # 741
+                           @37:
+             0371  8B5EF8          MOV     BX,[BP].previous_buffer
+             0374  6BF308          IMUL    SI,BX,8H
+             0377  83BC060000      CMP     buffers[SI+6H],0H
+             037C  7403            JZ      $+5H
+             037E  E92100          JMP     @38
+             0381  6B3E1C0008      IMUL    DI,current_buffer,8H
+             0386  83BD060000      CMP     buffers[DI+6H],0H
+             038B  7403            JZ      $+5H
+             038D  E91200          JMP     @38
+                                                   ; STATEMENT # 745
+             0390  8B840400        MOV     AX,buffers[SI+4H]
+             0394  D1E0            SHL     AX,1
+             0396  BA0000          MOV     DX,0H
+             0399  52              PUSH    DX      ; 1
+             039A  50              PUSH    AX      ; 2
+             039B  E80000          CALL    update_track_position
+             039E  81C40400        ADD     SP,4H
+                                                   ; STATEMENT # 749
+                           @38:
+             03A2  6B1E1C0008      IMUL    BX,current_buffer,8H
+             03A7  83BF060000      CMP     buffers[BX+6H],0H
+             03AC  7503            JNZ     $+5H
+             03AE  E91800          JMP     @39
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  26
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             03B1  833E220000      CMP     rpt_play,0H
+             03B6  7403            JZ      $+5H
+             03B8  E90E00          JMP     @39
+                                                   ; STATEMENT # 752
+             03BB  E80000          CALL    audio_halt
+                                                   ; STATEMENT # 764
+             03BE  E80000          CALL    init_track
+                                                   ; STATEMENT # 767
+             03C1  C746080000      MOV     [BP].cur_status,0H
+                                                   ; STATEMENT # 769
+             03C6  E9BE01          JMP     @40
+                           @39:
+                                                   ; STATEMENT # 774
+             03C9  8B061C00        MOV     AX,current_buffer
+             03CD  81C00200        ADD     AX,2H
+             03D1  8946F6          MOV     [BP].fill_buffer,AX
+                                                   ; STATEMENT # 776
+             03D4  81F80300        CMP     AX,3H
+             03D8  7D03            JGE     $+5H
+             03DA  E90500          JMP     @41
+                                                   ; STATEMENT # 777
+             03DD  816EF60300      SUB     [BP].fill_buffer,3H
+                                                   ; STATEMENT # 783
+                           @41:
+             03E2  6B5EFA08        IMUL    BX,[BP].next_buffer,8H
+             03E6  8B870400        MOV     AX,buffers[BX+4H]
+             03EA  BA0000          MOV     DX,0H
+             03ED  8946E6          MOV     [BP].words_read,AX
+             03F0  8956E8          MOV     [BP].words_read+2H,DX
+                                                   ; STATEMENT # 785
+             03F3  8B1E1C00        MOV     BX,current_buffer
+             03F7  6BF308          IMUL    SI,BX,8H
+             03FA  83BC060000      CMP     buffers[SI+6H],0H
+             03FF  7403            JZ      $+5H
+             0401  E90D00          JMP     @42
+                                                   ; STATEMENT # 786
+             0404  8B840400        MOV     AX,buffers[SI+4H]
+             0408  BA0000          MOV     DX,0H
+             040B  0146E6          ADD     [BP].words_read,AX
+             040E  1156E8          ADC     [BP].words_read+2H,DX
+                                                   ; STATEMENT # 788
+                           @42:
+             0411  E80000          CALL    get_track_remaining_length
+             0414  50              PUSH    AX      ; 1
+             0415  B80200          MOV     AX,2H
+             0418  BF0000          MOV     DI,0H
+             041B  8B76E8          MOV     SI,[BP].words_read+2H
+             041E  8B4EE6          MOV     CX,[BP].words_read
+             0421  52              PUSH    DX      ; 2
+             0422  8BD7            MOV     DX,DI
+             0424  8BFE            MOV     DI,SI
+             0426  9A00000000      CALL    LQ_SLONG_MUL
+             042B  5F              POP     DI      ; 2
+             042C  59              POP     CX      ; 1
+             042D  2BC8            SUB     CX,AX
+             042F  1BFA            SBB     DI,DX
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  27
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0431  894EEA          MOV     [BP].bytes_left,CX
+             0434  897EEC          MOV     [BP].bytes_left+2H,DI
+                                                   ; STATEMENT # 789
+             0437  E80000          CALL    get_track_block_position
+             043A  50              PUSH    AX      ; 1
+             043B  8B7EE8          MOV     DI,[BP].words_read+2H
+             043E  8B46E6          MOV     AX,[BP].words_read
+             0441  B90001          MOV     CX,100H
+             0444  BE0000          MOV     SI,0H
+             0447  52              PUSH    DX      ; 2
+             0448  8BD7            MOV     DX,DI
+             044A  8BFE            MOV     DI,SI
+             044C  9A00000000      CALL    LQ_SLONG_DIV
+             0451  5F              POP     DI      ; 2
+             0452  59              POP     CX      ; 1
+             0453  03C1            ADD     AX,CX
+             0455  13D7            ADC     DX,DI
+             0457  8946F2          MOV     [BP].start_pos,AX
+             045A  8956F4          MOV     [BP].start_pos+2H,DX
+                                                   ; STATEMENT # 792
+             045D  817EEC0000      CMP     [BP].bytes_left+2H,0H
+             0462  7E03            JLE     $+5H
+             0464  E94000          JMP     @43
+             0467  7D03            JGE     $+5H
+             0469  E90A00          JMP     @55
+             046C  817EEA0000      CMP     [BP].bytes_left,0H
+             0471  7603            JBE     $+5H
+             0473  E93100          JMP     @43
+                           @55:
+                                                   ; STATEMENT # 794
+             0476  833E220000      CMP     rpt_play,0H
+             047B  7503            JNZ     $+5H
+             047D  E92200          JMP     @44
+                                                   ; STATEMENT # 796
+             0480  E80000          CALL    init_track
+                                                   ; STATEMENT # 798
+             0483  E80000          CALL    get_track_remaining_length
+             0486  8946EA          MOV     [BP].bytes_left,AX
+             0489  8956EC          MOV     [BP].bytes_left+2H,DX
+                                                   ; STATEMENT # 800
+             048C  E80000          CALL    get_track_block_position
+             048F  8946F2          MOV     [BP].start_pos,AX
+             0492  8956F4          MOV     [BP].start_pos+2H,DX
+                                                   ; STATEMENT # 802
+             0495  6B5EFA08        IMUL    BX,[BP].next_buffer,8H
+             0499  C78706000100    MOV     buffers[BX+6H],1H
+                                                   ; STATEMENT # 804
+             049F  E90500          JMP     @45
+                           @44:
+                                                   ; STATEMENT # 806
+             04A2  C746E40100      MOV     [BP].end_play,1H
+                                                   ; STATEMENT # 807
+                           @45:
+                                                   ; STATEMENT # 811
+                           @43:
+             04A7  837EE400        CMP     [BP].end_play,0H
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  28
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             04AB  7403            JZ      $+5H
+             04AD  E9AB00          JMP     @46
+                                                   ; STATEMENT # 814
+             04B0  8B56EC          MOV     DX,[BP].bytes_left+2H
+             04B3  8B46EA          MOV     AX,[BP].bytes_left
+             04B6  81C0FF01        ADD     AX,1FFH
+             04BA  81D20000        ADC     DX,0H
+             04BE  B90002          MOV     CX,200H
+             04C1  BF0000          MOV     DI,0H
+             04C4  9A00000000      CALL    LQ_SLONG_DIV
+             04C9  8946F0          MOV     [BP].blocks_to_read,AX
+                                                   ; STATEMENT # 816
+             04CC  81F82000        CMP     AX,20H
+             04D0  7F03            JG      $+5H
+             04D2  E90500          JMP     @47
+                                                   ; STATEMENT # 817
+             04D5  C746F02000      MOV     [BP].blocks_to_read,20H
+                                                   ; STATEMENT # 820
+                           @47:
+             04DA  6B5EF608        IMUL    BX,[BP].fill_buffer,8H
+             04DE  C49F0000        LES     BX,buffers[BX]
+             04E2  06              PUSH    ES      ; 1
+             04E3  53              PUSH    BX      ; 2
+             04E4  FF76F0          PUSH    [BP].blocks_to_read; 3
+             04E7  FF76F4          PUSH    [BP].start_pos+2H; 4
+             04EA  FF76F2          PUSH    [BP].start_pos; 5
+             04ED  E80000          CALL    get_file_blocks
+             04F0  81C40A00        ADD     SP,0AH
+             04F4  8946EE          MOV     [BP].blocks_read,AX
+                                                   ; STATEMENT # 823
+             04F7  09C0            OR      AX,AX
+             04F9  7F03            JG      $+5H
+             04FB  E95800          JMP     @48
+                                                   ; STATEMENT # 825
+             04FE  69C00002        IMUL    AX,AX,200H
+             0502  99              CWD
+             0503  3B56EC          CMP     DX,[BP].bytes_left+2H
+             0506  7E03            JLE     $+5H
+             0508  E91D00          JMP     @49
+             050B  7D03            JGE     $+5H
+             050D  E90800          JMP     @56
+             0510  3B46EA          CMP     AX,[BP].bytes_left
+             0513  7603            JBE     $+5H
+             0515  E91000          JMP     @49
+                           @56:
+                                                   ; STATEMENT # 827
+             0518  6946EE0001      IMUL    AX,[BP].blocks_read,100H
+             051D  6B5EF608        IMUL    BX,[BP].fill_buffer,8H
+             0521  89870400        MOV     buffers[BX+4H],AX
+                                                   ; STATEMENT # 828
+             0525  E92100          JMP     @50
+                           @49:
+                                                   ; STATEMENT # 831
+             0528  8B56EC          MOV     DX,[BP].bytes_left+2H
+             052B  8B46EA          MOV     AX,[BP].bytes_left
+             052E  81C00100        ADD     AX,1H
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  29
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0532  81D20000        ADC     DX,0H
+             0536  B90200          MOV     CX,2H
+             0539  BF0000          MOV     DI,0H
+             053C  9A00000000      CALL    LQ_SLONG_DIV
+             0541  6B5EF608        IMUL    BX,[BP].fill_buffer,8H
+             0545  89870400        MOV     buffers[BX+4H],AX
+                           @50:
+                                                   ; STATEMENT # 833
+             0549  6B5EF608        IMUL    BX,[BP].fill_buffer,8H
+             054D  C78706000000    MOV     buffers[BX+6H],0H
+                                                   ; STATEMENT # 835
+             0553  E90500          JMP     @51
+                           @48:
+                                                   ; STATEMENT # 837
+             0556  C746E40100      MOV     [BP].end_play,1H
+                                                   ; STATEMENT # 838
+                           @51:
+                                                   ; STATEMENT # 842
+                           @46:
+             055B  837EE400        CMP     [BP].end_play,0H
+             055F  7503            JNZ     $+5H
+             0561  E91C00          JMP     @52
+                                                   ; STATEMENT # 843
+             0564  6B5EF608        IMUL    BX,[BP].fill_buffer,8H
+             0568  C4061800        LES     AX,empty_buffer
+             056C  89870000        MOV     buffers[BX],AX
+             0570  8C870200        MOV     buffers[BX+2H],ES
+                                                   ; STATEMENT # 844
+             0574  C78704000020    MOV     buffers[BX+4H],2000H
+                                                   ; STATEMENT # 845
+             057A  C78706000100    MOV     buffers[BX+6H],1H
+                                                   ; STATEMENT # 850
+                           @52:
+             0580  8B46FA          MOV     AX,[BP].next_buffer
+             0583  89061C00        MOV     current_buffer,AX
+                                                   ; STATEMENT # 851
+                           @40:
+                                                   ; STATEMENT # 858
+                           @36:
+             0587  E80000          CALL    elapsed_time
+             058A  99              CWD
+             058B  8B3E2000        MOV     DI,play_time+2H
+             058F  8B0E1E00        MOV     CX,play_time
+             0593  2BC8            SUB     CX,AX
+             0595  1BFA            SBB     DI,DX
+             0597  890E1E00        MOV     play_time,CX
+             059B  893E2000        MOV     play_time+2H,DI
+                                                   ; STATEMENT # 860
+             059F  8BC1            MOV     AX,CX
+             05A1  B96400          MOV     CX,64H
+             05A4  BA0000          MOV     DX,0H
+             05A7  87D7            XCHG    DX,DI
+             05A9  9A00000000      CALL    LQ_SLONG_DIV
+             05AE  50              PUSH    AX      ; 1
+             05AF  8B7EFE          MOV     DI,[BP].old_play_time+2H
+             05B2  8B46FC          MOV     AX,[BP].old_play_time
+iC-86  COMPILER   PLAYMP3                                                                    05/28/;6 00:44:00  PAGE  30
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             05B5  B96400          MOV     CX,64H
+             05B8  BE0000          MOV     SI,0H
+             05BB  52              PUSH    DX      ; 2
+             05BC  8BD7            MOV     DX,DI
+             05BE  8BFE            MOV     DI,SI
+             05C0  9A00000000      CALL    LQ_SLONG_DIV
+             05C5  5F              POP     DI      ; 2
+             05C6  5B              POP     BX      ; 1
+             05C7  3BFA            CMP     DI,DX
+             05C9  7502            JNZ     $+4H
+             05CB  3BD8            CMP     BX,AX
+             05CD  7503            JNZ     $+5H
+             05CF  E90A00          JMP     @53
+                                                   ; STATEMENT # 862
+             05D2  53              PUSH    BX      ; 1
+             05D3  E80000          CALL    abs_
+             05D6  59              POP     CX      ; 1
+             05D7  50              PUSH    AX      ; 1
+             05D8  E80000          CALL    display_time
+             05DB  59              POP     CX      ; 1
+                                                   ; STATEMENT # 866
+                           @53:
+             05DC  8B4608          MOV     AX,[BP].cur_status
+             05DF  C9              LEAVE
+             05E0  5F              POP     DI
+             05E1  5E              POP     SI
+             05E2  C3              RET
+                                                   ; STATEMENT # 868
+                           update_Play      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 05E3H   1507D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 0024H     36D
+     MAXIMUM STACK SIZE           = 0030H     48D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

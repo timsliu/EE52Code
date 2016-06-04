@@ -1,0 +1,120 @@
+##############################################################################
+# 
+# Makefile
+#
+# EE/CS 52: 80188 MP3 Jukebox Project
+#
+# Revision History
+# 2/16/2010  Glen George     Initial Revision
+#
+##############################################################################
+
+
+### VARIABLES ################################################################
+
+# C Compiler Definition
+CC=ic86
+ASM=asm86
+LINK=link86
+HEXMAKE=oh86
+
+# Directory Definitions
+SRCDIR=src
+OBJDIR=obj
+SYSDIR=$(SRCDIR)/sys
+JUKEDIR=$(SRCDIR)/juke214
+INCLUDEDIR=c:/5xtools
+
+# Compiler Flags
+CFLAGS= debug mod186 extend code small rom noalign include($(INCLUDEDIR))
+ASMFLAGS= m1 ep db
+
+
+$ Jukebox files
+
+JUKEFILES=$(wildcard $(JUKEDIR)/*.c)
+JUKEOBJS=$(notdir $(JUKEFILES:.c=.obj)) $(OBJDIR)/lib188.obj
+
+
+# Linker Command File
+
+LINKCMD=jukebox.cli
+
+
+# low-level assembly files
+
+# user must define the symbol SYSOBJS below
+# example definition:
+# SYSOBJS= keypad.obj display.obj
+# ROMOBJS= c0smrom.obj $(SYSOBJS)
+
+
+
+### RULES ####################################################################
+
+# Specify Virtual Path for Object Files
+vpath %.obj $(OBJDIR)
+
+# Rule for Building Objects from C Sources
+%.obj:
+	echo $(patsubst %.obj,%.c,$(<))
+	$(CC) $(patsubst %.obj,%.c,$(<)) $(CFLAGS) object($(OBJDIR)/$@)
+
+
+	
+### COMMAND LINE TARGETS #####################################################
+
+# Target for building debug version of code
+juke: $(SYSOBJS) $(JUKEOBJS)
+	$(LINK) $(SYSOBJS) $(JUKEOBJS)
+
+
+# Target for building ROM version of code
+jukerom: $(ROMOBJS) $(JUKEOBJS)
+	$(LINK) $(ROMOBJS) $(JUKEOBJS)
+	$(HEXMAKE) jukebox
+
+
+# Target for cleaning house
+.PHONY: clean
+clean:
+	del jukebox jukebox.hex $(OBJDIR)\*.obj
+
+
+
+### GENERAL TARGETS ##########################################################
+
+# Targets for Jukebox Code
+mainloop.obj : $(SYSDIR)/mainloop.c $(SYSDIR)/interfac.h $(SYSDIR)/mp3defs.h \
+		$(SYSDIR)/keyproc.h $(SYSDIR)/updatfnc.h \
+		$(SYSDIR)/trakutil.h $(SYSDIR)/fatutil.h
+
+playmp3.obj  : $(SYSDIR)/playmp3.c $(SYSDIR)/mp3defs.h $(SYSDIR)/keyproc.h \
+		$(SYSDIR)/updatfnc.h $(SYSDIR)/trakutil.h $(SYSDIR)/fatutil.h
+
+ffrev.obj    : $(SYSDIR)/ffrev.c $(SYSDIR)/mp3defs.h $(SYSDIR)/keyproc.h \
+		$(SYSDIR)/updatfnc.h $(SYSDIR)/trakutil.h $(SYSDIR)/fatutil.h
+
+keyupdat.obj : $(SYSDIR)/keyupdat.c $(SYSDIR)/interfac.h $(SYSDIR)/mp3defs.h \
+		$(SYSDIR)/keyproc.h $(SYSDIR)/updatfnc.h \
+		$(SYSDIR)/trakutil.h $(SYSDIR)/fatutil.h
+
+trakutil.obj : $(SYSDIR)/trakutil.c $(SYSDIR)/interfac.h $(SYSDIR)/mp3defs.h \
+		$(SYSDIR)/trakutil.h $(SYSDIR)/fatutil.h $(SYSDIR)/vfat.h
+
+fatutil.obj  : $(SYSDIR)/fatutil.c $(SYSDIR)/mp3defs.h $(SYSDIR)/interfac.h \
+		$(SYSDIR)/vfat.h $(SYSDIR)/fatutil.h
+
+stubfncs.obj : $(SYSDIR)/stubfncs.c $(SYSDIR)/mp3defs.h
+
+simide.obj   : $(SYSDIR)/simide.c $(SYSDIR)/mp3defs.h $(SYSDIR)/interfac.h
+
+lib188.obj   : $(SYSDIR)/lib188.asm
+	$(ASM) $(SYSDIR)/lib188.asm $(ASMFLAGS) object($(OBJDIR)/lib188.obj)
+
+
+# Targets for Low-Level Code
+# user must supply these targets and dependencies
+# example defintions:
+#    keypad.obj: $(SYSDIR)/keypad.asm $(SYSDIR)/general.inc $(SYSDIR)/keypad.inc
+#            $(ASM) $(SYSDIR)/keypad.asm $(ASMFLAGS) object($(OBJDIR)/keypad.obj)

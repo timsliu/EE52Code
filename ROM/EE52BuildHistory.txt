@@ -1,0 +1,145 @@
+EE52 Board Build
+
+4/7/16
+Added the 5 mounting stands
+
+4/8/16
+Added 5 test points. Checked for continuity (all good - no shorts)
+C46 and C47 (1 uF)
+10nF caps
+10 uF caps (continuity checked)
+C37 (47 nF)
+C1 (47 uF)
+C6 and C53 (33 pF)
+C5, C10, C16
+C4, C11, C17 (continuity checked)
+C20, C2, C40, C19, C21 (GND - VCC continuity good)
+C12, C22, C49, C29, C40
+
+4/9/16
+C3, C13, C15, C48
+C36, C7, C28, C41, C42, C43 (continuity checked - no shorts)
+C26, C27, C44, C34, C35, C39 (continuity checked - no short)
+C30, C31, C32 (continuity checked - no shorts)
+Note: all caps now done (I think)
+Trimmed cap leads further down.
+U8 (LM1086 voltage regulator)
+J1 DC power jack
+Spliced open DC power adapter - white wire is VCC
+Soldered white wire VCC to the corresponding lead on male jack
+
+4/10/16 - 8am
+Added hot glue to cover bare wires in DC jack
+Soldered other wire to the smaller lead
+Smashed the DC power jack case back in
+Tested for five volts on board - 5.02V and 3.24V recorded (looks good)
+
+4/11/16
+R76 and R77 (LED resistors) soldered. LEDs both turn on (yay!)
+SW1 Reset and SW10 Trap
+Sockets for U9, U10, X1, U4
+
+4/12/16
+Sockets for U7, U11, U13, U16
+R20, R105
+R2 (external oscillator resistor)
+Tested SW1 Reset - lights up correctly
+NOTE: Make sure to think about order that the CPLDs are soldered on b/c the 
+sockets are larger than the footprints and there isn’t room for the
+resistors on the top of the board.
+R3, R4, R5, R8 (11k CPU resistors)
+SW3 - SW9
+Sockets U19-21
+
+4/13/16
+Inserted U2 (CPU) and X1 (external oscillator) into sockets
+Inserted U4 (Reset) into socket
+Soldered header P20, 21, 22, 12, 3, 4, 13, 17, 9, 8
+
+4/15/16
+R82, R83, R84, R85 (zero ohm buffer resistors)
+Trace to DB0 was accidentally destroyed - will need to wire wrap
+Soldered P16 or at least what could be soldered
+P4 and P17
+R21-R27 and R97-104
+Tested switches - SW2, SW3, and SW7 aren’t lighting up - could be solder
+joints are poor or broken switches
+
+4/16/16
+Repaired SW2, SW3, and SW7. Best guess is that I melted the insides while
+soldering the large middle pin. Pulled out the switches and replaced
+them with new ones. Did not solder the large middle pin, but they all
+seem to work fine.
+Tested SW10 watchdog switch with multimeter - seems to work fine
+Measured voltage levels of all switches - all good :)
+
+4/17/16
+Inserted U1, U3, U5, and U9 into sockets
+Header P14
+Plugged serial debugger in the wrong way and chips started smoking - very
+bad. Probably destroyed.
+Serial debugger still works, but board not connecting. Soldered P1 header
+Temporary resistor to pull SRDY up
+
+4/18/16
+R14, R11, R80
+
+4/20/16
+Inserted 74ALS245 into U11 (switch buffer)
+
+4/22/16
+Swapped U1 74ALS573 for 74AL573 to try and eliminate ground bounce and
+make serial debugger more reliable - didn’t work
+
+4/23/16
+R41, R62, R35, R16, R55, R36, U17 socket
+Resoldered some of the joints on U10 ROM socket and soldered a joint
+that hadn’t been soldered - that joint was probably source of reliability
+problems :P
+
+4/25/16
+Soldered in LCD1 sockets and R75 (backlight resistor) and R37 pot
+Removed pull up resistor for SRDY and instead soldered wire wrap wire
+between SRDY1 and SRDY
+Inserted U17 CPLD into socket
+Serial debugger still connects (phew)
+
+5/7/16
+
+Soldered R32, R33, R34, R38, R39, R17 (for CPLD U12)
+R65 - R70, R71, R72, R73 (MUX enables) - continuity checked. Still good, but
+unexpected rise in resistance
+R64, R63, R15, and R7
+Loaded and tested code again - all good
+Socket U12 for CPLD and inserted CPLD
+Loaded and tested display/button code - still works, notably slower
+
+5/8/16
+Soldered U12 DRAM socket - didn’t think about orientation but very luckily
+I think I got it right.
+
+5/9/16
+Inserted U19, U20, U21 and DRAM into sockets
+
+5/10/16
+Soldered some pins on the mux sockets that weren’t soldered, which was
+leading to some issues. DRAM appears to be working.
+
+5/13/16
+U6 transceiver - everything still working
+R13, R18, R42, R47
+R19, R43, R44, R53
+R1, R40, R52, R54
+
+5/25/16
+Missed a few days of records oops
+Soldered compact flash card adapter end to end
+
+5/26/16
+VS1011
+Inserted U13
+X2
+J4
+R48, 49, 50, 51, 60
+R59
+All parts have been built

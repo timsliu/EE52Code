@@ -1,0 +1,149 @@
+iC-86  COMPILER   STUBFNCS                                                                   05/07/;6 12:45:19  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE STUBFNCS
+OBJECT MODULE PLACED IN STUBFNCS.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE STUBFNCS.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                STUBFNCS                                  */
+    4             /*                          Audio Stub Functions                            */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                EE/CS 52                                  */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains stub functions for the hardware interfacing code.  The
+   12                file is meant to allow linking of the main code without necessarily having
+   13                all the low-level functions.  The functions included are:
+   14                   update         - check if ready for an update
+   15                   elapsed_time   - get the time since the last call to this function
+   16                   key_available  - check if a key is available
+   17                   getkey         - get a key
+   18                   display_time   - display the passed time
+   19                   display_track  - display the passed track number
+   20                   display_status - display the passed status
+   21                   display_title  - display the passed track title
+   22                   display_artist - display the passed track artist
+   23                   get_blocks     - get data from the hard drive
+   24                   audio_play     - start audio output
+   25                   audio_halt     - halt audio input or output
+   26             
+   27                The local functions included are:
+   28                   none
+   29             
+   30                The locally global variable definitions included are:
+   31                   none
+   32             
+   33             
+   34                Revision History
+   35                   6/6/00   Glen George       Initial revision (from the 3/6/99 version of
+   36                                              stubfncs.c for the Digital Audio Recorder
+   37                                              Project).
+   38                   6/2/02   Glen George       Removed ffrev_start() and ffrev_halt(), they
+   39                                              are no longer part of the user-written code.
+   40                   6/5/03   Glen George       Removed display_track(), is is no longer part
+   41                                              of the user-written code.
+   42                   4/29/06  Glen George       Updated definitions of get_blocks(),
+   43                                              update(), and audio_play() to use words
+   44                              instead of bytes.
+   45             */
+   46             
+   47             
+   48             
+   49             /* library include files */
+   50               /* none */
+   51             
+iC-86  COMPILER   STUBFNCS                                                                   05/07/;6 12:45:19  PAGE   2
+
+
+   52             /* local include files */
+   53             #include  "mp3defs.h"
+   54             
+   55             
+   56             
+   57             
+   58             /* update function */
+   59             
+   60             unsigned char  update(unsigned short int far *p, int n)
+   61             {
+   62     1           return  FALSE;
+   63     1       }
+   64             
+   65             #if 0
+                  #endif
+  124             
+  125             /* audio functions */
+  126             
+  127             void  audio_play(unsigned short int far *p, int n)
+  128             {
+  129     1           return;
+  130     1       }
+  131             
+  132             void  audio_halt()
+  133             {
+  134     1           return;
+  135     1       }
+  136             
+iC-86  COMPILER   STUBFNCS                                                                   05/07/;6 12:45:19  PAGE   3
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 61
+                           update      PROC NEAR
+             0000  56              PUSH    SI
+             0001  57              PUSH    DI
+             0002  55              PUSH    BP
+             0003  8BEC            MOV     BP,SP
+                           @1:
+                                                   ; STATEMENT # 62
+             0005  31C0            XOR     AX,AX
+             0007  5D              POP     BP
+             0008  5F              POP     DI
+             0009  5E              POP     SI
+             000A  C3              RET
+                                                   ; STATEMENT # 63
+                           update      ENDP
+                                                   ; STATEMENT # 128
+                           audio_play      PROC NEAR
+             000C  56              PUSH    SI
+             000D  57              PUSH    DI
+             000E  55              PUSH    BP
+             000F  8BEC            MOV     BP,SP
+                           @2:
+                                                   ; STATEMENT # 129
+             0011  5D              POP     BP
+             0012  5F              POP     DI
+             0013  5E              POP     SI
+             0014  C3              RET
+                                                   ; STATEMENT # 130
+                           audio_play      ENDP
+                                                   ; STATEMENT # 133
+                           audio_halt      PROC NEAR
+             0016  56              PUSH    SI
+             0017  57              PUSH    DI
+             0018  55              PUSH    BP
+             0019  8BEC            MOV     BP,SP
+                           @3:
+                                                   ; STATEMENT # 134
+             001B  5D              POP     BP
+             001C  5F              POP     DI
+             001D  5E              POP     SI
+             001E  C3              RET
+                                                   ; STATEMENT # 135
+                           audio_halt      ENDP
+
+
+
+MODULE INFORMATION:
+
+     CODE AREA SIZE               = 001FH     31D
+     CONSTANT AREA SIZE           = 0000H      0D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 0008H      8D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS

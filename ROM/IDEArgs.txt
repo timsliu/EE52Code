@@ -1,0 +1,16 @@
+BP+4    start block 0:15
+BP+6    start block 16:31
+BP+8    number of sectors to read
+BP+10   Destination offset
+BP+12   Destination segment
+
+BP+4    start block 0:7
+BP+5    start block 8:15
+BP+6    start block 16:23
+BP+7    start block 24:31
+BP+8    number of sectors to read (low byte)
+BP+9    number of sectors to read (high byte)
+BP+10   Low byte of offset
+BP+11   High byte of offset
+BP+12   Low byte of segment
+BP+13   High byte of segment

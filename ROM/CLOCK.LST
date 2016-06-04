@@ -1,0 +1,215 @@
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    19:30:14  06/03/;6  PAGE    1
+
+
+DOS 5.0 (038-N) 8086/87/88/186 MACRO ASSEMBLER V3.1 ASSEMBLY OF MODULE CLOCK
+OBJECT MODULE PLACED IN CLOCK.OBJ
+ASSEMBLER INVOKED BY:  C:\WINDOWS\SYSTEM32\ASM86.EXE CLOCK.ASM M1 EP DB
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                             1         NAME  CLOCK
+                             2     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                             3     ;                                                                            ;
+                             4     ;                                     Clock                                  ;
+                             5     ;                                Clock Functions                             ;
+                             6     ;                                   EE/CS 52                                 ;
+                             7     ;                                                                            ;
+                             8     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+                             9     ; Description:   This file contains the functions relating to the MP3 clock.
+                            10     ;
+                            11     
+                            12     ; Table of Contents:
+                            13     ;
+                            14     ;        InitClock             -initialize shared clock variables
+                            15     ;        UpdateClock           -increments milliseconds elapsed
+                            16     ;        Elapsed_Time          -returns milliseconds since last call
+                            17     
+                            18     ; Revision History:
+                            19     ;
+                            20     ;    5/6/16    Tim Liu    initial revision
+                            21     ;    5/7/16    Tim Liu    wrote InitClock and Elapsed_Time
+                            22     ;
+                            23     ;
+                            24     
+                            25     ; local include files
+                            26     
+                            27     CGROUP    GROUP    CODE
+                            28     DGROUP    GROUP    DATA
+                            29     
+                            30     
+                            31     
+----                        32     CODE SEGMENT PUBLIC 'CODE'
+                            33     
+                            34             ASSUME  CS:CGROUP
+                            35             ASSUME  DS:DGROUP
+                            36     
+                            37     ;external function declarations
+                            38     
+                            39     ; Name:              InitClock
+                            40     ;
+                            41     ;
+                            42     ;Description:        This function initializes the shared variable
+                            43     ;                    NumMs which tracks how many milliseconds have elapsed.
+                            44     ;                    
+                            45     ; 
+                            46     ;Operation:          Reset NumMs to 0 milliseconds elapsed.
+                            47     ;
+                            48     ;Arguments:          None
+                            49     ;
+                            50     ;Return Values:      None
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    19:30:14  06/03/;6  PAGE    2
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                            51     ;
+                            52     ;Local Variables:    None
+                            53     ;
+                            54     ;Shared Variables:   NumMs (W) - number of milliseconds that have elapsed
+                            55     ;
+                            56     ;Output:             None
+                            57     ;
+                            58     ;Error Handling:     None
+                            59     ;
+                            60     ;Algorithms:         None
+                            61     ;
+                            62     ;Registers Used:     None
+                            63     ;
+                            64     ;Known Bugs:         None
+                            65     ;
+                            66     ;Limitations:        None
+                            67     ;
+                            68     ;Author:             Timothy Liu
+                            69     ;
+                            70     ;Last Modified       5/7/16
+                            71     
+0000                        72     InitClock        PROC    NEAR
+                            73                      PUBLIC  InitClock
+                            74     
+0000                        75     InitClockStart:                 ;write value to NumMs
+0000 C70600000000   R       76         MOV    NumMs, 0
+                            77     
+0006                        78     InitClockDone:                  ;end of function
+0006 C3                     79         RET
+                            80     
+                            81     InitClock    ENDP
+                            82     
+                            83     
+                            84     ; Name:              UpdateClock
+                            85     ;
+                            86     ;
+                            87     ;Description:        This function updates the shared variable NumMS which
+                            88     ;                    tracks the number of milliseconds that have elapsed.
+                            89     ; 
+                            90     ;Operation:          The function increments the value of the shared
+                            91     ;                    variable NumMs.
+                            92     ;
+                            93     ;Arguments:          None
+                            94     ;
+                            95     ;Return Values:      None
+                            96     ;
+                            97     ;Local Variables:    None
+                            98     ;
+                            99     ;Shared Variables:   NumMs (W) - number of milliseconds that have elapsed
+                           100     ;
+                           101     ;Output:             None
+                           102     ;
+                           103     ;Error Handling:     None
+                           104     ;
+                           105     ;Algorithms:         None
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    19:30:14  06/03/;6  PAGE    3
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           106     ;
+                           107     ;Registers Used:     None
+                           108     ;
+                           109     ;Known Bugs:         Does not handle NumMs wrapping at maximum value
+                           110     ;
+                           111     ;Limitations:        None
+                           112     ;
+                           113     ;Author:             Timothy Liu
+                           114     ;
+                           115     ;Last Modified       5/6/6
+                           116     
+0007                       117     UpdateClock        PROC    NEAR
+                           118                        PUBLIC  UpdateClock
+                           119     
+0007                       120     UpdateClockInc:                        ;increment NumMs
+0007 FF060000       R      121         INC    NumMs                       ;one more millisecond elapsed
+                           122     
+000B                       123     UpdateClockDone:                       ;done - return function
+000B C3                    124         RET
+                           125     
+                           126     
+                           127     UpdateClock    ENDP
+                           128     
+                           129     ; Name:              Elapsed_Time
+                           130     ;
+                           131     ;
+                           132     ;Description:        This function returns how many milliseconds have elapsed
+                           133     ;                    since the function was last called. The value maybe 
+                           134     ;                    zero if the function was recently called.
+                           135     ;                    
+                           136     ; 
+                           137     ;Operation:          The function reads the value of NumMs and copies it
+                           138     ;                    to AX. The function then resets NumMs to zero and
+                           139     ;                    returns.
+                           140     ;
+                           141     ;Arguments:          None
+                           142     ;
+                           143     ;Return Values:      AX - milliseconds elapsed since last call
+                           144     ;
+                           145     ;Local Variables:    None
+                           146     ;
+                           147     ;Shared Variables:   NumMs (R/W) - number of milliseconds that have elapsed
+                           148     ;
+                           149     ;Output:             None
+                           150     ;
+                           151     ;Error Handling:     None
+                           152     ;
+                           153     ;Algorithms:         None
+                           154     ;
+                           155     ;Registers Used:     AX
+                           156     ;
+                           157     ;Known Bugs:         None
+                           158     ;
+                           159     ;Limitations:        None
+                           160     ;
+8086/87/88/186 MACRO ASSEMBLER    CLOCK                                                    19:30:14  06/03/;6  PAGE    4
+
+
+LOC  OBJ                  LINE     SOURCE
+
+                           161     ;Author:             Timothy Liu
+                           162     ;
+                           163     ;Last Modified       5/7/16
+                           164     
+000C                       165     Elapsed_Time        PROC    NEAR
+                           166                         PUBLIC  Elapsed_Time
+                           167     
+000C                       168     Elapsed_TimeRead:                       ;copy the value of NumMs
+000C A10000         R      169         MOV    AX, NumMs                    ;place NumMs in return register
+000F C70600000000   R      170         MOV    NumMs, 0                     ;reset NumMs to zero
+                           171     
+0015                       172     Elapsed_TimeDone:                       ;function done - return
+0015 C3                    173         RET
+                           174     
+                           175     
+                           176     
+                           177     Elapsed_Time    ENDP
+                           178     
+                           179     
+----                       180     CODE ENDS
+                           181     
+----                       182     DATA    SEGMENT PUBLIC  'DATA'
+                           183     
+0000 ????                  184     NumMs          DW    ?     ;number of milliseconds that have elapsed
+                           185     
+----                       186     DATA    ENDS
+                           187     
+                           188             END
+
+ASSEMBLY COMPLETE, NO ERRORS FOUND

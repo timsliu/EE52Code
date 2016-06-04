@@ -1,0 +1,533 @@
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   1
+
+
+DOS 5.0 (038-N) iC-86 COMPILER V4.0, COMPILATION OF MODULE SIMIDE
+OBJECT MODULE PLACED IN SIMIDE.OBJ
+COMPILER INVOKED BY: C:\5XTOOLS\IC86.EXE SIMIDE.C DEBUG MOD186 EXTEND CODE SMALL ROM NOALIGN
+
+ line level  incl 
+
+    1             /****************************************************************************/
+    2             /*                                                                          */
+    3             /*                                  SIMIDE                                  */
+    4             /*                         IDE Simulation Functions                         */
+    5             /*                           MP3 Jukebox Project                            */
+    6             /*                                 EE/CS 52                                 */
+    7             /*                                                                          */
+    8             /****************************************************************************/
+    9             
+   10             /*
+   11                This file contains a function for simulation an IDE hard drive for the MP3
+   12                Jukebox project.  This function can be used to test the software without a
+   13                physical hard drive being connected.  The functions included are:
+   14                   get_blocks - retrieve blocks of data from the simulated hard drive.
+   15             
+   16                The local functions included are:
+   17                   none
+   18             
+   19                The locally global variable definitions included are:
+   20                   none
+   21             
+   22             
+   23                Revision History
+   24                   6/7/00   Glen George       Initial revision.
+   25                   6/10/00  Glen George       Changed hex character constants to octal so
+   26                                              will compile under Intel C.
+   27                   6/2/02   Glen George       Fixed format for simulated index file, it was
+   28                                              inconsistent with current code.
+   29                   6/2/02   Glen George       Updated comments.
+   30                   5/11/03  Glen George       Fixed const-ness for character arrays so will
+   31                                              compile using rom model.
+   32                   6/5/03   Glen George       Updated function headers.
+   33                   5/13/05  Glen George       Updated the function to allow simulation for
+   34                                              version 2 of the code.
+   35                   4/29/06  Glen George       Made arrays of faked data be unsigned char.
+   36                   4/29/06  Glen George       Updated the function to match the new
+   37                                              specification for get_update() to use words
+   38                                  instead of bytes.
+   39             */
+   40             
+   41             
+   42             
+   43             /* library include files */
+   44               /* none */
+   45             
+   46             /* local include files */
+   47             #include  "mp3defs.h"
+   48             #include  "interfac.h"
+   49             
+   50             
+   51             
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   2
+
+
+   52             /* useful definitions */
+   53             #define  MAX_READ_SIZE   3      /* maximum number of blocks to read */
+   54             
+   55             #define  NO_ENTRIES      3      /* number of song entries */
+   56             
+   57             #define  BLOCK_LENGTH    8      /* number of words in the block number */
+   58             #define  CHAR_COUNT      26     /* number of characters to put in a block */
+   59             
+   60             
+   61             
+   62             
+   63             /*
+   64                get_blocks
+   65             
+   66                Description:      This function simulates the reading of blocks from an IDE
+   67                                  hard drive.  The data "read" is written to the memory
+   68                                  pointed to by the third argument.  The number of blocks
+   69                                  requested is given as the second argument.  If this value
+   70                                  is greater than the MAX_READ_SIZE, only MAX_READ_SIZE
+   71                                  blocks are read.  The starting block number to read is
+   72                                  passed as the first argument.  If this is between 0 and
+   73                                  NO_ENTRIES a fake track information block is returned.
+   74                                  Otherwise the block returned has the hex string for the
+   75                                  block number followed by a thru z and then all 0 values.
+   76                                  The function returns the number of blocks "read" (the
+   77                                  smaller of MAX_READ_SIZE and the second argument).
+   78             
+   79                Arguments:        block (unsigned long int)       - block number at which
+   80                                                                    to start the read.
+   81                                  length (int)                    - number of blocks to be
+   82                                                                    read.
+   83                                  dest (unsigned short int far *) - pointer to the memory
+   84                                                                    where the read data is
+   85                                                                    to be written.
+   86                Return Value:     The number of blocks actually written (for this code it
+   87                                  is always either the passed length or MAX_READ_SIZE).
+   88             
+   89                Input:            None.
+   90                Output:           None.
+   91             
+   92                Error Handling:   None.
+   93             
+   94                Algorithms:       None.
+   95                Data Structures:  None.
+   96             
+   97                Shared Variables: None.
+   98             
+   99                Author:           Glen George
+  100                Last Modified:    April 28, 2006
+  101             
+  102             */
+  103             
+  104             int  get_blocks(unsigned long int block, int length, unsigned short int far *dest)
+  105             {
+  106     1           /* variables */
+  107     1       
+  108     1           /* array of containing the "fake" data for the boot sector */
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   3
+
+
+  109     1           static const unsigned char  boot_sector[] = {
+  110     1               0, 0, 0,        /* boot jump */
+  111     1               'F', 'a', 'k', 'e', /* OEM name */
+  112     1               'B', 'o', 'o', 't',
+  113     1               0, 2,           /* 512 bytes per sector */
+  114     1           64,         /* sectors per allocation unit */
+  115     1           1, 0,           /* 1 reserved sector */
+  116     1           2,          /* 2 FATs */
+  117     1           0, 4,           /* 1024 root directory entries */
+  118     1           0, 0,           /* 0 sectors per logical volume */
+  119     1           0xF8,           /* media type */
+  120     1           0, 1,           /* 256 FAT sectors */
+  121     1           63, 0,          /* 63 sectors per track */
+  122     1           255, 0,         /* 255 heads */
+  123     1           63, 0, 0, 0,        /* 63 hidden sectors */
+  124     1           0x86, 0xFA, 0x3F, 0,    /* 4192902 sectors in the volume */
+  125     1           0x80,           /* drive number 0x80 */
+  126     1           0,          /* reserved byte */
+  127     1           0x29,           /* extended boot record signature */
+  128     1           1, 2, 3, 4      /* volume ID */
+  129     1           };
+  130     1       
+  131     1           /* array of containing the "fake" data for the first directory sector */
+  132     1           static const unsigned char  dir_sector[] = {
+  133     1               0x42, 0x65, 0x00, 0x65, 0x00, 0x6E, 0x00, 0x20,     /* first song */
+  134     1           0x00, 0x44, 0x00, 0x0F, 0x00, 0xA2, 0x61, 0x00,
+  135     1           0x79, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  136     1           0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  137     1           0x01, 0x50, 0x00, 0x61, 0x00, 0x6E, 0x00, 0x69,
+  138     1           0x00, 0x63, 0x00, 0x0F, 0x00, 0xA2, 0x20, 0x00,
+  139     1           0x53, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x67, 0x00,
+  140     1           0x7F, 0x00, 0x00, 0x00, 0x47, 0x00, 0x72, 0x00,
+  141     1           0x50, 0x41, 0x4E, 0x49, 0x43, 0x53, 0x4F, 0x4E,
+  142     1           0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0x62, 0x00,
+  143     1           0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0x62, 0x00,
+  144     1           0xAD, 0x32, 0x64, 0x08, 0x06, 0x00, 0x10, 0x00,
+  145     1           0x42, 0x20, 0x00, 0x44, 0x00, 0x6F, 0x00, 0x75,     /* second song */
+  146     1           0x00, 0x62, 0x00, 0x0F, 0x00, 0xCB, 0x74, 0x00,
+  147     1           0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  148     1           0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  149     1           0x01, 0x53, 0x00, 0x70, 0x00, 0x69, 0x00, 0x64,
+  150     1           0x00, 0x65, 0x00, 0x0F, 0x00, 0xCB, 0x72, 0x00,
+  151     1           0x77, 0x00, 0x65, 0x00, 0x62, 0x00, 0x73, 0x00,
+  152     1           0x7F, 0x00, 0x00, 0x00, 0x4E, 0x00, 0x6F, 0x00,
+  153     1           0x53, 0x50, 0x49, 0x44, 0x45, 0x52, 0x57, 0x45,
+  154     1           0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0x8D, 0x00,
+  155     1           0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0x8D, 0x00,
+  156     1           0xAD, 0x32, 0x8A, 0x08, 0x06, 0x00, 0x10, 0x00,
+  157     1           0x43, 0x6B, 0x00, 0x20, 0x00, 0x31, 0x00, 0x38,     /* third song */
+  158     1           0x00, 0x32, 0x00, 0x0F, 0x00, 0x38, 0x00, 0x00,
+  159     1           0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  160     1           0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+  161     1           0x02, 0x20, 0x00, 0x43, 0x00, 0x6F, 0x00, 0x6C,
+  162     1           0x00, 0x6C, 0x00, 0x0F, 0x00, 0x38, 0x65, 0x00,
+  163     1           0x67, 0x00, 0x65, 0x00, 0x7F, 0x00, 0x42, 0x00,
+  164     1           0x6C, 0x00, 0x00, 0x00, 0x69, 0x00, 0x6E, 0x00,
+  165     1           0x01, 0x47, 0x00, 0x6F, 0x00, 0x69, 0x00, 0x6E,
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   4
+
+
+  166     1           0x00, 0x67, 0x00, 0x0F, 0x00, 0x38, 0x20, 0x00,
+  167     1           0x41, 0x00, 0x77, 0x00, 0x61, 0x00, 0x79, 0x00,
+  168     1           0x20, 0x00, 0x00, 0x00, 0x74, 0x00, 0x6F, 0x00,
+  169     1           0x47, 0x4F, 0x49, 0x4E, 0x47, 0x41, 0x57, 0x41,
+  170     1           0x20, 0x20, 0x20, 0x20, 0x00, 0x64, 0xA3, 0x00,
+  171     1           0xAD, 0x32, 0xAD, 0x32, 0x00, 0x00, 0xA3, 0x00,
+  172     1           0xAD, 0x32, 0xEF, 0x08, 0x06, 0x00, 0x10, 0x00
+  173     1           };
+  174     1       
+  175     1       
+  176     1           int  no_blocks;             /* number of blocks to "read" */
+  177     1       
+  178     1           int  digit;                 /* a hex digit to output */
+  179     1       
+  180     1           int  i;                     /* general loop indices */
+  181     1           int  j;
+  182     1       
+  183     1       
+  184     1       
+  185     1           /* first figure how many blocks to transfer */
+  186     1           if (length > MAX_READ_SIZE)
+  187     1               /* too many requested, only "read" MAX_READ_SIZE */
+  188     1               no_blocks = MAX_READ_SIZE;
+  189     1           else
+  190     1               /* can "read" all the requested blocks */
+  191     1               no_blocks = length;
+  192     1       
+  193     1       
+  194     1           /* fill the blocks */
+  195     1           for (i = 0; i < no_blocks; i++)  {
+  196     2       
+  197     2               /* check the block number to figure out what to transfer */
+  198     2           if ((block + i) == 0)  {
+  199     3       
+  200     3               /* trying to read the first block on the disk */
+  201     3               /* transfer the fake boot sector */
+  202     3               for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  203     4                   /* information or boot code */
+  204     4               if (j < (sizeof(boot_sector) / 2))
+  205     4                   /* still boot sector information - copy it */
+  206     4                       *dest++ = boot_sector[2 * j] | (boot_sector[2 * j + 1] << 8);
+  207     4               else
+  208     4                   /* now in the boot code part of the sector - just zero it */
+  209     4                   *dest++ = 0;
+  210     4               }
+  211     3           }
+  212     2               else if ((block + i) == 513)  {
+  213     3       
+  214     3                   /* trying to read directory information - fill the block */
+  215     3               /* transfer the fake directory sector */
+  216     3               for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  217     4                   /* does the fake data exist? */
+  218     4               if (j < (sizeof(dir_sector) / 2))
+  219     4                   /* still directory sector information - copy it */
+  220     4                       *dest++ = dir_sector[2 * j] | (dir_sector[2 * j + 1] << 8);
+  221     4               else
+  222     4                   /* unused part of directory sector - zero it */
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   5
+
+
+  223     4                   *dest++ = 0;
+  224     4               }
+  225     3               }
+  226     2               else  {
+  227     3       
+  228     3                   /* trying to read general blocks - fill the blocks */
+  229     3                   for (j = 0; j < IDE_BLOCK_SIZE; j++)  {
+  230     4       
+  231     4                       /* figure out what to output */
+  232     4                       if (j < BLOCK_LENGTH)  {
+  233     5       
+  234     5                           /* output the block number in the first words */
+  235     5                           /* get this digit of the block number */
+  236     5                           digit = (((block + i) >> (4 * i)) & 0x00000000FL);
+  237     5       
+  238     5                           /* and output it while converting to a hex digit */
+  239     5                           if (digit < 10)
+  240     5                               *dest++ = digit + '0';
+  241     5                           else
+  242     5                               *dest++ = digit + 'A';
+  243     5                       }
+  244     4                       else if (j < (BLOCK_LENGTH + CHAR_COUNT))  {
+  245     5       
+  246     5                           /* output a-z in the next bytes */
+  247     5                           *dest++ = 'a' + (j - BLOCK_LENGTH);
+  248     5                       }
+  249     4                       else  {
+  250     5       
+  251     5                           /* rest of the block is 0 */
+  252     5                           *dest++ = 0;
+  253     5                       }
+  254     4                   }
+  255     3               }
+  256     2           }
+  257     1       
+  258     1       
+  259     1           /* all done - return the number of blocks actually transferred */
+  260     1           return  no_blocks;
+  261     1       
+  262     1       }
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   6
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+                                                   ; STATEMENT # 105
+                           get_blocks      PROC NEAR
+             016C  56              PUSH    SI
+             016D  57              PUSH    DI
+             016E  C8080000        ENTER   8H,0H
+                           @1:
+                                                   ; STATEMENT # 186
+             0172  817E0C0300      CMP     [BP].length,3H
+             0177  7F03            JG      $+5H
+             0179  E90800          JMP     @2
+                                                   ; STATEMENT # 188
+             017C  C746FE0300      MOV     [BP].no_blocks,3H
+                                                   ; STATEMENT # 189
+             0181  E90600          JMP     @3
+                           @2:
+                                                   ; STATEMENT # 191
+             0184  8B460C          MOV     AX,[BP].length
+             0187  8946FE          MOV     [BP].no_blocks,AX
+                           @3:
+                                                   ; STATEMENT # 195
+             018A  C746FA0000      MOV     [BP].i,0H
+             018F  E90300          JMP     @6
+                           @4:
+             0192  FF46FA          INC     [BP].i
+                           @6:
+             0195  8B46FA          MOV     AX,[BP].i
+             0198  3946FE          CMP     [BP].no_blocks,AX
+             019B  7F03            JG      $+5H
+             019D  E98901          JMP     @5
+                                                   ; STATEMENT # 198
+             01A0  99              CWD
+             01A1  034608          ADD     AX,[BP].block
+             01A4  13560A          ADC     DX,[BP].block+2H
+             01A7  09D2            OR      DX,DX
+             01A9  7504            JNZ     $+6H
+             01AB  81F80000        CMP     AX,0H
+             01AF  7403            JZ      $+5H
+             01B1  E95B00          JMP     @7
+                                                   ; STATEMENT # 202
+             01B4  C746F80000      MOV     [BP].j,0H
+             01B9  E90300          JMP     @10
+                           @8:
+             01BC  FF46F8          INC     [BP].j
+                           @10:
+             01BF  8B5EF8          MOV     BX,[BP].j
+             01C2  81FB0001        CMP     BX,100H
+             01C6  7C03            JL      $+5H
+             01C8  E94100          JMP     @9
+                                                   ; STATEMENT # 204
+             01CB  81FB1500        CMP     BX,15H
+             01CF  7203            JB      $+5H
+             01D1  E92600          JMP     @11
+                                                   ; STATEMENT # 206
+             01D4  D1E3            SAL     BX,1
+             01D6  53              PUSH    BX      ; 1
+             01D7  43              INC     BX
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   7
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             01D8  2E8A870000      MOV     AL,CS:boot_sector[BX]
+             01DD  B400            MOV     AH,0H
+             01DF  C1E008          SAL     AX,8H
+             01E2  5B              POP     BX      ; 1
+             01E3  2E8A8F0000      MOV     CL,CS:boot_sector[BX]
+             01E8  B500            MOV     CH,0H
+             01EA  0BC1            OR      AX,CX
+             01EC  C47E0E          LES     DI,[BP].dest
+             01EF  81460E0200      ADD     [BP].dest,2H
+             01F4  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 207
+             01F7  E90F00          JMP     @12
+                           @11:
+                                                   ; STATEMENT # 209
+             01FA  C4460E          LES     AX,[BP].dest
+             01FD  81460E0200      ADD     [BP].dest,2H
+             0202  8BD8            MOV     BX,AX
+             0204  26C7070000      MOV     ES:[BX],0H
+                           @12:
+                                                   ; STATEMENT # 210
+             0209  E9B0FF          JMP     @8
+                           @9:
+                                                   ; STATEMENT # 212
+             020C  E91701          JMP     @13
+                           @7:
+             020F  8B46FA          MOV     AX,[BP].i
+             0212  99              CWD
+             0213  034608          ADD     AX,[BP].block
+             0216  13560A          ADC     DX,[BP].block+2H
+             0219  09D2            OR      DX,DX
+             021B  7504            JNZ     $+6H
+             021D  81F80102        CMP     AX,201H
+             0221  7403            JZ      $+5H
+             0223  E95B00          JMP     @14
+                                                   ; STATEMENT # 216
+             0226  C746F80000      MOV     [BP].j,0H
+             022B  E90300          JMP     @17
+                           @15:
+             022E  FF46F8          INC     [BP].j
+                           @17:
+             0231  8B5EF8          MOV     BX,[BP].j
+             0234  81FB0001        CMP     BX,100H
+             0238  7C03            JL      $+5H
+             023A  E94100          JMP     @16
+                                                   ; STATEMENT # 218
+             023D  81FBA000        CMP     BX,0A0H
+             0241  7203            JB      $+5H
+             0243  E92600          JMP     @18
+                                                   ; STATEMENT # 220
+             0246  D1E3            SAL     BX,1
+             0248  53              PUSH    BX      ; 1
+             0249  43              INC     BX
+             024A  2E8A872B00      MOV     AL,CS:dir_sector[BX]
+             024F  B400            MOV     AH,0H
+             0251  C1E008          SAL     AX,8H
+             0254  5B              POP     BX      ; 1
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   8
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             0255  2E8A8F2B00      MOV     CL,CS:dir_sector[BX]
+             025A  B500            MOV     CH,0H
+             025C  0BC1            OR      AX,CX
+             025E  C47E0E          LES     DI,[BP].dest
+             0261  81460E0200      ADD     [BP].dest,2H
+             0266  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 221
+             0269  E90F00          JMP     @19
+                           @18:
+                                                   ; STATEMENT # 223
+             026C  C4460E          LES     AX,[BP].dest
+             026F  81460E0200      ADD     [BP].dest,2H
+             0274  8BD8            MOV     BX,AX
+             0276  26C7070000      MOV     ES:[BX],0H
+                           @19:
+                                                   ; STATEMENT # 224
+             027B  E9B0FF          JMP     @15
+                           @16:
+                                                   ; STATEMENT # 226
+             027E  E9A500          JMP     @20
+                           @14:
+                                                   ; STATEMENT # 229
+             0281  C746F80000      MOV     [BP].j,0H
+             0286  E90300          JMP     @23
+                           @21:
+             0289  FF46F8          INC     [BP].j
+                           @23:
+             028C  8B46F8          MOV     AX,[BP].j
+             028F  81F80001        CMP     AX,100H
+             0293  7C03            JL      $+5H
+             0295  E98E00          JMP     @22
+                                                   ; STATEMENT # 232
+             0298  81F80800        CMP     AX,8H
+             029C  7C03            JL      $+5H
+             029E  E95100          JMP     @24
+                                                   ; STATEMENT # 236
+             02A1  8B46FA          MOV     AX,[BP].i
+             02A4  99              CWD
+             02A5  034608          ADD     AX,[BP].block
+             02A8  13560A          ADC     DX,[BP].block+2H
+             02AB  6B4EFA04        IMUL    CX,[BP].i,4H
+             02AF  E306            JCXZ    $+8H
+             02B1  D1EA            SHR     DX,1
+             02B3  D1D8            RCR     AX,1
+             02B5  E2FA            LOOP    $-4H
+             02B7  81E00F00        AND     AX,0FH
+             02BB  81E20000        AND     DX,0H
+             02BF  8946FC          MOV     [BP].digit,AX
+                                                   ; STATEMENT # 239
+             02C2  81F80A00        CMP     AX,0AH
+             02C6  7C03            JL      $+5H
+             02C8  E91200          JMP     @25
+                                                   ; STATEMENT # 240
+             02CB  81C03000        ADD     AX,30H
+             02CF  C47E0E          LES     DI,[BP].dest
+             02D2  81460E0200      ADD     [BP].dest,2H
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE   9
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+             02D7  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 241
+             02DA  E91200          JMP     @26
+                           @25:
+                                                   ; STATEMENT # 242
+             02DD  8B46FC          MOV     AX,[BP].digit
+             02E0  81C04100        ADD     AX,41H
+             02E4  C47E0E          LES     DI,[BP].dest
+             02E7  81460E0200      ADD     [BP].dest,2H
+             02EC  268905          MOV     ES:[DI],AX
+                           @26:
+                                                   ; STATEMENT # 244
+             02EF  E93100          JMP     @27
+                           @24:
+             02F2  8B46F8          MOV     AX,[BP].j
+             02F5  81F82200        CMP     AX,22H
+             02F9  7C03            JL      $+5H
+             02FB  E91600          JMP     @28
+                                                   ; STATEMENT # 247
+             02FE  81E80800        SUB     AX,8H
+             0302  81C06100        ADD     AX,61H
+             0306  C47E0E          LES     DI,[BP].dest
+             0309  81460E0200      ADD     [BP].dest,2H
+             030E  268905          MOV     ES:[DI],AX
+                                                   ; STATEMENT # 249
+             0311  E90F00          JMP     @29
+                           @28:
+                                                   ; STATEMENT # 252
+             0314  C4460E          LES     AX,[BP].dest
+             0317  81460E0200      ADD     [BP].dest,2H
+             031C  8BD8            MOV     BX,AX
+             031E  26C7070000      MOV     ES:[BX],0H
+                                                   ; STATEMENT # 253
+                           @29:
+                           @27:
+                                                   ; STATEMENT # 254
+             0323  E963FF          JMP     @21
+                           @22:
+                                                   ; STATEMENT # 255
+                           @20:
+                           @13:
+                                                   ; STATEMENT # 256
+             0326  E969FE          JMP     @4
+                           @5:
+                                                   ; STATEMENT # 260
+             0329  8B46FE          MOV     AX,[BP].no_blocks
+             032C  C9              LEAVE
+             032D  5F              POP     DI
+             032E  5E              POP     SI
+             032F  C3              RET
+                                                   ; STATEMENT # 262
+                           get_blocks      ENDP
+
+
+
+MODULE INFORMATION:
+iC-86  COMPILER   SIMIDE                                                                     05/07/;6 12:45:19  PAGE  10
+                  ASSEMBLY LISTING OF OBJECT CODE
+
+
+     CODE AREA SIZE               = 01C5H    453D
+     CONSTANT AREA SIZE           = 016BH    363D
+     DATA AREA SIZE               = 0000H      0D
+     MAXIMUM STACK SIZE           = 0016H     22D
+
+iC-86 COMPILATION COMPLETE.      0 WARNINGS,     0 ERRORS
